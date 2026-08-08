@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import useBreathSensor from '../components/useBreathSensor';
 import axios from 'axios';
-
+import { cpTheme } from '../theme/colors';
 const FlowerGame = () => {
   const { blowIntensity, isListening, startListening, stopListening } = useBreathSensor();
   
@@ -21,7 +21,7 @@ const FlowerGame = () => {
     blowIntensityRef.current = blowIntensity;
     
     // Desibel hesaplama (Max 100)
-    const currentDb = Math.min(Math.round((blowIntensity / 50) * 100), 100);
+    const currentDb = Math.min(Math.round((blowIntensity / 160) * 100), 100);
     setDbPercentage(currentDb);
 
     if (currentDb > 2) {
@@ -37,7 +37,7 @@ const FlowerGame = () => {
       if (type === 'encourage') {
         message = "Kollarını iki yana kocaman aç ve derin bir nefes al!";
       } else if (type === 'calm_down') {
-        message = "Çok güçlüsün! Gökkuşağı için daha yavaş nefes almalıyız.";
+        message = "Güzeldi ama bir kez daha deneyelim, gökkuşağı için daha yavaş nefes alabilirsin.";
       } else if (type === 'success') {
         message = "Harika, bulutlar dağılıyor! Böyle devam et.";
       }
@@ -62,7 +62,7 @@ const FlowerGame = () => {
       gameLoop = setInterval(() => {
         setProgress((prev) => {
           let newProgress = prev - 0.3; // Nefes alınmadığında bulutlar yavaşça kapanır
-          const currentDb = Math.min(Math.round((blowIntensityRef.current / 50) * 100), 100);
+          const currentDb = Math.min(Math.round((blowIntensityRef.current / 160) * 100), 100);
           
           // İDEAL NEFES ALMA: Göğsü açacak yavaş ve derin nefes (%5 - %30 arası)
           if (currentDb >= 5 && currentDb <= 30) {
@@ -126,8 +126,8 @@ const FlowerGame = () => {
 
   // Dinamik Arka Plan Rengi: İlerlemeye göre koyu griden parlak maviye geçer
   const skyColor = progress > 50 
-    ? `rgba(41, 182, 246, ${progress / 100})`  // Aydınlık Gökyüzü
-    : `rgba(38, 50, 56, ${1 - (progress / 100)})`; // Karanlık/Bulutlu
+    ? `rgba(41, 182, 246, ${progress / 160})`  // Aydınlık Gökyüzü
+    : `rgba(38, 50, 56, ${1 - (progress / 160)})`; // Karanlık/Bulutlu
 
   return (
     <div style={{
@@ -148,34 +148,32 @@ const FlowerGame = () => {
           border: '3px solid #FFC107', boxShadow: '0 8px 20px rgba(0,0,0,0.5)',
           display: 'flex', flexDirection: 'column', alignItems: 'center'
         }}>
-          <h3 style={{ margin: '0 0 10px 0', fontSize: '18px', color: '#FFD54F' }}>🎙️ Nefes Sesi</h3>
-          <div style={{ width: '200px', height: '20px', backgroundColor: '#000', borderRadius: '10px', overflow: 'hidden', position: 'relative' }}>
-            {/* İdeal Nefes Alma Aralığı (%5 - %30) */}
-            <div style={{ position: 'absolute', left: '5%', width: '25%', height: '100%', backgroundColor: 'rgba(0, 230, 118, 0.4)', zIndex: 1 }} />
+          <h3 style={{ margin: '0 0 10px 0', fontSize: '18px', color: cpTheme.text.dark }}>🎙️ Nefes Sesi</h3>
+          <div style={{ width: '200px', height: '20px', backgroundColor: cpTheme.elements.progressBg, borderRadius: '10px', overflow: 'hidden', position: 'relative' }}>
             <div style={{ 
               width: `${dbPercentage}%`, height: '100%', 
-              backgroundColor: dbPercentage > 30 ? '#FF1744' : '#00E676', 
+              backgroundColor: dbPercentage > 30 ? cpTheme.primary.coral : cpTheme.primary.emerald, 
               transition: 'width 0.1s linear', zIndex: 2, position: 'relative'
             }} />
           </div>
-          <span style={{ marginTop: '5px', fontWeight: 'bold', color: '#FFD54F' }}>%{dbPercentage}</span>
+          <span style={{ marginTop: '5px', fontWeight: 'bold', color: cpTheme.text.dark }}>%{dbPercentage}</span>
         </div>
 
         {/* Skor ve Kristal */}
         <div style={{
-          backgroundColor: '#37474F', padding: '15px 30px', borderRadius: '16px',
-          border: '3px solid #FFC107', boxShadow: '0 8px 20px rgba(0,0,0,0.5)',
+          backgroundColor: cpTheme.card.white, padding: '15px 30px', borderRadius: '16px',
+          border: `3px solid ${cpTheme.elements.border}`, boxShadow: '0 8px 20px rgba(0,0,0,0.1)',
           display: 'flex', flexDirection: 'column', alignItems: 'flex-end'
         }}>
-          <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '900', color: '#FFD54F' }}>🌈 3. Bölüm: Göğsümü Açıyorum</h2>
-          <div style={{ fontSize: '20px', fontWeight: 'bold', marginTop: '5px', color: '#FFF' }}>
+          <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '900', color: cpTheme.text.dark }}>🌈 Göğsümü Açıyorum</h2>
+          <div style={{ fontSize: '20px', fontWeight: 'bold', marginTop: '5px', color: cpTheme.text.muted }}>
             Skor: {score} | 💎 Kristal: {crystals}
           </div>
           
           {!isListening ? (
-            <button onClick={startListening} style={{...btnStyle, backgroundColor: '#00E676', color: '#000', marginTop: '15px'}}>▶️ BAŞLA</button>
+            <button onClick={startListening} style={{...btnStyle, backgroundColor: cpTheme.primary.teal, color: cpTheme.text.light, marginTop: '15px'}}>▶️ BAŞLA</button>
           ) : (
-            <button onClick={handleFinishGame} style={{...btnStyle, backgroundColor: '#FF1744', color: '#FFF', marginTop: '15px'}}>⏹️ BİTİR</button>
+            <button onClick={handleFinishGame} style={{...btnStyle, backgroundColor: cpTheme.primary.coral, color: cpTheme.text.light, marginTop: '15px'}}>⏹️ BİTİR</button>
           )}
         </div>
       </div>
@@ -191,7 +189,7 @@ const FlowerGame = () => {
         <div style={{
           position: 'absolute',
           fontSize: '300px',
-          opacity: Math.max(progress / 100, 0.1), // Tamamen kaybolmaz, hafifçe silüeti kalır
+          opacity: Math.max(progress / 160, 0.1), // Tamamen kaybolmaz, hafifçe silüeti kalır
           transform: `scale(${0.5 + (progress / 200)}) translateY(${30 - (progress * 0.3)}px)`, // Aşağıdan yukarıya doğru yükselerek büyür
           transition: 'all 0.2s ease-out',
           zIndex: 1,
@@ -205,7 +203,7 @@ const FlowerGame = () => {
           position: 'absolute', left: '30%',
           fontSize: '180px', zIndex: 2,
           transform: `translateX(-${progress * 4}px)`,
-          opacity: 1 - (progress / 150), // Dağılırken hafif silikleşir
+          opacity: 1 - (progress / 220), // Dağılırken hafif silikleşir
           transition: 'all 0.2s linear',
           filter: `brightness(${50 + (progress * 0.5)}%)` // Aydınlanır
         }}>
@@ -217,7 +215,7 @@ const FlowerGame = () => {
           position: 'absolute', right: '30%',
           fontSize: '180px', zIndex: 2,
           transform: `translateX(${progress * 4}px)`,
-          opacity: 1 - (progress / 150),
+          opacity: 1 - (progress / 220),
           transition: 'all 0.2s linear',
           filter: `brightness(${50 + (progress * 0.5)}%)`
         }}>
@@ -232,9 +230,9 @@ const FlowerGame = () => {
         display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 100
       }}>
         <div style={{
-          width: '120px', height: '120px', backgroundColor: '#FFF', borderRadius: '50%',
-          border: '4px solid #FFC107', display: 'flex', justifyContent: 'center',
-          alignItems: 'center', fontSize: '60px', boxShadow: '0 10px 20px rgba(0,0,0,0.5)',
+          width: '120px', height: '120px', backgroundColor: cpTheme.card.white, borderRadius: '50%',
+          border: `4px solid ${cpTheme.elements.border}`, display: 'flex', justifyContent: 'center',
+          alignItems: 'center', fontSize: '60px', boxShadow: '0 10px 20px rgba(0,0,0,0.1)',
         }}>
           👦🏻
         </div>
@@ -242,8 +240,8 @@ const FlowerGame = () => {
         {/* Karakterin Konuşma Balonu */}
         {isListening && (
           <div style={{
-            marginTop: '15px', backgroundColor: '#FFF', color: '#000', padding: '10px 20px',
-            borderRadius: '20px', fontWeight: 'bold', fontSize: '16px', boxShadow: '0 5px 15px rgba(0,0,0,0.5)',
+            marginTop: '15px', backgroundColor: cpTheme.card.white, color: cpTheme.text.dark, padding: '10px 20px',
+            borderRadius: '20px', fontWeight: 'bold', fontSize: '16px', boxShadow: '0 5px 15px rgba(0,0,0,0.1)',
             maxWidth: '220px', textAlign: 'center'
           }}>
             {progress < 50 ? '💬 Kollarını kocaman aç ve nefes al!' : '💬 Süper, gökkuşağı çıkıyor!'}

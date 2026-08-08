@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import useBreathSensor from '../components/useBreathSensor';
 import axios from 'axios';
-
+import { cpTheme } from '../theme/colors';
 const DragonGame = () => {
   const { blowIntensity, isListening, startListening, stopListening } = useBreathSensor();
   
@@ -22,7 +22,7 @@ const DragonGame = () => {
     blowIntensityRef.current = blowIntensity;
     
     // Desibel hesaplama (Max 100)
-    const currentDb = Math.min(Math.round((blowIntensity / 50) * 100), 100);
+    const currentDb = Math.min(Math.round((blowIntensity / 160) * 100), 100);
     setDbPercentage(currentDb);
 
     if (currentDb > 2) {
@@ -38,7 +38,7 @@ const DragonGame = () => {
       if (type === 'encourage') {
         message = "Harika gidiyorsun, karnını balon gibi şişirmeye devam et!";
       } else if (type === 'calm_down') {
-        message = "Çok güçlüsün! Şimdi nefesimizi biraz daha yavaş ve sessiz alalım.";
+        message = "Güzeldi ama bir kez daha deneyelim, nefesimizi biraz daha yavaş ve sessiz alabilirsin.";
       }
 
       const speech = new SpeechSynthesisUtterance(message);
@@ -61,7 +61,7 @@ const DragonGame = () => {
       gameLoop = setInterval(() => {
         setBellyScale((prevScale) => {
           let newScale = prevScale - 0.01; // Nefes alınmadığında yavaşça iner
-          const currentDb = Math.min(Math.round((blowIntensityRef.current / 50) * 100), 100);
+          const currentDb = Math.min(Math.round((blowIntensityRef.current / 160) * 100), 100);
           
           // İDEAL NEFES ALMA: Düşük ve sabit desibel (Örn: %5 ile %25 arası)
           if (currentDb >= 5 && currentDb <= 30) {
@@ -123,10 +123,10 @@ const DragonGame = () => {
 
   // Yüksek Kontrast Gece Teması (Zıt Renkler)
   const themeColors = { 
-    bg: '#1A237E', // Çok Koyu Gece Mavisi
-    text: '#64FFDA', // Parlak Fosforlu Turkuaz/Yeşil
-    card: '#283593',
-    border: '#00E676'
+    bg: cpTheme.bg.mintGreen,
+    text: cpTheme.text.dark,
+    card: cpTheme.card.white,
+    border: cpTheme.elements.border
   };
 
   return (
@@ -148,19 +148,19 @@ const DragonGame = () => {
           border: `3px solid ${themeColors.border}`, boxShadow: '0 8px 20px rgba(0,0,0,0.4)',
           display: 'flex', flexDirection: 'column', alignItems: 'center'
         }}>
-          <h3 style={{ margin: '0 0 10px 0', fontSize: '18px', color: '#FFF' }}>🎙️ Nefes Sesi</h3>
-          <div style={{ width: '200px', height: '20px', backgroundColor: '#000', borderRadius: '10px', overflow: 'hidden', position: 'relative' }}>
+          <h3 style={{ margin: '0 0 10px 0', fontSize: '18px', color: cpTheme.text.dark }}>🎙️ Nefes Sesi</h3>
+          <div style={{ width: '200px', height: '20px', backgroundColor: cpTheme.elements.progressBg, borderRadius: '10px', overflow: 'hidden', position: 'relative' }}>
             {/* İdeal Nefes Alma Aralığı Göstergesi (%5 - %30 arası yeşil alan) */}
-            <div style={{ position: 'absolute', left: '5%', width: '25%', height: '100%', backgroundColor: 'rgba(0, 230, 118, 0.3)', zIndex: 1 }} />
+            <div style={{ position: 'absolute', left: '5%', width: '25%', height: '100%', backgroundColor: 'rgba(16, 185, 129, 0.2)', zIndex: 1 }} />
             
             <div style={{ 
               width: `${dbPercentage}%`, height: '100%', 
-              backgroundColor: dbPercentage > 30 ? '#FFEA00' : '#00E676', // 30'u geçerse sarı olur (çok güçlü)
+              backgroundColor: dbPercentage > 30 ? cpTheme.primary.coral : cpTheme.primary.emerald, 
               transition: 'width 0.1s linear',
               zIndex: 2, position: 'relative'
             }} />
           </div>
-          <span style={{ marginTop: '5px', fontWeight: 'bold', color: '#FFF' }}>%{dbPercentage}</span>
+          <span style={{ marginTop: '5px', fontWeight: 'bold', color: cpTheme.text.dark }}>%{dbPercentage}</span>
         </div>
 
         {/* Skor ve Kristal */}
@@ -169,15 +169,15 @@ const DragonGame = () => {
           border: `3px solid ${themeColors.border}`, boxShadow: '0 8px 20px rgba(0,0,0,0.4)',
           display: 'flex', flexDirection: 'column', alignItems: 'flex-end'
         }}>
-          <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '900', color: '#FFF' }}>🐉 2. Bölüm: Diyafram</h2>
+          <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '900', color: cpTheme.text.dark }}>🐉 Diyafram</h2>
           <div style={{ fontSize: '20px', fontWeight: 'bold', marginTop: '5px' }}>
             Skor: {score} | 💎 Kristal: {crystals}
           </div>
           
           {!isListening ? (
-            <button onClick={startListening} style={{...btnStyle, backgroundColor: '#00E676', color: '#000', marginTop: '15px'}}>▶️ BAŞLA</button>
+            <button onClick={startListening} style={{...btnStyle, backgroundColor: cpTheme.primary.teal, color: cpTheme.text.light, marginTop: '15px'}}>▶️ BAŞLA</button>
           ) : (
-            <button onClick={handleFinishGame} style={{...btnStyle, backgroundColor: '#FF1744', color: '#FFF', marginTop: '15px'}}>⏹️ BİTİR</button>
+            <button onClick={handleFinishGame} style={{...btnStyle, backgroundColor: cpTheme.primary.coral, color: cpTheme.text.light, marginTop: '15px'}}>⏹️ BİTİR</button>
           )}
         </div>
       </div>
@@ -190,7 +190,7 @@ const DragonGame = () => {
       }}>
         {/* ZzZ Uyku Efekti */}
         {dragonState === 'sleeping' && isListening && (
-          <div style={{ fontSize: '40px', color: '#FFF', marginBottom: '20px', animation: 'float 3s infinite' }}>
+          <div style={{ fontSize: '40px', color: cpTheme.text.dark, marginBottom: '20px', animation: 'float 3s infinite' }}>
             ZzZ...
           </div>
         )}
@@ -226,9 +226,9 @@ const DragonGame = () => {
         display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 100
       }}>
         <div style={{
-          width: '120px', height: '120px', backgroundColor: '#FFF', borderRadius: '50%',
+          width: '120px', height: '120px', backgroundColor: cpTheme.card.white, borderRadius: '50%',
           border: `4px solid ${themeColors.border}`, display: 'flex', justifyContent: 'center',
-          alignItems: 'center', fontSize: '60px', boxShadow: '0 10px 20px rgba(0,0,0,0.5)',
+          alignItems: 'center', fontSize: '60px', boxShadow: '0 10px 20px rgba(0,0,0,0.1)',
         }}>
           👧🏻
         </div>
@@ -236,8 +236,8 @@ const DragonGame = () => {
         {/* Karakterin Konuşma Balonu */}
         {isListening && (
           <div style={{
-            marginTop: '15px', backgroundColor: '#FFF', color: '#000', padding: '10px 20px',
-            borderRadius: '20px', fontWeight: 'bold', fontSize: '16px', boxShadow: '0 5px 15px rgba(0,0,0,0.5)',
+            marginTop: '15px', backgroundColor: cpTheme.card.white, color: cpTheme.text.dark, padding: '10px 20px',
+            borderRadius: '20px', fontWeight: 'bold', fontSize: '16px', boxShadow: '0 5px 15px rgba(0,0,0,0.1)',
             maxWidth: '200px', textAlign: 'center'
           }}>
             {dragonState === 'sleeping' ? '💬 Karnını balon gibi şişir...' : '💬 Sakin ol, yavaşça nefes al.'}

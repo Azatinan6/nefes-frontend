@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import useBreathSensor from '../components/useBreathSensor';
+import BellyBreathGuide from '../components/BellyBreathGuide';
 import axios from 'axios';
-
+import { cpTheme } from '../theme/colors';
 const BalloonGame = () => {
   // Nefes sensöründen gelen veriler ve kontroller
   const { blowIntensity, isListening, startListening, stopListening } = useBreathSensor();
@@ -27,7 +28,7 @@ const BalloonGame = () => {
     intensityRef.current = blowIntensity;
     
     // Desibel Yüzdesi Hesaplama
-    const currentDb = Math.min(Math.round((blowIntensity / 50) * 100), 100);
+    const currentDb = Math.min(Math.round((blowIntensity / 160) * 100), 100);
     setDbPercentage(currentDb);
 
     if (currentDb > 5) {
@@ -80,7 +81,7 @@ const BalloonGame = () => {
 
         setProgress((prevProgress) => {
           let newProgress = prevProgress;
-          const currentDb = Math.min(Math.round((intensityRef.current / 50) * 100), 100);
+          const currentDb = Math.min(Math.round((intensityRef.current / 160) * 100), 100);
 
           // İdeal üfleme aralığı: Kontrollü ve ritmik (Çok sert değil, çok yavaş değil)
           if (currentDb >= 10 && currentDb <= 80) {
@@ -168,10 +169,10 @@ const BalloonGame = () => {
       position: 'relative',
       width: '100%',
       height: 'calc(100vh - 70px)',
-      background: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)', // Yumuşak ve canlandırıcı pastel gradyan
+      background: cpTheme.bg.warmSand, // CP-friendly arka plan
       overflow: 'hidden',
       fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-      color: '#333',
+      color: cpTheme.text.dark,
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
@@ -230,24 +231,24 @@ const BalloonGame = () => {
     coachAvatar: {
       width: '100px',
       height: '100px',
-      backgroundColor: '#fff',
+      backgroundColor: cpTheme.card.white,
       borderRadius: '50%',
       display: 'flex',
       justifyContent: 'center',
       alignItems: 'center',
       fontSize: '50px',
       boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
-      border: '4px solid #fff',
+      border: `4px solid ${cpTheme.elements.border}`,
     },
     chatBubble: {
       marginBottom: '30px',
       padding: '15px 25px',
-      backgroundColor: '#fff',
+      backgroundColor: cpTheme.card.white,
       borderRadius: '20px 20px 20px 0',
       boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
       maxWidth: '300px',
       fontWeight: '600',
-      color: '#4A4A4A',
+      color: cpTheme.text.dark,
       fontSize: '16px',
       lineHeight: '1.5',
     },
@@ -255,12 +256,12 @@ const BalloonGame = () => {
       padding: '12px 30px',
       fontSize: '16px',
       fontWeight: 'bold',
-      color: '#fff',
-      background: 'linear-gradient(45deg, #4facfe 0%, #00f2fe 100%)',
+      color: cpTheme.text.light,
+      background: cpTheme.primary.teal,
       border: 'none',
       borderRadius: '12px',
       cursor: 'pointer',
-      boxShadow: '0 4px 15px rgba(0, 242, 254, 0.4)',
+      boxShadow: '0 4px 15px rgba(0, 131, 143, 0.4)',
       marginTop: '10px',
       transition: 'transform 0.2s',
     },
@@ -268,12 +269,12 @@ const BalloonGame = () => {
       padding: '12px 30px',
       fontSize: '16px',
       fontWeight: 'bold',
-      color: '#fff',
-      background: 'linear-gradient(45deg, #ff0844 0%, #ffb199 100%)',
+      color: cpTheme.text.light,
+      background: cpTheme.primary.coral,
       border: 'none',
       borderRadius: '12px',
       cursor: 'pointer',
-      boxShadow: '0 4px 15px rgba(255, 8, 68, 0.4)',
+      boxShadow: '0 4px 15px rgba(239, 68, 68, 0.4)',
       marginTop: '10px',
       transition: 'transform 0.2s',
     }
@@ -281,6 +282,7 @@ const BalloonGame = () => {
 
   return (
     <div style={styles.container}>
+      <BellyBreathGuide isListening={isListening} blowIntensity={blowIntensity} />
       
       {/* --- 1. ÜST PANEL: İstatistikler ve Kontroller --- */}
       <div style={styles.topPanel}>
@@ -288,13 +290,13 @@ const BalloonGame = () => {
         {/* Nefes Desibel (Şiddet) Göstergesi */}
         <div style={{ ...styles.glassCard, ...styles.statBox }}>
           <h3 style={{ margin: '0 0 10px 0', fontSize: '16px', color: '#555' }}>💨 Nefes Gücü</h3>
-          <div style={{ width: '200px', height: '16px', backgroundColor: 'rgba(255,255,255,0.5)', borderRadius: '8px', overflow: 'hidden', position: 'relative' }}>
+          <div style={{ width: '200px', height: '16px', backgroundColor: cpTheme.elements.progressBg, borderRadius: '8px', overflow: 'hidden', position: 'relative' }}>
             {/* İdeal Üfleme Aralığı Rehberi (%10 - %80) */}
-            <div style={{ position: 'absolute', left: '10%', width: '70%', height: '100%', backgroundColor: 'rgba(76, 175, 80, 0.3)', zIndex: 1 }} />
+            <div style={{ position: 'absolute', left: '10%', width: '70%', height: '100%', backgroundColor: 'rgba(16, 185, 129, 0.2)', zIndex: 1 }} />
             
             <div style={{ 
               width: `${dbPercentage}%`, height: '100%', 
-              backgroundColor: dbPercentage > 80 ? '#FF5252' : '#4CAF50', // Çok sertse kırmızı, normalse yeşil
+              backgroundColor: dbPercentage > 80 ? cpTheme.primary.coral : cpTheme.primary.emerald, 
               transition: 'width 0.1s linear, background-color 0.3s', zIndex: 2, position: 'relative',
               borderRadius: '8px'
             }} />
@@ -303,8 +305,8 @@ const BalloonGame = () => {
 
         {/* Skor, Kristaller ve Başla/Bitir Butonu */}
         <div style={{ ...styles.glassCard, ...styles.statBox, alignItems: 'flex-end' }}>
-          <h2 style={{ margin: 0, fontSize: '22px', fontWeight: '800', color: '#333' }}>🎈 Dik Dur Güçlen</h2>
-          <div style={{ fontSize: '18px', fontWeight: '600', marginTop: '5px', color: '#666' }}>
+          <h2 style={{ margin: 0, fontSize: '22px', fontWeight: '800', color: cpTheme.text.dark }}>🎈 Eğlenceli Balon</h2>
+          <div style={{ fontSize: '18px', fontWeight: '600', marginTop: '5px', color: cpTheme.text.muted }}>
             Skor: {Math.floor(score)} | 💎 Kristal: {crystals}
           </div>
           
@@ -338,7 +340,7 @@ const BalloonGame = () => {
           width: '200px', height: '200px',
           borderRadius: '50%',
           background: `radial-gradient(circle, rgba(255,255,255,${progress/100}) 0%, rgba(255,255,255,0) 70%)`,
-          transform: `scale(${1 + (progress / 50)})`,
+          transform: `scale(${1 + (progress / 160)})`,
           transition: 'all 0.2s linear',
           zIndex: 0
         }} />

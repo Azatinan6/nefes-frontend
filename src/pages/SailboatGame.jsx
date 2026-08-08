@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import useBreathSensor from '../components/useBreathSensor';
+import BellyBreathGuide from '../components/BellyBreathGuide';
 import axios from 'axios';
-
+import { cpTheme } from '../theme/colors';
 const SailboatGame = () => {
   const { blowIntensity, isListening, startListening, stopListening } = useBreathSensor();
   
@@ -23,7 +24,7 @@ const SailboatGame = () => {
     blowIntensityRef.current = blowIntensity;
     
     // Üfleme (Ekspirasyon) olduğu için mikrofon daha yüksek ses alır. Duyarlılık azaltıldı (Bölen 150)
-    const currentDb = Math.min(Math.round((blowIntensity / 150) * 100), 100);
+    const currentDb = Math.min(Math.round((blowIntensity / 220) * 100), 100);
     setDbPercentage(currentDb);
 
     if (currentDb > 5) {
@@ -32,19 +33,45 @@ const SailboatGame = () => {
     }
   }, [blowIntensity]);
 
+  // Yeni Sözel Komut Havuzu (Hafta 3 - Yelken Oyunu)
+  const promptsPool = {
+    start: [
+      "Hazır mısın? Yelkenimizi yüzdürelim! Daha önce öğrendiğin gibi, şimdi burnundan derin ve yavaş bir nefes al."
+    ],
+    idle: [
+      "Karnındaki balonu şişirdiğini düşün.",
+      "Hadi, bir kez daha burnundan derin bir nefes al."
+    ],
+    active: [
+      "Şimdi dudaklarını büz ve yavaşça üfleyerek uzun bir nefes ver.",
+      "Ağzından yavaşça ve uzun uzun üfle.",
+      "Şimdi yavaşça ve dudaklarını büzerek uzun uzun üfle."
+    ],
+    motivational: [
+      "Harika! Yelkenimiz ilerliyor!",
+      "Şahane gidiyorsun!",
+      "Çok güzel! Yavaşça üflemeye devam et."
+    ],
+    calm_down: [
+      "Çok hızlı üflersen yelkenimiz devrilebilir."
+    ],
+    success: [
+      "Bravo sana! Yelkeni karşıya ulaştırdın!"
+    ]
+  };
+
   // Sesli Yönlendirme (Dudak büzme ve kontrollü uzun nefes odaklı)
   const playAudioPrompt = (type) => {
     if (!warningGiven.current && !gameOver && isListening) {
       let message = "";
-      if (type === 'start') {
-        message = "Dudaklarını büz ve yelkenliyi yüzdürmek için uzun, yumuşak bir rüzgar gönder.";
-      } else if (type === 'encourage') {
-        message = "Harika! Uzun uzun üflemeye devam et, limana çok az kaldı.";
-      } else if (type === 'calm_down') {
-        message = "Çok güçlü bir rüzgar çıktı, gemi sallanıyor! Biraz daha yumuşak üfleyelim.";
-      } else if (type === 'success') {
-        message = "Süper! Yelkenli limana ulaştı, sen gerçek bir kaptansın.";
+      
+      if (promptsPool[type] && promptsPool[type].length > 0) {
+        // Rastgele bir cümle seç
+        const randomIndex = Math.floor(Math.random() * promptsPool[type].length);
+        message = promptsPool[type][randomIndex];
       }
+
+      if (!message) return;
 
       const speech = new SpeechSynthesisUtterance(message);
       speech.lang = 'tr-TR';
@@ -75,7 +102,7 @@ const SailboatGame = () => {
     
     if (isListening && !gameOver) {
       gameLoop = setInterval(() => {
-        const currentDb = Math.min(Math.round((blowIntensityRef.current / 150) * 100), 100);
+        const currentDb = Math.min(Math.round((blowIntensityRef.current / 220) * 100), 100);
 
         setBoatPosition((prev) => {
           let newPosition = prev;
@@ -121,9 +148,19 @@ const SailboatGame = () => {
           return newPosition;
         });
 
-        // 5 Saniye boyunca üfleme yoksa teşvik edici prompt ver
-        if (Date.now() - lastBreathTime.current > 5000) {
-          playAudioPrompt('encourage');
+        // 5 saniye hareketsizlikte teşvik
+        const timeSinceLastBreath = Date.now() - lastBreathTime.current;
+        if (timeSinceLastBreath > 6000 && !warningGiven.current) {
+          playAudioPrompt('idle');
+        } else if (timeSinceLastBreath > 4000 && !warningGiven.current) {
+          playAudioPrompt('start');
+        }
+
+        // Düzenli ilerleyişte motivasyon
+        if (currentDb > 10 && currentDb < 60 && !warningGiven.current) {
+           if (Math.random() < 0.005) {
+             playAudioPrompt(Math.random() > 0.5 ? 'motivational' : 'active');
+           }
         }
 
       }, 100); 
@@ -159,11 +196,11 @@ const SailboatGame = () => {
 
   // Yüksek Kontrast Teması (Açık Deniz)
   const themeColors = { 
-    bg: '#01579B', // Derin Deniz Mavisi
-    text: '#FFFFFF', // Beyaz
-    card: '#0277BD', 
-    border: '#FFCA28', // Güneş Sarısı
-    accent: '#00E5FF' // Su Mavisi
+    bg: cpTheme.bg.softBlue, // Derin Deniz Mavisi
+    text: cpTheme.text.dark, // Beyaz
+    card: cpTheme.card.white, 
+    border: cpTheme.elements.border, // Güneş Sarısı
+    accent: cpTheme.primary.teal // Su Mavisi
   };
 
   return (
@@ -172,6 +209,8 @@ const SailboatGame = () => {
       backgroundColor: themeColors.bg, overflow: 'hidden', fontFamily: 'sans-serif',
       color: themeColors.text
     }}>
+      <BellyBreathGuide isListening={isListening} blowIntensity={blowIntensity} />
+
       
       {/* Dalga Efekti (Arka Plan CSS) */}
       <style>
@@ -200,39 +239,39 @@ const SailboatGame = () => {
         {/* Desibel Performans Göstergesi (Uzun Üfleme Hassasiyeti) */}
         <div style={{
           backgroundColor: themeColors.card, padding: '15px 25px', borderRadius: '16px',
-          border: `3px solid ${themeColors.border}`, boxShadow: '0 8px 20px rgba(0,0,0,0.3)',
+          border: `3px solid ${themeColors.border}`, boxShadow: '0 8px 20px rgba(0,0,0,0.1)',
           display: 'flex', flexDirection: 'column', alignItems: 'center'
         }}>
-          <h3 style={{ margin: '0 0 10px 0', fontSize: '18px', color: themeColors.border }}>🎙️ Rüzgar Gücü</h3>
-          <div style={{ width: '200px', height: '20px', backgroundColor: '#000', borderRadius: '10px', overflow: 'hidden', position: 'relative' }}>
+          <h3 style={{ margin: '0 0 10px 0', fontSize: '18px', color: cpTheme.text.dark }}>🎙️ Rüzgar Gücü</h3>
+          <div style={{ width: '200px', height: '20px', backgroundColor: cpTheme.elements.progressBg, borderRadius: '10px', overflow: 'hidden', position: 'relative' }}>
             
             {/* İdeal Uzun Üfleme Aralığı (%15 - %60) */}
-            <div style={{ position: 'absolute', left: '15%', width: '45%', height: '100%', backgroundColor: 'rgba(0, 229, 255, 0.4)', zIndex: 1 }} />
+            <div style={{ position: 'absolute', left: '15%', width: '45%', height: '100%', backgroundColor: 'rgba(16, 185, 129, 0.2)', zIndex: 1 }} />
             
             <div style={{ 
               width: `${dbPercentage}%`, height: '100%', 
-              backgroundColor: dbPercentage > 60 ? '#FF1744' : themeColors.accent, 
+              backgroundColor: dbPercentage > 60 ? cpTheme.primary.coral : themeColors.accent, 
               transition: 'width 0.1s linear', zIndex: 2, position: 'relative'
             }} />
           </div>
-          <span style={{ marginTop: '5px', fontWeight: 'bold', color: '#FFF' }}>%{dbPercentage}</span>
+          <span style={{ marginTop: '5px', fontWeight: 'bold', color: cpTheme.text.dark }}>%{dbPercentage}</span>
         </div>
 
         {/* Skor ve Kristal */}
         <div style={{
           backgroundColor: themeColors.card, padding: '15px 30px', borderRadius: '16px',
-          border: `3px solid ${themeColors.border}`, boxShadow: '0 8px 20px rgba(0,0,0,0.3)',
+          border: `3px solid ${themeColors.border}`, boxShadow: '0 8px 20px rgba(0,0,0,0.1)',
           display: 'flex', flexDirection: 'column', alignItems: 'flex-end'
         }}>
-          <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '900', color: themeColors.border }}>⛵ 5. Bölüm: Rüzgar Gölü</h2>
-          <div style={{ fontSize: '18px', fontWeight: 'bold', marginTop: '5px', color: '#FFF' }}>
+          <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '900', color: cpTheme.text.dark }}>⛵ Rüzgarlı Göl Macerası</h2>
+          <div style={{ fontSize: '18px', fontWeight: 'bold', marginTop: '5px', color: cpTheme.text.muted }}>
             Liman Seferi: {laps} | Skor: {score} | 💎 Kristal: {crystals}
           </div>
           
           {!isListening ? (
-            <button onClick={startListening} style={{...btnStyle, backgroundColor: themeColors.border, color: '#000', marginTop: '15px'}}>▶️ BAŞLA</button>
+            <button onClick={startListening} style={{...btnStyle, backgroundColor: cpTheme.primary.teal, color: cpTheme.text.light, marginTop: '15px'}}>▶️ BAŞLA</button>
           ) : (
-            <button onClick={handleFinishGame} style={{...btnStyle, backgroundColor: '#FF1744', color: '#FFF', marginTop: '15px'}}>⏹️ BİTİR</button>
+            <button onClick={handleFinishGame} style={{...btnStyle, backgroundColor: cpTheme.primary.coral, color: cpTheme.text.light, marginTop: '15px'}}>⏹️ BİTİR</button>
           )}
         </div>
       </div>

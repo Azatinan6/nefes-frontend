@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import useBreathSensor from '../components/useBreathSensor';
+import BellyBreathGuide from '../components/BellyBreathGuide';
 import axios from 'axios';
-
+import { cpTheme } from '../theme/colors';
 const CalmBreathGame = () => {
   const { isListening, startListening, stopListening } = useBreathSensor();
   
@@ -70,7 +71,7 @@ const CalmBreathGame = () => {
     setGameOver(true);
     setPhase('idle');
     
-    const earnedCrystals = Math.floor(score / 500);
+    const earnedCrystals = Math.floor(score / 1600);
     const progressData = {
       userId: "123e4567-e89b-12d3-a456-426614174000",
       gameId: 5, // Huzur Nefesi ID
@@ -104,38 +105,40 @@ const CalmBreathGame = () => {
       width: '100%',
       height: 'calc(100vh - 70px)',
       // Dinlendirici bir gün batımı/huzur gradyanı
-      background: 'linear-gradient(to bottom, #311B92 0%, #512DA8 40%, #7E57C2 70%, #B39DDB 100%)', 
+      background: cpTheme.bg.lavender, 
       overflow: 'hidden',
       fontFamily: 'sans-serif'
     }}>
+      <BellyBreathGuide isListening={isListening} blowIntensity={blowIntensity} phase={phase} />
+
       
       {/* Şeffaf (Glassmorphism) Bilgi Kartı */}
       <div style={{
         position: 'absolute', top: '20px', right: '30px',
-        backgroundColor: 'rgba(255, 255, 255, 0.15)', backdropFilter: 'blur(10px)', 
-        padding: '15px 25px', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.3)',
-        color: '#FFF', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '10px',
-        zIndex: 100, boxShadow: '0 8px 32px rgba(0,0,0,0.2)'
+        backgroundColor: cpTheme.card.white, backdropFilter: 'blur(10px)', 
+        padding: '15px 25px', borderRadius: '16px', border: `1px solid ${cpTheme.elements.border}`,
+        color: cpTheme.text.dark, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '10px',
+        zIndex: 100, boxShadow: '0 8px 32px rgba(0,0,0,0.1)'
       }}>
         <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 'bold' }}>🧘 Huzur Nefesi</h3>
-        <div style={{ fontSize: '15px', color: '#D1C4E9', fontWeight: 'bold' }}>
-          Skor: <strong style={{color: '#FFF'}}>{score}</strong> | 💎 <strong style={{color: '#FFF'}}>{Math.floor(score / 500)}</strong>
+        <div style={{ fontSize: '15px', color: cpTheme.text.muted, fontWeight: 'bold' }}>
+          Skor: <strong style={{color: cpTheme.text.dark}}>{score}</strong> | 💎 <strong style={{color: cpTheme.text.dark}}>{Math.floor(score / 1600)}</strong>
         </div>
         
         {!isListening ? (
-          <button onClick={startGame} style={actionBtnStyle('#4CAF50')}>Oyuna Başla</button>
+          <button onClick={startGame} style={actionBtnStyle(cpTheme.primary.teal)}>Oyuna Başla</button>
         ) : (
-          <button onClick={handleFinishGame} style={actionBtnStyle('#f44336')}>Görevi Bitir</button>
+          <button onClick={handleFinishGame} style={actionBtnStyle(cpTheme.primary.coral)}>Görevi Bitir</button>
         )}
       </div>
 
       {/* Dinamik Yönerge Mesajı Paneli */}
       <div style={{
         position: 'absolute', top: '40px', left: '50%', transform: 'translateX(-50%)',
-        backgroundColor: (!isPostureCorrect && phase !== 'idle') ? 'rgba(211, 47, 47, 0.85)' : 'rgba(255, 255, 255, 0.2)',
-        color: 'white', padding: '15px 35px', borderRadius: '25px',
+        backgroundColor: (!isPostureCorrect && phase !== 'idle') ? cpTheme.primary.coral : cpTheme.card.white,
+        color: (!isPostureCorrect && phase !== 'idle') ? cpTheme.text.light : cpTheme.text.dark, padding: '15px 35px', borderRadius: '25px',
         fontWeight: 'bold', fontSize: '24px', zIndex: 100, backdropFilter: 'blur(8px)',
-        boxShadow: '0 4px 15px rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.4)',
+        boxShadow: '0 4px 15px rgba(0,0,0,0.1)', border: `1px solid ${cpTheme.elements.border}`,
         transition: 'all 0.3s'
       }}>
         {getMessage()}
@@ -150,11 +153,11 @@ const CalmBreathGame = () => {
           onTouchStart={() => setIsPostureCorrect(true)}
           onTouchEnd={() => setIsPostureCorrect(false)}
           style={{
-            padding: '16px 40px', fontSize: '18px', color: 'white', 
-            border: '2px solid rgba(255,255,255,0.4)', borderRadius: '30px', cursor: 'pointer',
-            backgroundColor: isPostureCorrect ? 'rgba(103, 58, 183, 0.9)' : 'rgba(158, 158, 158, 0.7)',
+            padding: '16px 40px', fontSize: '18px', color: cpTheme.text.light, 
+            border: 'none', borderRadius: '30px', cursor: 'pointer',
+            backgroundColor: isPostureCorrect ? cpTheme.primary.teal : cpTheme.text.muted,
             backdropFilter: 'blur(5px)',
-            boxShadow: isPostureCorrect ? '0 0 20px rgba(103, 58, 183, 0.8)' : '0 8px 20px rgba(0,0,0,0.3)',
+            boxShadow: isPostureCorrect ? '0 0 20px rgba(0, 131, 143, 0.4)' : '0 8px 20px rgba(0,0,0,0.1)',
             transform: isPostureCorrect ? 'scale(0.98)' : 'scale(1)',
             transition: 'all 0.2s', fontWeight: 'bold', whiteSpace: 'nowrap'
           }}

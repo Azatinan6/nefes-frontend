@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import useBreathSensor from '../components/useBreathSensor';
+import BellyBreathGuide from '../components/BellyBreathGuide';
 import axios from 'axios';
-
+import { cpTheme } from '../theme/colors';
 const FinalAdventureGame = () => {
   const { blowIntensity, isListening, startListening, stopListening } = useBreathSensor();
   
@@ -30,7 +31,7 @@ const FinalAdventureGame = () => {
     if (validIntensity < 0) validIntensity = 0;
 
     // HASSASİYET AZALTILDI: Bölen 150 yapılarak nefesin daha kontrollü (yavaş) algılanması sağlandı
-    const currentDb = Math.min(Math.round((validIntensity / 150) * 100), 100);
+    const currentDb = Math.min(Math.round((validIntensity / 220) * 100), 100);
     setDbPercentage(currentDb);
   }, [blowIntensity, phaseIndex]);
 
@@ -86,7 +87,7 @@ const FinalAdventureGame = () => {
         if (validIntensity < 0) validIntensity = 0;
 
         // Hassasiyet Azaltıldı (150'ye bölüyoruz ki bar anında fırlamasın, kontrollü dolsun)
-        const currentDb = Math.min(Math.round((validIntensity / 150) * 100), 100);
+        const currentDb = Math.min(Math.round((validIntensity / 220) * 100), 100);
 
         setPhaseProgress((prev) => {
           let newProgress = prev;
@@ -184,17 +185,17 @@ const FinalAdventureGame = () => {
   const styles = {
     container: {
       position: 'relative', width: '100%', height: 'calc(100vh - 70px)',
-      background: 'radial-gradient(ellipse at center, #1A237E 0%, #000000 100%)', // Uzay boşluğu
+      background: cpTheme.bg.lavender, // Uzay boşluğu
       overflow: 'hidden', fontFamily: "'Segoe UI', Tahoma, sans-serif",
-      color: '#FFF', display: 'flex', flexDirection: 'column', alignItems: 'center',
+      color: cpTheme.text.dark, display: 'flex', flexDirection: 'column', alignItems: 'center',
     },
     glassCard: {
-      background: 'rgba(255, 255, 255, 0.05)',
+      background: cpTheme.card.white,
       backdropFilter: 'blur(15px)',
       WebkitBackdropFilter: 'blur(15px)',
       borderRadius: '24px',
-      border: `1px solid ${currentDetails.color}50`,
-      boxShadow: `0 8px 32px 0 rgba(0, 0, 0, 0.5)`,
+      border: `1px solid ${currentDetails.color}`,
+      boxShadow: `0 8px 32px 0 rgba(0, 0, 0, 0.1)`,
       transition: 'border 0.5s ease',
     },
     topPanel: {
@@ -209,32 +210,34 @@ const FinalAdventureGame = () => {
       display: 'flex', alignItems: 'flex-end', gap: '20px', zIndex: 10,
     },
     coachAvatar: {
-      width: '110px', height: '110px', backgroundColor: '#FFF',
+      width: '110px', height: '110px', backgroundColor: cpTheme.card.white,
       borderRadius: '50%', display: 'flex', justifyContent: 'center', alignItems: 'center',
-      fontSize: '60px', boxShadow: `0 15px 35px ${currentDetails.color}50`, border: `4px solid ${currentDetails.color}`,
+      fontSize: '60px', boxShadow: `0 15px 35px rgba(0,0,0,0.1)`, border: `4px solid ${currentDetails.color}`,
       transition: 'all 0.5s ease'
     },
     chatBubble: {
-      marginBottom: '35px', padding: '18px 25px', backgroundColor: 'rgba(255,255,255,0.95)',
-      borderRadius: '25px 25px 25px 0', boxShadow: '0 15px 35px rgba(0,0,0,0.5)',
-      maxWidth: '380px', fontWeight: '700', color: '#111', fontSize: '17px', lineHeight: '1.5',
+      marginBottom: '35px', padding: '18px 25px', backgroundColor: cpTheme.card.white,
+      borderRadius: '25px 25px 25px 0', boxShadow: '0 15px 35px rgba(0,0,0,0.1)',
+      maxWidth: '380px', fontWeight: '700', color: cpTheme.text.dark, fontSize: '17px', lineHeight: '1.5',
     },
     btnStart: {
-      padding: '14px 35px', fontSize: '16px', fontWeight: 'bold', color: '#000',
-      background: `linear-gradient(45deg, ${currentDetails.color} 0%, #FFF 100%)`,
+      padding: '14px 35px', fontSize: '16px', fontWeight: 'bold', color: cpTheme.text.light,
+      background: cpTheme.primary.teal,
       border: 'none', borderRadius: '15px', cursor: 'pointer',
-      boxShadow: `0 8px 20px ${currentDetails.color}50`, marginTop: '15px', transition: 'all 0.3s ease',
+      boxShadow: `0 8px 20px rgba(0, 131, 143, 0.4)`, marginTop: '15px', transition: 'all 0.3s ease',
     },
     btnStop: {
-      padding: '14px 35px', fontSize: '16px', fontWeight: 'bold', color: '#fff',
-      background: 'linear-gradient(45deg, #FF1744 0%, #D50000 100%)',
+      padding: '14px 35px', fontSize: '16px', fontWeight: 'bold', color: cpTheme.text.light,
+      background: cpTheme.primary.coral,
       border: 'none', borderRadius: '15px', cursor: 'pointer',
-      boxShadow: '0 8px 20px rgba(255, 23, 68, 0.5)', marginTop: '15px', transition: 'all 0.3s ease',
+      boxShadow: '0 8px 20px rgba(239, 68, 68, 0.4)', marginTop: '15px', transition: 'all 0.3s ease',
     }
   };
 
   return (
     <div style={styles.container}>
+      <BellyBreathGuide isListening={isListening} blowIntensity={blowIntensity} />
+
       
       {/* Arka Plan Yıldız Efektleri */}
       <div style={{ position: 'absolute', top: '10%', left: '20%', fontSize: '20px', opacity: 0.5, animation: 'float 3s infinite' }}>✨</div>
@@ -250,7 +253,7 @@ const FinalAdventureGame = () => {
             <h3 style={{ margin: '0 0 15px 0', fontSize: '19px', color: currentDetails.color, transition: 'color 0.5s' }}>
               {currentDetails.icon} {currentDetails.title}
             </h3>
-            <div style={{ width: '280px', height: '22px', backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: '11px', overflow: 'hidden', position: 'relative', border: '1px solid rgba(255,255,255,0.1)' }}>
+            <div style={{ width: '280px', height: '22px', backgroundColor: cpTheme.elements.progressBg, borderRadius: '11px', overflow: 'hidden', position: 'relative', border: '1px solid rgba(0,0,0,0.1)' }}>
               
               {/* İdeal Nefes Alanı */}
               <div style={{ 
@@ -269,14 +272,14 @@ const FinalAdventureGame = () => {
                 borderRadius: '11px'
               }} />
             </div>
-            <span style={{ marginTop: '10px', fontWeight: 'bold', fontSize: '16px', color: '#FFF' }}>%{dbPercentage}</span>
+            <span style={{ marginTop: '10px', fontWeight: 'bold', fontSize: '16px', color: cpTheme.text.dark }}>%{dbPercentage}</span>
           </div>
         ) : <div />}
 
         {/* Skor Paneli */}
         <div style={{ ...styles.glassCard, ...styles.statBox, alignItems: 'flex-end' }}>
-          <h2 style={{ margin: 0, fontSize: '26px', fontWeight: '900', color: '#E040FB', textShadow: '0 2px 10px rgba(224, 64, 251, 0.6)' }}>👑 8. Bölüm: Büyük Final</h2>
-          <div style={{ fontSize: '19px', fontWeight: 'bold', marginTop: '8px', color: '#E8F5E9' }}>
+          <h2 style={{ margin: 0, fontSize: '26px', fontWeight: '900', color: cpTheme.text.dark }}>👑 Büyük Hazine Peşinde</h2>
+          <div style={{ fontSize: '19px', fontWeight: 'bold', marginTop: '8px', color: cpTheme.text.muted }}>
             Skor: {Math.floor(score)} | 💎 Kristal: {crystals}
           </div>
           

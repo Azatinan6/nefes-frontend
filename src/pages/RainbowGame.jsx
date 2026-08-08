@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import useBreathSensor from '../components/useBreathSensor';
+import BellyBreathGuide from '../components/BellyBreathGuide';
 import axios from 'axios';
-
+import { cpTheme } from '../theme/colors';
 const RainbowGame = () => {
   // Nefes sensöründen gelen veriler
   const { blowIntensity, isListening, startListening, stopListening } = useBreathSensor();
@@ -32,7 +33,7 @@ const RainbowGame = () => {
     if (validIntensity < 0) validIntensity = 0;
 
     // Büzük dudak solunumu yavaş ve sabit bir ses üretir.
-    const currentDb = Math.min(Math.round((validIntensity / 120) * 100), 100);
+    const currentDb = Math.min(Math.round((validIntensity / 180) * 100), 100);
     setDbPercentage(currentDb);
 
     if (currentDb > 5) {
@@ -49,7 +50,7 @@ const RainbowGame = () => {
       } else if (type === 'encourage') {
         message = "Harika! Uzun ve kesintisiz üflemeye devam et.";
       } else if (type === 'warning') {
-        message = "Çok sert üfledin ve fırtına çıktı! Mum üfler gibi daha yavaş ve sakin üfle.";
+        message = "Güzeldi ama bir kez daha deneyelim, mum üfler gibi daha yavaş ve sakin üfleyebilirsin.";
       } else if (type === 'success') {
         message = "Muhteşem! Gökyüzü pırıl pırıl oldu ve gökkuşağı çıktı.";
       }
@@ -93,7 +94,7 @@ const RainbowGame = () => {
           const noiseThreshold = 30; 
           let validIntensity = intensityRef.current - noiseThreshold;
           if (validIntensity < 0) validIntensity = 0;
-          const currentDb = Math.min(Math.round((validIntensity / 120) * 100), 100);
+          const currentDb = Math.min(Math.round((validIntensity / 180) * 100), 100);
           
           // İDEAL NEFES: Uzun, kontrollü, büzük dudak (Yeşil Alan: %10 - %60)
           if (currentDb >= 10 && currentDb <= 60) {
@@ -181,16 +182,16 @@ const RainbowGame = () => {
 
   // --- Dinamik Tasarım Ayarları ---
   // progress'e göre arka plan rengi karanlık griden aydınlık gökyüzü mavisine geçiş yapar
-  const r = Math.floor(69 + (progress / 100) * (41 - 69));   // 69 -> 41 (#45 -> #29)
-  const g = Math.floor(90 + (progress / 100) * (182 - 90));  // 90 -> 182 (#5A -> #B6)
-  const b = Math.floor(100 + (progress / 100) * (246 - 100)); // 100 -> 246 (#64 -> #F6)
+  const r = Math.floor(69 + (progress / 160) * (41 - 69));   // 69 -> 41 (#45 -> #29)
+  const g = Math.floor(90 + (progress / 160) * (182 - 90));  // 90 -> 182 (#5A -> #B6)
+  const b = Math.floor(100 + (progress / 160) * (246 - 100)); // 160 -> 246 (#64 -> #F6)
   const skyColor = `rgb(${r}, ${g}, ${b})`;
 
   const styles = {
     container: {
       position: 'relative', width: '100%', height: 'calc(100vh - 70px)',
       backgroundColor: skyColor, overflow: 'hidden', fontFamily: "'Segoe UI', Tahoma, sans-serif",
-      color: '#FFF', transition: 'background-color 0.2s linear',
+      color: cpTheme.text.dark, transition: 'background-color 0.2s linear',
       display: 'flex', flexDirection: 'column', alignItems: 'center',
     },
     glassCard: {
@@ -218,54 +219,56 @@ const RainbowGame = () => {
       display: 'flex', alignItems: 'flex-end', gap: '15px', zIndex: 10,
     },
     coachAvatar: {
-      width: '100px', height: '100px', backgroundColor: '#FFD54F',
+      width: '100px', height: '100px', backgroundColor: cpTheme.card.white,
       borderRadius: '50%', display: 'flex', justifyContent: 'center', alignItems: 'center',
-      fontSize: '50px', boxShadow: '0 10px 25px rgba(0,0,0,0.3)', border: '4px solid #FFF',
+      fontSize: '50px', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', border: `4px solid ${cpTheme.elements.border}`,
     },
     chatBubble: {
-      marginBottom: '30px', padding: '15px 25px', backgroundColor: '#FFF',
-      borderRadius: '20px 20px 20px 0', boxShadow: '0 10px 25px rgba(0,0,0,0.2)',
-      maxWidth: '350px', fontWeight: '600', color: '#333', fontSize: '16px', lineHeight: '1.5',
+      marginBottom: '30px', padding: '15px 25px', backgroundColor: cpTheme.card.white,
+      borderRadius: '20px 20px 20px 0', boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+      maxWidth: '350px', fontWeight: '600', color: cpTheme.text.dark, fontSize: '16px', lineHeight: '1.5',
     },
     btnStart: {
-      padding: '12px 30px', fontSize: '16px', fontWeight: 'bold', color: '#000',
-      background: 'linear-gradient(45deg, #FFCA28 0%, #FFB300 100%)',
+      padding: '12px 30px', fontSize: '16px', fontWeight: 'bold', color: cpTheme.text.light,
+      background: cpTheme.primary.teal,
       border: 'none', borderRadius: '12px', cursor: 'pointer',
-      boxShadow: '0 4px 15px rgba(255, 202, 40, 0.4)', marginTop: '10px', transition: 'transform 0.2s',
+      boxShadow: '0 4px 15px rgba(0, 131, 143, 0.4)', marginTop: '10px', transition: 'transform 0.2s',
     },
     btnStop: {
-      padding: '12px 30px', fontSize: '16px', fontWeight: 'bold', color: '#fff',
-      background: 'linear-gradient(45deg, #EF5350 0%, #E53935 100%)',
+      padding: '12px 30px', fontSize: '16px', fontWeight: 'bold', color: cpTheme.text.light,
+      background: cpTheme.primary.coral,
       border: 'none', borderRadius: '12px', cursor: 'pointer',
-      boxShadow: '0 4px 15px rgba(239, 83, 80, 0.4)', marginTop: '10px', transition: 'transform 0.2s',
+      boxShadow: '0 4px 15px rgba(239, 68, 68, 0.4)', marginTop: '10px', transition: 'transform 0.2s',
     }
   };
 
   return (
     <div style={styles.container}>
+      <BellyBreathGuide isListening={isListening} blowIntensity={blowIntensity} />
+
       
       {/* 1. ÜST PANEL: İstatistikler */}
       <div style={styles.topPanel}>
         {/* Nefes Sesi Göstergesi (Büzük Dudak) */}
         <div style={{ ...styles.glassCard, ...styles.statBox }}>
-          <h3 style={{ margin: '0 0 10px 0', fontSize: '16px', color: '#FFF' }}>🎙️ Kontrollü Nefes Verme</h3>
-          <div style={{ width: '200px', height: '16px', backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: '8px', overflow: 'hidden', position: 'relative' }}>
+          <h3 style={{ margin: '0 0 10px 0', fontSize: '16px', color: cpTheme.text.dark }}>🎙️ Kontrollü Nefes Verme</h3>
+          <div style={{ width: '200px', height: '16px', backgroundColor: cpTheme.elements.progressBg, borderRadius: '8px', overflow: 'hidden', position: 'relative' }}>
             {/* İdeal Uzun Nefes Aralığı Rehberi (%10 - %60) */}
-            <div style={{ position: 'absolute', left: '10%', width: '50%', height: '100%', backgroundColor: 'rgba(255, 202, 40, 0.5)', zIndex: 1 }} />
+            <div style={{ position: 'absolute', left: '10%', width: '50%', height: '100%', backgroundColor: 'rgba(16, 185, 129, 0.2)', zIndex: 1 }} />
             
             <div style={{ 
               width: `${dbPercentage}%`, height: '100%', 
-              backgroundColor: dbPercentage > 60 ? '#EF5350' : '#FFCA28', 
+              backgroundColor: dbPercentage > 60 ? cpTheme.primary.coral : cpTheme.primary.emerald, 
               transition: 'width 0.1s linear, background-color 0.3s', zIndex: 2, position: 'relative',
               borderRadius: '8px'
             }} />
           </div>
-          {stormWarning && <span style={{ marginTop: '8px', color: '#FFCDD2', fontSize: '13px', fontWeight: 'bold' }}>⚠️ Çok Sert! Yavaşla</span>}
+          {stormWarning && <span style={{ marginTop: '8px', color: cpTheme.primary.coral, fontSize: '13px', fontWeight: 'bold' }}>⚠️ Çok Sert! Yavaşla</span>}
         </div>
 
         {/* Skor Paneli */}
         <div style={{ ...styles.glassCard, ...styles.statBox, alignItems: 'flex-end' }}>
-          <h2 style={{ margin: 0, fontSize: '22px', fontWeight: '800', color: '#FFF', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>🌈 3. Bölüm: Gökkuşağı Çiz</h2>
+          <h2 style={{ margin: 0, fontSize: '22px', fontWeight: '800', color: '#FFF', textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>🌈 Gökkuşağı Çiz!</h2>
           <div style={{ fontSize: '18px', fontWeight: '600', marginTop: '5px', color: '#E1F5FE' }}>
             Skor: {Math.floor(score)} | 💎 Kristal: {crystals}
           </div>
@@ -290,7 +293,7 @@ const RainbowGame = () => {
           position: 'absolute', top: '15%',
           fontSize: '150px',
           opacity: Math.max((progress - 30) / 70, 0),
-          transform: `scale(${0.5 + (progress / 100)})`,
+          transform: `scale(${0.5 + (progress / 160)})`,
           transition: 'all 0.2s ease',
           animation: 'spin-slow 20s linear infinite',
           zIndex: 1
@@ -302,8 +305,8 @@ const RainbowGame = () => {
         <div style={{
           position: 'absolute',
           fontSize: '280px',
-          opacity: Math.max(progress / 100, 0), 
-          transform: `scale(${0.3 + (progress / 120)}) translateY(${50 - (progress * 0.5)}px)`, 
+          opacity: Math.max(progress / 160, 0), 
+          transform: `scale(${0.3 + (progress / 180)}) translateY(${50 - (progress * 0.5)}px)`, 
           transition: 'all 0.2s ease-out',
           zIndex: 2,
           filter: 'drop-shadow(0px 10px 30px rgba(255,255,255,0.6))'
@@ -323,7 +326,7 @@ const RainbowGame = () => {
           position: 'absolute', left: '35%', top: '35%',
           fontSize: '220px', zIndex: 3,
           transform: `translateX(-${progress * 6}px)`,
-          opacity: 1 - (progress / 150), 
+          opacity: 1 - (progress / 220), 
           transition: 'transform 0.2s linear, filter 0.3s ease',
           filter: stormWarning ? 'grayscale(80%) brightness(60%)' : `brightness(${60 + (progress * 0.4)}%)` 
         }}>
@@ -335,7 +338,7 @@ const RainbowGame = () => {
           position: 'absolute', right: '35%', top: '35%',
           fontSize: '220px', zIndex: 3,
           transform: `translateX(${progress * 6}px)`,
-          opacity: 1 - (progress / 150),
+          opacity: 1 - (progress / 220),
           transition: 'transform 0.2s linear, filter 0.3s ease',
           filter: stormWarning ? 'grayscale(80%) brightness(60%)' : `brightness(${60 + (progress * 0.4)}%)`
         }}>

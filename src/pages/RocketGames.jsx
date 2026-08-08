@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import useBreathSensor from '../components/useBreathSensor';
+import BellyBreathGuide from '../components/BellyBreathGuide';
 import axios from 'axios';
-
+import { cpTheme } from '../theme/colors';
 const RocketGame = () => {
   const { blowIntensity, isListening, startListening, stopListening } = useBreathSensor();
   
@@ -28,7 +29,7 @@ const RocketGame = () => {
     if (validIntensity < 0) validIntensity = 0;
 
     // Roketin daha dengeli havalanması için
-    const currentDb = Math.min(Math.round((validIntensity / 100) * 100), 100);
+    const currentDb = Math.min(Math.round((validIntensity / 160) * 100), 100);
     setDbPercentage(currentDb);
 
     if (currentDb > 10) {
@@ -44,7 +45,7 @@ const RocketGame = () => {
       if (type === 'start') {
         message = "Derin bir nefes al ve roketi fırlatmak için tüm gücünle tek seferde üfle!";
       } else if (type === 'encourage') {
-        message = "Hadi, derin bir nefes daha alıp daha güçlü üfleyelim!";
+        message = "Güzeldi ama bir kez daha deneyelim, daha güçlü üfleyebilirsin!";
       } else if (type === 'success') {
         message = "İnanılmaz bir güç! Roket uzaya ulaştı.";
       }
@@ -82,7 +83,7 @@ const RocketGame = () => {
         let validIntensity = blowIntensityRef.current - noiseThreshold;
         if (validIntensity < 0) validIntensity = 0;
 
-        const currentDb = Math.min(Math.round((validIntensity / 100) * 100), 100);
+        const currentDb = Math.min(Math.round((validIntensity / 160) * 100), 100);
 
         setRocketHeight((prev) => {
           let newHeight = prev;
@@ -159,16 +160,16 @@ const RocketGame = () => {
 
   // Yüksek Kontrast Teması (Kızgın Volkan ve Karanlık Uzay)
   const themeColors = { 
-    bg: '#212121', // Çok Koyu Gri (Gökyüzü/Uzay)
-    text: '#FFFFFF', // Beyaz
-    card: '#424242', 
-    border: '#FF3D00', // Parlak Volkan Turuncusu
-    accent: '#FFEA00' // Ateş Sarısı
+    bg: cpTheme.bg.warmSand, // Çok Koyu Gri (Gökyüzü/Uzay)
+    text: cpTheme.text.dark, // Beyaz
+    card: cpTheme.card.white, 
+    border: cpTheme.elements.border, // Parlak Volkan Turuncusu
+    accent: cpTheme.primary.coral // Ateş Sarısı
   };
 
   // Roket yüksekliğine göre arka plan rengini uzaya doğru karartma efekti
   const dynamicBg = rocketHeight > 50 
-    ? `rgba(0, 0, 0, ${rocketHeight / 100})` 
+    ? `rgba(0, 0, 0, ${rocketHeight / 160})` 
     : themeColors.bg;
 
   return (
@@ -177,6 +178,8 @@ const RocketGame = () => {
       backgroundColor: dynamicBg, overflow: 'hidden', fontFamily: 'sans-serif',
       color: themeColors.text, transition: 'background-color 0.2s ease'
     }}>
+      <BellyBreathGuide isListening={isListening} blowIntensity={blowIntensity} />
+
       
       {/* Yıldız Efektleri (Roket yükseldikçe belirginleşir) */}
       {rocketHeight > 60 && (
@@ -196,39 +199,39 @@ const RocketGame = () => {
         {/* Desibel Performans Göstergesi (Güçlü Üfleme Hassasiyeti) */}
         <div style={{
           backgroundColor: themeColors.card, padding: '15px 25px', borderRadius: '16px',
-          border: `3px solid ${themeColors.border}`, boxShadow: '0 8px 20px rgba(255,61,0,0.4)',
+          border: `3px solid ${themeColors.border}`, boxShadow: '0 8px 20px rgba(0,0,0,0.1)',
           display: 'flex', flexDirection: 'column', alignItems: 'center'
         }}>
-          <h3 style={{ margin: '0 0 10px 0', fontSize: '18px', color: themeColors.border }}>🎙️ Patlama Gücü</h3>
-          <div style={{ width: '200px', height: '20px', backgroundColor: '#000', borderRadius: '10px', overflow: 'hidden', position: 'relative' }}>
+          <h3 style={{ margin: '0 0 10px 0', fontSize: '18px', color: cpTheme.text.dark }}>🎙️ Patlama Gücü</h3>
+          <div style={{ width: '200px', height: '20px', backgroundColor: cpTheme.elements.progressBg, borderRadius: '10px', overflow: 'hidden', position: 'relative' }}>
             
             {/* İdeal Güçlü Üfleme Aralığı (Ters mantık: %20 ve üzeri yeşil alan) */}
-            <div style={{ position: 'absolute', left: '20%', width: '80%', height: '100%', backgroundColor: 'rgba(0, 230, 118, 0.4)', zIndex: 1 }} />
+            <div style={{ position: 'absolute', left: '20%', width: '80%', height: '100%', backgroundColor: 'rgba(16, 185, 129, 0.2)', zIndex: 1 }} />
             
             <div style={{ 
               width: `${dbPercentage}%`, height: '100%', 
-              backgroundColor: dbPercentage > 20 ? '#00E676' : '#FF9100', // Yüksek güç isteniyor
+              backgroundColor: dbPercentage > 20 ? cpTheme.primary.emerald : cpTheme.primary.coral, // Yüksek güç isteniyor
               transition: 'width 0.1s linear', zIndex: 2, position: 'relative'
             }} />
           </div>
-          <span style={{ marginTop: '5px', fontWeight: 'bold', color: '#FFF' }}>%{dbPercentage}</span>
+          <span style={{ marginTop: '5px', fontWeight: 'bold', color: cpTheme.text.dark }}>%{dbPercentage}</span>
         </div>
 
         {/* Skor ve Kristal */}
         <div style={{
           backgroundColor: themeColors.card, padding: '15px 30px', borderRadius: '16px',
-          border: `3px solid ${themeColors.border}`, boxShadow: '0 8px 20px rgba(255,61,0,0.4)',
+          border: `3px solid ${themeColors.border}`, boxShadow: '0 8px 20px rgba(0,0,0,0.1)',
           display: 'flex', flexDirection: 'column', alignItems: 'flex-end'
         }}>
-          <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '900', color: themeColors.border }}>🚀 6. Bölüm: Volkan Vadisi</h2>
-          <div style={{ fontSize: '18px', fontWeight: 'bold', marginTop: '5px', color: '#FFF' }}>
+          <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '900', color: cpTheme.text.dark }}>🚀 Süper Gücünü Kullan!</h2>
+          <div style={{ fontSize: '18px', fontWeight: 'bold', marginTop: '5px', color: cpTheme.text.muted }}>
             Fırlatma: {launchCount} | Skor: {score} | 💎 Kristal: {crystals}
           </div>
           
           {!isListening ? (
-            <button onClick={startListening} style={{...btnStyle, backgroundColor: themeColors.border, color: '#FFF', marginTop: '15px'}}>▶️ BAŞLA</button>
+            <button onClick={startListening} style={{...btnStyle, backgroundColor: cpTheme.primary.teal, color: cpTheme.text.light, marginTop: '15px'}}>▶️ BAŞLA</button>
           ) : (
-            <button onClick={handleFinishGame} style={{...btnStyle, backgroundColor: '#D50000', color: '#FFF', marginTop: '15px'}}>⏹️ BİTİR</button>
+            <button onClick={handleFinishGame} style={{...btnStyle, backgroundColor: cpTheme.primary.coral, color: cpTheme.text.light, marginTop: '15px'}}>⏹️ BİTİR</button>
           )}
         </div>
       </div>

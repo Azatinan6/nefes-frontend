@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import useBreathSensor from '../components/useBreathSensor';
+import BellyBreathGuide from '../components/BellyBreathGuide';
 import axios from 'axios';
-
+import { cpTheme } from '../theme/colors';
 const BalanceGame = () => {
   const { blowIntensity, isListening, startListening, stopListening } = useBreathSensor();
   
@@ -31,7 +32,7 @@ const BalanceGame = () => {
     if (validIntensity < 0) validIntensity = 0;
 
     // Dengeli (Ritmik) solunum hedefleniyor
-    const currentDb = Math.min(Math.round((validIntensity / 100) * 100), 100);
+    const currentDb = Math.min(Math.round((validIntensity / 160) * 100), 100);
     setDbPercentage(currentDb);
 
     if (currentDb > 5) {
@@ -48,7 +49,7 @@ const BalanceGame = () => {
       } else if (type === 'encourage') {
         message = "Harika adımlar! Ritmik nefes almaya devam et, hazineye az kaldı.";
       } else if (type === 'swaying') {
-        message = "Dikkat! Çok hızlı nefes alıyorsun, köprü sallanıyor. Yavaşla ve sakinleş.";
+        message = "Güzeldi ama bir kez daha deneyelim, köprüyü geçmek için daha yavaş ve sakin nefes alabilirsin.";
       } else if (type === 'success') {
         message = "Mükemmel denge! Köprüyü geçtin ve kayıp kristale ulaştın.";
       }
@@ -85,7 +86,7 @@ const BalanceGame = () => {
         const noiseThreshold = 30; 
         let validIntensity = intensityRef.current - noiseThreshold;
         if (validIntensity < 0) validIntensity = 0;
-        const currentDb = Math.min(Math.round((validIntensity / 100) * 100), 100);
+        const currentDb = Math.min(Math.round((validIntensity / 160) * 100), 100);
 
         setProgress((prev) => {
           let newProgress = prev;
@@ -175,9 +176,9 @@ const BalanceGame = () => {
   const styles = {
     container: {
       position: 'relative', width: '100%', height: 'calc(100vh - 70px)',
-      background: 'linear-gradient(to bottom, #1B5E20 0%, #000000 100%)', // Sisli karanlık orman
+      background: cpTheme.bg.mintGreen,
       overflow: 'hidden', fontFamily: "'Segoe UI', Tahoma, sans-serif",
-      color: '#FFF', display: 'flex', flexDirection: 'column', alignItems: 'center',
+      color: cpTheme.text.dark, display: 'flex', flexDirection: 'column', alignItems: 'center',
     },
     glassCard: {
       background: 'rgba(255, 255, 255, 0.1)',
@@ -201,57 +202,63 @@ const BalanceGame = () => {
     coachAvatar: {
       width: '100px', height: '100px', backgroundColor: '#FFF',
       borderRadius: '50%', display: 'flex', justifyContent: 'center', alignItems: 'center',
-      fontSize: '50px', boxShadow: '0 10px 25px rgba(0, 0, 0, 0.4)', border: '4px solid #69F0AE',
+      fontSize: '50px', boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)', border: `4px solid ${cpTheme.elements.border}`,
     },
     chatBubble: {
-      marginBottom: '30px', padding: '15px 25px', backgroundColor: 'rgba(255,255,255,0.95)',
-      borderRadius: '20px 20px 20px 0', boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
-      maxWidth: '350px', fontWeight: '600', color: '#111', fontSize: '16px', lineHeight: '1.5',
+      marginBottom: '30px', padding: '15px 25px', backgroundColor: cpTheme.card.white,
+      borderRadius: '20px 20px 20px 0', boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+      maxWidth: '350px', fontWeight: '600', color: cpTheme.text.dark, fontSize: '16px', lineHeight: '1.5',
     },
     btnStart: {
-      padding: '12px 30px', fontSize: '16px', fontWeight: 'bold', color: '#000',
-      background: 'linear-gradient(45deg, #69F0AE 0%, #00E676 100%)',
+      padding: '12px 30px', fontSize: '16px', fontWeight: 'bold', color: cpTheme.text.light,
+      background: cpTheme.primary.emerald,
       border: 'none', borderRadius: '12px', cursor: 'pointer',
-      boxShadow: '0 4px 15px rgba(105, 240, 174, 0.4)', marginTop: '10px', transition: 'transform 0.2s',
+      boxShadow: '0 4px 15px rgba(16, 185, 129, 0.4)', marginTop: '10px', transition: 'transform 0.2s',
     },
     btnStop: {
-      padding: '12px 30px', fontSize: '16px', fontWeight: 'bold', color: '#fff',
-      background: 'linear-gradient(45deg, #FF5252 0%, #D50000 100%)',
+      padding: '12px 30px', fontSize: '16px', fontWeight: 'bold', color: cpTheme.text.light,
+      background: cpTheme.primary.coral,
       border: 'none', borderRadius: '12px', cursor: 'pointer',
-      boxShadow: '0 4px 15px rgba(255, 82, 82, 0.4)', marginTop: '10px', transition: 'transform 0.2s',
+      boxShadow: '0 4px 15px rgba(239, 68, 68, 0.4)', marginTop: '10px', transition: 'transform 0.2s',
     }
   };
 
   return (
     <div style={styles.container}>
+      <BellyBreathGuide 
+        isListening={isListening} 
+        blowIntensity={blowIntensity} 
+        customStyle={{ top: '100px', left: '50%', transform: 'translateX(-50%)', right: 'auto', bottom: 'auto' }}
+      />
+
       
       {/* 1. ÜST PANEL */}
       <div style={styles.topPanel}>
         
         {/* Denge Göstergesi */}
         <div style={{ ...styles.glassCard, ...styles.statBox }}>
-          <h3 style={{ margin: '0 0 10px 0', fontSize: '16px', color: '#69F0AE' }}>🎙️ Denge Ritmi</h3>
-          <div style={{ width: '200px', height: '16px', backgroundColor: 'rgba(0,0,0,0.4)', borderRadius: '8px', overflow: 'hidden', position: 'relative' }}>
+          <h3 style={{ margin: '0 0 10px 0', fontSize: '16px', color: cpTheme.primary.teal }}>🎙️ Denge Ritmi</h3>
+          <div style={{ width: '200px', height: '16px', backgroundColor: cpTheme.elements.progressBg, borderRadius: '8px', overflow: 'hidden', position: 'relative' }}>
             
             {/* İdeal Ritmik Nefes Aralığı (%5 - %45) */}
-            <div style={{ position: 'absolute', left: '5%', width: '40%', height: '100%', backgroundColor: 'rgba(105, 240, 174, 0.4)', zIndex: 1 }} />
+            <div style={{ position: 'absolute', left: '5%', width: '40%', height: '100%', backgroundColor: 'rgba(16, 185, 129, 0.2)', zIndex: 1 }} />
             
             <div style={{ 
               width: `${dbPercentage}%`, height: '100%', 
-              backgroundColor: dbPercentage > 45 ? '#FF5252' : '#69F0AE', 
+              backgroundColor: dbPercentage > 45 ? cpTheme.primary.coral : cpTheme.primary.emerald, 
               transition: 'width 0.1s linear, background-color 0.3s', zIndex: 2, position: 'relative',
               borderRadius: '8px'
             }} />
           </div>
-          <span style={{ marginTop: '8px', fontWeight: 'bold', color: '#FFF' }}>
+          <span style={{ marginTop: '8px', fontWeight: 'bold', color: cpTheme.text.dark }}>
             {sway > 3 ? '⚠️ Köprü Sallanıyor!' : `%${dbPercentage}`}
           </span>
         </div>
 
         {/* Skor Paneli */}
         <div style={{ ...styles.glassCard, ...styles.statBox, alignItems: 'flex-end' }}>
-          <h2 style={{ margin: 0, fontSize: '22px', fontWeight: '800', color: '#69F0AE', textShadow: '0 2px 4px rgba(0,0,0,0.4)' }}>🌉 7. Bölüm: Macera Köprüsü</h2>
-          <div style={{ fontSize: '18px', fontWeight: '600', marginTop: '5px', color: '#E8F5E9' }}>
+          <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '900', color: cpTheme.text.dark }}>🌉 Cesaret Köprüsü</h2>
+          <div style={{ fontSize: '18px', fontWeight: '600', marginTop: '5px', color: cpTheme.text.muted }}>
             İlerleme: %{Math.floor(progress)} | Skor: {Math.floor(score)} | 💎 Kristal: {crystals}
           </div>
           
@@ -285,7 +292,7 @@ const BalanceGame = () => {
           position: 'absolute', top: '50%', left: '10%', right: '10%', height: '30px',
           backgroundColor: 'rgba(93, 64, 55, 0.9)', borderRadius: '15px',
           borderBottom: '20px dashed #3E2723', // Tahta görünümü
-          transform: `translateY(-50%) rotate(${Math.sin(Date.now() / 150) * sway}deg)`, // Dinamik Sallantı
+          transform: `translateY(-50%) rotate(${Math.sin(Date.now() / 220) * sway}deg)`, // Dinamik Sallantı
           transition: 'transform 0.1s linear',
           boxShadow: '0 30px 50px rgba(0,0,0,0.8)',
           zIndex: 5,
@@ -328,7 +335,7 @@ const BalanceGame = () => {
           animation: (dbPercentage >= 5 && dbPercentage <= 45) ? 'walk 0.6s infinite alternate' : 'none',
           transition: 'left 0.1s linear',
           filter: 'drop-shadow(0px 15px 15px rgba(0,0,0,0.6))',
-          transform: `rotate(${Math.sin(Date.now() / 150) * sway}deg)` // Köprüyle birlikte sallanır
+          transform: `rotate(${Math.sin(Date.now() / 220) * sway}deg)` // Köprüyle birlikte sallanır
         }}>
           🚶🏻
         </div>

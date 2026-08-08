@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import useBreathSensor from '../components/useBreathSensor';
+import BellyBreathGuide from '../components/BellyBreathGuide';
 import axios from 'axios';
-
+import { cpTheme } from '../theme/colors';
 const FrogGame = () => {
   // Nefes sensöründen gelen veriler
   const { blowIntensity, isListening, startListening, stopListening } = useBreathSensor();
@@ -32,7 +33,7 @@ const FrogGame = () => {
     if (validIntensity < 0) validIntensity = 0;
 
     // Duyarlılığı azalttık (bölen sayıyı 60'tan 120'ye çıkardık, böylece %100'e ulaşmak daha zor)
-    const currentDb = Math.min(Math.round((validIntensity / 120) * 100), 100);
+    const currentDb = Math.min(Math.round((validIntensity / 180) * 100), 100);
     setDbPercentage(currentDb);
 
     if (currentDb > 2) {
@@ -40,19 +41,45 @@ const FrogGame = () => {
     }
   }, [blowIntensity]);
 
+  // Yeni Sözel Komut Havuzu (Hafta 2 - Çiçek Koklama)
+  const promptsPool = {
+    start: [
+      "Hazır mısın? Hadi çiçeği koklayalım! Ekrandaki çiçeklere bakalım. Onları canlandırmak için burnumuzdan derin ve yavaş bir nefes alalım.",
+      "Şimdi burnundan yavaşça nefes al ve çiçeği kokladığını düşün.",
+      "Göğüs kafesini yavaşça açalım."
+    ],
+    idle: [
+      "Bir kez daha derin ve yavaş bir nefes alalım.",
+      "Çiçeği güzelce kokla… Mis gibi!"
+    ],
+    active: [
+      "Şimdi nefesini yavaşça ve uzun bir şekilde ver.",
+      "Nefes verirken çiçeklerin yapraklarının hareket ettiğini düşün."
+    ],
+    motivational: [
+      "Harika! Çiçekleri çok güzel canlandırıyorsun.",
+      "Çok güzel nefes aldın, süpersin!"
+    ],
+    warning: [
+      "Ejderhayı uyandırmamak için nefesini daha sessiz ve yavaş alabilirsin."
+    ],
+    success: [
+      "Çok güzel nefes aldın, süpersin!"
+    ]
+  };
+
   // --- Sesli Yönlendirme (Web Speech API) ---
   const playAudioPrompt = (type) => {
     if (!warningGiven.current && !gameOver && isListening) {
       let message = "";
-      if (type === 'start') {
-        message = "Şimdi bir kurbağa gibi sessizleşelim. Göğsünü açıp bir çiçeği kokluyormuş gibi yavaşça ve derin bir nefes al.";
-      } else if (type === 'encourage') {
-        message = "Harika, yavaşça ve sessizce nefes almaya devam et.";
-      } else if (type === 'warning') {
-        message = "Çok ses çıkardın! Arkadaki uyuyan ejderhayı uyandırmamak için nefesini daha sessiz ve yavaş al.";
-      } else if (type === 'success') {
-        message = "Harika bir derin nefes! Kurbağamız çok mutlu.";
+      
+      if (promptsPool[type] && promptsPool[type].length > 0) {
+        // Rastgele bir cümle seç
+        const randomIndex = Math.floor(Math.random() * promptsPool[type].length);
+        message = promptsPool[type][randomIndex];
       }
+
+      if (!message) return;
 
       setPromptMessage(message);
 
@@ -89,7 +116,7 @@ const FrogGame = () => {
           const noiseThreshold = 30; 
           let validIntensity = intensityRef.current - noiseThreshold;
           if (validIntensity < 0) validIntensity = 0;
-          const currentDb = Math.min(Math.round((validIntensity / 120) * 100), 100);
+          const currentDb = Math.min(Math.round((validIntensity / 180) * 100), 100);
 
           // İDEAL YAVAŞ NEFES ALMA (Sessiz ve Derin) -> Yeşil Alan (%5 - %50) (Eşik genişletildi)
           if (currentDb >= 5 && currentDb <= 50) {
@@ -122,10 +149,19 @@ const FrogGame = () => {
           return Math.max(1, newScale); // 1'in altına inmesin
         });
 
-        // 5 saniye hareketsizlikte teşvik mesajı
+        // 5 saniye hareketsizlikte teşvik mesajı (Sadece sesli uyarılarda)
         const timeSinceLastBreath = Date.now() - lastBreathTime.current;
-        if (timeSinceLastBreath > 5000 && !warningGiven.current && !dragonWarning) {
-          playAudioPrompt('encourage');
+        if (timeSinceLastBreath > 6000 && !warningGiven.current && !dragonWarning) {
+          playAudioPrompt('idle');
+        } else if (timeSinceLastBreath > 4000 && !warningGiven.current && !dragonWarning) {
+          playAudioPrompt('start');
+        }
+        
+        // Ara sıra nefes verirken motivasyon
+        if (currentDb > 10 && !warningGiven.current && !dragonWarning) {
+           if (Math.random() < 0.005) {
+             playAudioPrompt(Math.random() > 0.5 ? 'motivational' : 'active');
+           }
         }
 
         animationFrameId.current = requestAnimationFrame(updateGame);
@@ -192,21 +228,21 @@ const FrogGame = () => {
       position: 'relative',
       width: '100%',
       height: 'calc(100vh - 70px)',
-      background: 'linear-gradient(to bottom, #1a2a6c, #11212B)', // Koyu gizemli bataklık gecesi
+      background: cpTheme.bg.mintGreen, // Koyu gizemli bataklık gecesi
       overflow: 'hidden',
       fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-      color: '#FFF',
+      color: cpTheme.text.dark,
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
     },
     glassCard: {
-      background: 'rgba(20, 30, 48, 0.6)',
+      background: cpTheme.card.white,
       backdropFilter: 'blur(12px)',
       WebkitBackdropFilter: 'blur(12px)',
       borderRadius: '24px',
-      border: '1px solid rgba(118, 255, 3, 0.3)', // Fosforlu yeşil detaylar
-      boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.5)',
+      border: `1px solid ${cpTheme.elements.border}`, // Fosforlu yeşil detaylar
+      boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.1)',
     },
     topPanel: {
       position: 'absolute',
@@ -247,24 +283,24 @@ const FrogGame = () => {
     coachAvatar: {
       width: '100px',
       height: '100px',
-      backgroundColor: '#2E7D32', // Orman yeşili
+      backgroundColor: cpTheme.card.white, // Orman yeşili
       borderRadius: '50%',
       display: 'flex',
       justifyContent: 'center',
       alignItems: 'center',
       fontSize: '50px',
-      boxShadow: '0 10px 25px rgba(0,0,0,0.3)',
-      border: '4px solid #76FF03',
+      boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+      border: `4px solid ${cpTheme.elements.border}`,
     },
     chatBubble: {
       marginBottom: '30px',
       padding: '15px 25px',
-      backgroundColor: 'rgba(255,255,255,0.9)',
+      backgroundColor: cpTheme.card.white,
       borderRadius: '20px 20px 20px 0',
-      boxShadow: '0 10px 25px rgba(0,0,0,0.2)',
+      boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
       maxWidth: '300px',
       fontWeight: '600',
-      color: '#111',
+      color: cpTheme.text.dark,
       fontSize: '16px',
       lineHeight: '1.5',
     },
@@ -272,12 +308,12 @@ const FrogGame = () => {
       padding: '12px 30px',
       fontSize: '16px',
       fontWeight: 'bold',
-      color: '#000',
-      background: 'linear-gradient(45deg, #76FF03 0%, #64DD17 100%)',
+      color: cpTheme.text.light,
+      background: cpTheme.primary.teal,
       border: 'none',
       borderRadius: '12px',
       cursor: 'pointer',
-      boxShadow: '0 4px 15px rgba(118, 255, 3, 0.4)',
+      boxShadow: '0 4px 15px rgba(0, 131, 143, 0.4)',
       marginTop: '10px',
       transition: 'transform 0.2s',
     },
@@ -285,12 +321,12 @@ const FrogGame = () => {
       padding: '12px 30px',
       fontSize: '16px',
       fontWeight: 'bold',
-      color: '#fff',
-      background: 'linear-gradient(45deg, #f44336 0%, #d32f2f 100%)',
+      color: cpTheme.text.light,
+      background: cpTheme.primary.coral,
       border: 'none',
       borderRadius: '12px',
       cursor: 'pointer',
-      boxShadow: '0 4px 15px rgba(244, 67, 54, 0.4)',
+      boxShadow: '0 4px 15px rgba(239, 68, 68, 0.4)',
       marginTop: '10px',
       transition: 'transform 0.2s',
     }
@@ -298,33 +334,35 @@ const FrogGame = () => {
 
   return (
     <div style={styles.container}>
+      <BellyBreathGuide isListening={isListening} blowIntensity={blowIntensity} />
+
       
       {/* --- 1. ÜST PANEL: İstatistikler ve Kontroller --- */}
       <div style={styles.topPanel}>
         
         {/* Nefes Sesi (Diyafram Hassasiyeti) Göstergesi */}
         <div style={{ ...styles.glassCard, ...styles.statBox }}>
-          <h3 style={{ margin: '0 0 10px 0', fontSize: '16px', color: '#B2FF59' }}>🎙️ Nefes Sesi (Sessizlik)</h3>
-          <div style={{ width: '200px', height: '16px', backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '8px', overflow: 'hidden', position: 'relative' }}>
+          <h3 style={{ margin: '0 0 10px 0', fontSize: '16px', color: cpTheme.primary.teal }}>🎙️ Nefes Sesi (Sessizlik)</h3>
+          <div style={{ width: '200px', height: '16px', backgroundColor: cpTheme.elements.progressBg, borderRadius: '8px', overflow: 'hidden', position: 'relative' }}>
             {/* İdeal Sessiz Nefes Aralığı Rehberi (%5 - %50) */}
-            <div style={{ position: 'absolute', left: '5%', width: '45%', height: '100%', backgroundColor: 'rgba(118, 255, 3, 0.3)', zIndex: 1 }} />
+            <div style={{ position: 'absolute', left: '5%', width: '45%', height: '100%', backgroundColor: 'rgba(16, 185, 129, 0.2)', zIndex: 1 }} />
             
             <div style={{ 
               width: `${dbPercentage}%`, height: '100%', 
-              backgroundColor: dbPercentage > 50 ? '#FF5252' : '#76FF03', // Çok sesliyse kırmızı, normalse yeşil
+              backgroundColor: dbPercentage > 50 ? cpTheme.primary.coral : cpTheme.primary.emerald, // Çok sesliyse kırmızı, normalse yeşil
               transition: 'width 0.1s linear, background-color 0.3s', zIndex: 2, position: 'relative',
               borderRadius: '8px'
             }} />
           </div>
           {dragonWarning && (
-            <span style={{ marginTop: '8px', color: '#FF5252', fontSize: '13px', fontWeight: 'bold' }}>⚠️ Çok Sesli!</span>
+            <span style={{ marginTop: '8px', color: cpTheme.primary.coral, fontSize: '13px', fontWeight: 'bold' }}>⚠️ Çok Sesli!</span>
           )}
         </div>
 
         {/* Skor, Kristaller ve Başla/Bitir Butonu */}
         <div style={{ ...styles.glassCard, ...styles.statBox, alignItems: 'flex-end' }}>
-          <h2 style={{ margin: 0, fontSize: '22px', fontWeight: '800', color: '#B2FF59' }}>🐸 2. Bölüm: Yavaş Nefes Al</h2>
-          <div style={{ fontSize: '18px', fontWeight: '600', marginTop: '5px', color: '#E0E0E0' }}>
+          <h2 style={{ margin: 0, fontSize: '22px', fontWeight: '800', color: cpTheme.text.dark }}>🐸 Kurbağa ile Zıpla!</h2>
+          <div style={{ fontSize: '18px', fontWeight: '600', marginTop: '5px', color: cpTheme.text.muted }}>
             Skor: {Math.floor(score)} | 💎 Kristal: {crystals}
           </div>
           

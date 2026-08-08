@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import useBreathSensor from '../components/useBreathSensor';
+import BellyBreathGuide from '../components/BellyBreathGuide';
 import axios from 'axios';
-
+import { cpTheme } from '../theme/colors';
 const AwarenessGame = () => {
   // Nefes sensöründen gelen veriler ve kontroller
   const { blowIntensity, isListening, startListening, stopListening } = useBreathSensor();
@@ -33,7 +34,7 @@ const AwarenessGame = () => {
     if (validIntensity < 0) validIntensity = 0;
 
     // Kalan şiddeti (0 ile ~150 arası) 0-100% aralığına çevir
-    const currentDb = Math.min(Math.round((validIntensity / 120) * 100), 100);
+    const currentDb = Math.min(Math.round((validIntensity / 180) * 100), 100);
     setDbPercentage(currentDb);
 
     if (currentDb > 10) {
@@ -42,19 +43,41 @@ const AwarenessGame = () => {
     }
   }, [blowIntensity]);
 
+  // Yeni Sözel Komut Havuzu (Hafta 1)
+  const promptsPool = {
+    start: [
+      "Elini karnına koy, burundan nefes alırken ve ağzından nefes verirken karnının hareketini hisset.",
+      "Hadi bakalım, nefes alıp verirken dik durmayı deniyelim.",
+      "Başını yukarı doğru yavaşça uzat."
+    ],
+    idle: [
+      "Elini karnına koy, burundan nefes alırken ve ağzından nefes verirken karnının hareketini hisset."
+    ],
+    active: [
+      "Şimdi ekrandaki balona odaklan, karnını bir balon gibi şişir, burundan nefes al ve ekrandaki balonu şişir ağızdan nefes ver.",
+      "Bu şekilde durarak şimdi karnındaki balonu tekrar şişirmeye çalış."
+    ],
+    motivational: [
+      "Harika görünüyorsun!",
+      "Süpersin, harika gidiyorsun!"
+    ],
+    pop: [
+      "Tebrikler, harika şişirdin!"
+    ]
+  };
+
   // --- Sesli Yönlendirme (Web Speech API) ---
   const playAudioPrompt = (type) => {
     if (!warningGiven.current && !gameOver && isListening) {
       let message = "";
-      if (type === 'start') {
-        message = "Klinikte öğrendiğin gibi omuzlarını rahatlat ve zürafa gibi dik dur. Şimdi elini karnına koy ve derin bir nefes alıp balonu şişir!";
-      } else if (type === 'encourage') {
-        message = "Harika gidiyorsun, uzun ve kontrollü üflemeye devam et!";
-      } else if (type === 'posture') {
-        message = "Unutma, zürafa gibi dik duruyoruz!";
-      } else if (type === 'pop') {
-        message = "Tebrikler, harika şişirdin!";
+      
+      if (promptsPool[type] && promptsPool[type].length > 0) {
+        // Rastgele bir cümle seç
+        const randomIndex = Math.floor(Math.random() * promptsPool[type].length);
+        message = promptsPool[type][randomIndex];
       }
+
+      if (!message) return;
 
       setPromptMessage(message);
 
@@ -91,12 +114,12 @@ const AwarenessGame = () => {
           const noiseThreshold = 40; 
           let validIntensity = intensityRef.current - noiseThreshold;
           if (validIntensity < 0) validIntensity = 0;
-          const currentDb = Math.min(Math.round((validIntensity / 120) * 100), 100);
+          const currentDb = Math.min(Math.round((validIntensity / 180) * 100), 100);
 
           // Gerçekten üfleniyorsa balon üfleme şiddetiyle orantılı olarak büyüsün
           if (currentDb > 15) {
             // Şiddete göre büyüme hızı: Ne kadar güçlü üflerse o kadar hızlı büyür (Ama çok abartılı değil)
-            newProgress += (currentDb / 100) * 1.5; 
+            newProgress += (currentDb / 160) * 1.5; 
             
             // Puan artışı
             setScore(s => s + 1);
@@ -108,7 +131,21 @@ const AwarenessGame = () => {
           // Balon %100'e ulaşırsa patlat ve kristal kazandır
           if (newProgress >= 100) {
             handleBalloonPop();
-            return 0; // Patladıktan sonra sıfırla
+            newProgress = 100; 
+          }
+
+          // Periyodik motivasyon / yönlendirme (eğer o an sesli komut çalmıyorsa)
+          if (!warningGiven.current && newProgress > 20 && newProgress < 90) {
+             // 1/150 ihtimalle (~her 2-3 saniyede bir dener, yani ortalama 10sn'de bir tetiklenir)
+             if (Math.random() < 0.005) {
+               if (currentDb > 15) {
+                 // Üflüyorsa
+                 playAudioPrompt(Math.random() > 0.5 ? 'motivational' : 'active');
+               } else {
+                 // Bekliyorsa
+                 playAudioPrompt('idle');
+               }
+             }
           }
 
           return Math.max(0, newProgress); // 0'ın altına düşmesin
@@ -117,9 +154,9 @@ const AwarenessGame = () => {
         // Hareketsizlik kontrolü (Postür ve teşvik uyarıları)
         const timeSinceLastBreath = Date.now() - lastBreathTime.current;
         if (timeSinceLastBreath > 6000 && !warningGiven.current) {
-          playAudioPrompt('posture'); // Dik duruş hatırlatması
+          playAudioPrompt('idle'); // Dik duruş hatırlatması
         } else if (timeSinceLastBreath > 4000 && !warningGiven.current) {
-          playAudioPrompt('encourage');
+          playAudioPrompt('start'); // Tekrar nefes almaya teşvik
         }
 
         animationFrameId.current = requestAnimationFrame(updateGame);
@@ -182,10 +219,10 @@ const AwarenessGame = () => {
       position: 'relative',
       width: '100%',
       height: 'calc(100vh - 70px)',
-      background: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)', // Yumuşak ve canlandırıcı pastel gradyan
+      background: cpTheme.bg.softBlue, // CP-friendly arka plan
       overflow: 'hidden',
       fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-      color: '#333',
+      color: cpTheme.text.dark,
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
@@ -261,7 +298,7 @@ const AwarenessGame = () => {
       boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
       maxWidth: '300px',
       fontWeight: '600',
-      color: '#4A4A4A',
+      color: cpTheme.text.dark,
       fontSize: '16px',
       lineHeight: '1.5',
     },
@@ -269,12 +306,12 @@ const AwarenessGame = () => {
       padding: '12px 30px',
       fontSize: '16px',
       fontWeight: 'bold',
-      color: '#fff',
-      background: 'linear-gradient(45deg, #4facfe 0%, #00f2fe 100%)',
+      color: cpTheme.text.light,
+      background: cpTheme.primary.teal,
       border: 'none',
       borderRadius: '12px',
       cursor: 'pointer',
-      boxShadow: '0 4px 15px rgba(0, 242, 254, 0.4)',
+      boxShadow: '0 4px 15px rgba(0, 131, 143, 0.4)',
       marginTop: '10px',
       transition: 'transform 0.2s',
     },
@@ -282,12 +319,12 @@ const AwarenessGame = () => {
       padding: '12px 30px',
       fontSize: '16px',
       fontWeight: 'bold',
-      color: '#fff',
-      background: 'linear-gradient(45deg, #ff0844 0%, #ffb199 100%)',
+      color: cpTheme.text.light,
+      background: cpTheme.primary.coral,
       border: 'none',
       borderRadius: '12px',
       cursor: 'pointer',
-      boxShadow: '0 4px 15px rgba(255, 8, 68, 0.4)',
+      boxShadow: '0 4px 15px rgba(239, 68, 68, 0.4)',
       marginTop: '10px',
       transition: 'transform 0.2s',
     }
@@ -295,6 +332,8 @@ const AwarenessGame = () => {
 
   return (
     <div style={styles.container}>
+      <BellyBreathGuide isListening={isListening} blowIntensity={blowIntensity} />
+
       
       {/* --- 1. ÜST PANEL: İstatistikler ve Kontroller --- */}
       <div style={styles.topPanel}>
@@ -302,13 +341,13 @@ const AwarenessGame = () => {
         {/* Nefes Desibel (Şiddet) Göstergesi */}
         <div style={{ ...styles.glassCard, ...styles.statBox }}>
           <h3 style={{ margin: '0 0 10px 0', fontSize: '16px', color: '#555' }}>💨 Nefes Gücü</h3>
-          <div style={{ width: '200px', height: '16px', backgroundColor: 'rgba(255,255,255,0.5)', borderRadius: '8px', overflow: 'hidden', position: 'relative' }}>
+          <div style={{ width: '200px', height: '16px', backgroundColor: cpTheme.elements.progressBg, borderRadius: '8px', overflow: 'hidden', position: 'relative' }}>
             {/* İdeal Üfleme Aralığı Rehberi (%10 - %80) */}
-            <div style={{ position: 'absolute', left: '10%', width: '70%', height: '100%', backgroundColor: 'rgba(76, 175, 80, 0.3)', zIndex: 1 }} />
+            <div style={{ position: 'absolute', left: '10%', width: '70%', height: '100%', backgroundColor: 'rgba(16, 185, 129, 0.2)', zIndex: 1 }} />
             
             <div style={{ 
               width: `${dbPercentage}%`, height: '100%', 
-              backgroundColor: dbPercentage > 80 ? '#FF5252' : '#4CAF50', // Çok sertse kırmızı, normalse yeşil
+              backgroundColor: dbPercentage > 80 ? cpTheme.primary.coral : cpTheme.primary.emerald, 
               transition: 'width 0.1s linear, background-color 0.3s', zIndex: 2, position: 'relative',
               borderRadius: '8px'
             }} />
@@ -317,8 +356,8 @@ const AwarenessGame = () => {
 
         {/* Skor, Kristaller ve Başla/Bitir Butonu */}
         <div style={{ ...styles.glassCard, ...styles.statBox, alignItems: 'flex-end' }}>
-          <h2 style={{ margin: 0, fontSize: '22px', fontWeight: '800', color: '#333' }}>🎈 Dik Dur Güçlen</h2>
-          <div style={{ fontSize: '18px', fontWeight: '600', marginTop: '5px', color: '#666' }}>
+          <h2 style={{ margin: 0, fontSize: '22px', fontWeight: '800', color: cpTheme.text.dark }}>🎈 Dik Dur, Gücünü Hisset!</h2>
+          <div style={{ fontSize: '18px', fontWeight: '600', marginTop: '5px', color: cpTheme.text.muted }}>
             Skor: {Math.floor(score)} | 💎 Kristal: {crystals}
           </div>
           
@@ -352,7 +391,7 @@ const AwarenessGame = () => {
           width: '200px', height: '200px',
           borderRadius: '50%',
           background: `radial-gradient(circle, rgba(255,255,255,${progress/100}) 0%, rgba(255,255,255,0) 70%)`,
-          transform: `scale(${1 + (progress / 50)})`,
+          transform: `scale(${1 + (progress / 160)})`,
           transition: 'all 0.2s linear',
           zIndex: 0
         }} />

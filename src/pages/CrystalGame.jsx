@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import useBreathSensor from '../components/useBreathSensor';
+import BellyBreathGuide from '../components/BellyBreathGuide';
 import axios from 'axios';
-
+import { cpTheme } from '../theme/colors';
 const CrystalGame = () => {
   const { blowIntensity, isListening, startListening, stopListening } = useBreathSensor();
   
@@ -32,7 +33,7 @@ const CrystalGame = () => {
     if (validIntensity < 0) validIntensity = 0;
 
     // Nefes alma veya hafif üfleme
-    const currentDb = Math.min(Math.round((validIntensity / 100) * 100), 100);
+    const currentDb = Math.min(Math.round((validIntensity / 160) * 100), 100);
     setDbPercentage(currentDb);
   }, [blowIntensity, gamePhase]);
 
@@ -45,7 +46,7 @@ const CrystalGame = () => {
       } else if (type === 'hold_now') {
         message = "Harika! Şimdi nefesini tut ve hiç ses çıkarma, kelebek geliyor...";
       } else if (type === 'scared') {
-        message = "Ah! Sesten ürktü. Tekrar kristali parlatıp sessizce bekleyelim.";
+        message = "Güzeldi ama bir kez daha deneyelim, daha sessiz bekleyebilirsin.";
       } else if (type === 'success') {
         message = "Muhteşem! Kelebek kondu. Nefesini harika kontrol ediyorsun!";
       }
@@ -81,7 +82,7 @@ const CrystalGame = () => {
         const noiseThreshold = 30; 
         let validIntensity = intensityRef.current - noiseThreshold;
         if (validIntensity < 0) validIntensity = 0;
-        const currentDb = Math.min(Math.round((validIntensity / 100) * 100), 100);
+        const currentDb = Math.min(Math.round((validIntensity / 160) * 100), 100);
 
         // AŞAMA 1: NEFES AL VE KRİSTALİ PARLAT
         if (phaseRef.current === 'inhale') {
@@ -194,17 +195,17 @@ const CrystalGame = () => {
   const styles = {
     container: {
       position: 'relative', width: '100%', height: 'calc(100vh - 70px)',
-      background: 'radial-gradient(circle at center, #1E1E2C 0%, #0B0B10 100%)', // Mağara karanlığı
+      background: cpTheme.bg.lavender, // Mağara karanlığı
       overflow: 'hidden', fontFamily: "'Segoe UI', Tahoma, sans-serif",
-      color: '#FFF', display: 'flex', flexDirection: 'column', alignItems: 'center',
+      color: cpTheme.text.dark, display: 'flex', flexDirection: 'column', alignItems: 'center',
     },
     glassCard: {
-      background: 'rgba(20, 20, 35, 0.6)',
+      background: cpTheme.card.white,
       backdropFilter: 'blur(10px)',
       WebkitBackdropFilter: 'blur(10px)',
       borderRadius: '24px',
-      border: '1px solid rgba(0, 229, 255, 0.3)',
-      boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.5)',
+      border: `1px solid ${cpTheme.elements.border}`,
+      boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.1)',
     },
     topPanel: {
       position: 'absolute', top: '20px', width: '90%',
@@ -223,63 +224,65 @@ const CrystalGame = () => {
       display: 'flex', alignItems: 'flex-end', gap: '15px', zIndex: 10,
     },
     coachAvatar: {
-      width: '100px', height: '100px', backgroundColor: '#FFF',
+      width: '100px', height: '100px', backgroundColor: cpTheme.card.white,
       borderRadius: '50%', display: 'flex', justifyContent: 'center', alignItems: 'center',
-      fontSize: '50px', boxShadow: '0 10px 25px rgba(0, 229, 255, 0.3)', border: '4px solid #00E5FF',
+      fontSize: '50px', boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)', border: `4px solid ${cpTheme.elements.border}`,
     },
     chatBubble: {
-      marginBottom: '30px', padding: '15px 25px', backgroundColor: 'rgba(255,255,255,0.95)',
-      borderRadius: '20px 20px 20px 0', boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
-      maxWidth: '350px', fontWeight: '600', color: '#111', fontSize: '16px', lineHeight: '1.5',
+      marginBottom: '30px', padding: '15px 25px', backgroundColor: cpTheme.card.white,
+      borderRadius: '20px 20px 20px 0', boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+      maxWidth: '350px', fontWeight: '600', color: cpTheme.text.dark, fontSize: '16px', lineHeight: '1.5',
     },
     btnStart: {
-      padding: '12px 30px', fontSize: '16px', fontWeight: 'bold', color: '#000',
-      background: 'linear-gradient(45deg, #00E5FF 0%, #00B0FF 100%)',
+      padding: '12px 30px', fontSize: '16px', fontWeight: 'bold', color: cpTheme.text.light,
+      background: cpTheme.primary.teal,
       border: 'none', borderRadius: '12px', cursor: 'pointer',
-      boxShadow: '0 4px 15px rgba(0, 229, 255, 0.4)', marginTop: '10px', transition: 'transform 0.2s',
+      boxShadow: '0 4px 15px rgba(0, 131, 143, 0.4)', marginTop: '10px', transition: 'transform 0.2s',
     },
     btnStop: {
-      padding: '12px 30px', fontSize: '16px', fontWeight: 'bold', color: '#fff',
-      background: 'linear-gradient(45deg, #FF1744 0%, #D50000 100%)',
+      padding: '12px 30px', fontSize: '16px', fontWeight: 'bold', color: cpTheme.text.light,
+      background: cpTheme.primary.coral,
       border: 'none', borderRadius: '12px', cursor: 'pointer',
-      boxShadow: '0 4px 15px rgba(255, 23, 68, 0.4)', marginTop: '10px', transition: 'transform 0.2s',
+      boxShadow: '0 4px 15px rgba(239, 68, 68, 0.4)', marginTop: '10px', transition: 'transform 0.2s',
     }
   };
 
   return (
     <div style={styles.container}>
+      <BellyBreathGuide isListening={isListening} blowIntensity={blowIntensity} phase={gamePhase} />
+
       
       {/* 1. ÜST PANEL */}
       <div style={styles.topPanel}>
         
         {/* Nefes Sesi Göstergesi */}
         <div style={{ ...styles.glassCard, ...styles.statBox }}>
-          <h3 style={{ margin: '0 0 10px 0', fontSize: '16px', color: '#00E5FF' }}>🎙️ Nefes Kontrolü</h3>
-          <div style={{ width: '200px', height: '16px', backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '8px', overflow: 'hidden', position: 'relative' }}>
+          <h3 style={{ margin: '0 0 10px 0', fontSize: '16px', color: cpTheme.primary.teal }}>🎙️ Nefes Kontrolü</h3>
+          <div style={{ width: '200px', height: '16px', backgroundColor: cpTheme.elements.progressBg, borderRadius: '8px', overflow: 'hidden', position: 'relative' }}>
             
             {/* Hedef Göstergeleri: 'inhale' için Mavi alan, 'hold' için Sarı sessizlik alanı */}
             {gamePhase === 'inhale' ? (
-              <div style={{ position: 'absolute', left: '5%', width: '45%', height: '100%', backgroundColor: 'rgba(0, 229, 255, 0.3)', zIndex: 1 }} />
+              <div style={{ position: 'absolute', left: '5%', width: '45%', height: '100%', backgroundColor: 'rgba(16, 185, 129, 0.2)', zIndex: 1 }} />
             ) : (
-              <div style={{ position: 'absolute', left: '0%', width: '5%', height: '100%', backgroundColor: 'rgba(255, 234, 0, 0.5)', zIndex: 1 }} />
+              <div style={{ position: 'absolute', left: '0%', width: '5%', height: '100%', backgroundColor: 'rgba(245, 158, 11, 0.2)', zIndex: 1 }} />
             )}
             
             <div style={{ 
               width: `${dbPercentage}%`, height: '100%', 
-              backgroundColor: dbPercentage > 50 ? '#FF1744' : '#00E5FF', 
+              backgroundColor: dbPercentage > 50 ? cpTheme.primary.coral : cpTheme.primary.emerald, 
               transition: 'width 0.1s linear, background-color 0.3s', zIndex: 2, position: 'relative',
               borderRadius: '8px'
             }} />
           </div>
-          <span style={{ marginTop: '8px', fontWeight: 'bold', color: '#FFF' }}>
+          <span style={{ marginTop: '8px', fontWeight: 'bold', color: cpTheme.text.dark }}>
             {gamePhase === 'hold' ? '🤫 Sessiz Ol...' : `%${dbPercentage}`}
           </span>
         </div>
 
         {/* Skor Paneli */}
         <div style={{ ...styles.glassCard, ...styles.statBox, alignItems: 'flex-end' }}>
-          <h2 style={{ margin: 0, fontSize: '22px', fontWeight: '800', color: '#00E5FF', textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>💎 4. Bölüm: Kristal Mağara</h2>
-          <div style={{ fontSize: '18px', fontWeight: '600', marginTop: '5px', color: '#E0F7FA' }}>
+          <h2 style={{ margin: 0, fontSize: '22px', fontWeight: '800', color: cpTheme.text.dark }}>💎 Gizemli Kristal Mağarası</h2>
+          <div style={{ fontSize: '18px', fontWeight: '600', marginTop: '5px', color: cpTheme.text.muted }}>
             Skor: {Math.floor(score)} | 💎 Kristal: {crystals}
           </div>
           
@@ -304,8 +307,8 @@ const CrystalGame = () => {
           {/* Kristal Arkası Aura */}
           <div style={{
             position: 'absolute', width: '150px', height: '150px', borderRadius: '50%',
-            background: `radial-gradient(circle, rgba(0, 229, 255, ${crystalGlow / 100}) 0%, rgba(0,0,0,0) 70%)`,
-            transform: `scale(${1 + (crystalGlow / 50)})`,
+            background: `radial-gradient(circle, rgba(0, 229, 255, ${crystalGlow / 160}) 0%, rgba(0,0,0,0) 70%)`,
+            transform: `scale(${1 + (crystalGlow / 160)})`,
             transition: 'all 0.1s linear', zIndex: 1
           }} />
 

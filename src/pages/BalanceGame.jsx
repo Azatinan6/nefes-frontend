@@ -5,206 +5,316 @@ import axios from 'axios';
 const BalanceGame = () => {
   const { blowIntensity, isListening, startListening, stopListening } = useBreathSensor();
   
-  const [playerPos, setPlayerPos] = useState(10); // Karakterin köprü üzerindeki konumu (%)
-  const [isPostureCorrect, setIsPostureCorrect] = useState(false);
+  // Oyun ve Fizyolojik Durumlar
+  const [progress, setProgress] = useState(0); // 0 (Köprü Başı) ile 100 (Hazine) arası
+  const [sway, setSway] = useState(0); // Köprünün sallantı derecesi
   const [score, setScore] = useState(0);
+  const [crystals, setCrystals] = useState(0);
   const [gameOver, setGameOver] = useState(false);
+  const [dbPercentage, setDbPercentage] = useState(0);
+  const [treasureOpened, setTreasureOpened] = useState(false);
 
   const blowIntensityRef = useRef(0);
-  const isPostureCorrectRef = useRef(false);
+  const lastBreathTime = useRef(Date.now());
+  const warningGiven = useRef(false);
 
+  // Referansları ve Desibel Yüzdesini güncel tutma
   useEffect(() => {
     blowIntensityRef.current = blowIntensity;
-    isPostureCorrectRef.current = isPostureCorrect;
-  }, [blowIntensity, isPostureCorrect]);
+    
+    // Dengeli (Ritmik) solunum hedefleniyor
+    const currentDb = Math.min(Math.round((blowIntensity / 60) * 100), 100);
+    setDbPercentage(currentDb);
 
-  // Karakter Yürüme/Denge Döngüsü
+    if (currentDb > 5) {
+      lastBreathTime.current = Date.now();
+      warningGiven.current = false;
+    }
+  }, [blowIntensity]);
+
+  // Sesli Yönlendirme (Fonksiyonel Entegrasyon ve Ritim odaklı)
+  const playAudioPrompt = (type) => {
+    if (!warningGiven.current && !gameOver && isListening) {
+      let message = "";
+      if (type === 'start') {
+        message = "Macera köprüsüne hoş geldin! Karşıya geçmek ve hazineye ulaşmak için dengeli ve ritmik nefes al.";
+      } else if (type === 'encourage') {
+        message = "Harika adımlar! Nefesini kontrol etmeye devam et.";
+      } else if (type === 'swaying') {
+        message = "Köprü biraz sallanıyor. Dik dur ve nefesini sakinleştir.";
+      } else if (type === 'success') {
+        message = "İnanılmaz! Köprüyü geçtin ve hazineyi buldun.";
+      }
+
+      const speech = new SpeechSynthesisUtterance(message);
+      speech.lang = 'tr-TR';
+      speech.rate = 1.0;
+      speech.pitch = 1.2;
+      window.speechSynthesis.speak(speech);
+      warningGiven.current = true;
+      
+      setTimeout(() => { warningGiven.current = false; }, 6000);
+    }
+  };
+
+  useEffect(() => {
+    if (isListening) playAudioPrompt('start');
+  }, [isListening]);
+
+  // Entegrasyon Motoru (Köprü Geçişi ve Denge)
   useEffect(() => {
     let gameLoop;
     
-    if (isListening && !gameOver) {
+    if (isListening && !gameOver && !treasureOpened) {
       gameLoop = setInterval(() => {
-        setPlayerPos((prevPos) => {
-          let newPos = prevPos;
+        const currentDb = Math.min(Math.round((blowIntensityRef.current / 60) * 100), 100);
+
+        setProgress((prev) => {
+          let newProgress = prev;
           
-          // Denge Şartı: Dik duruş + Sakin/İstikrarlı Nefes (Çok üflerse koşar, az üflerse durur)
-          if (isPostureCorrectRef.current && blowIntensityRef.current > 15) {
-            newPos = prevPos + 0.5 + (blowIntensityRef.current * 0.01); 
-            setScore((s) => s + 2);
-          } else {
-             // Dik durmazsa veya nefesi keserse köprüde hafif geri kayar (Denge kaybı)
-             newPos = prevPos > 10 ? prevPos - 0.2 : 10;
+          // İDEAL RİTMİK NEFES (%15 - %40 Arası) -> Karakter yürür, köprü sabittir
+          if (currentDb >= 15 && currentDb <= 40) {
+            newProgress += 0.3; // Yaklaşık 30 saniyelik kontrollü bir parkur
+            setSway((s) => Math.max(s - 2, 0)); // Sallantı azalır
+          } 
+          // ÇOK GÜÇLÜ/PANİK NEFESİ (> %40) -> Köprü şiddetle sallanır, yürüme durur
+          else if (currentDb > 40) {
+            setSway((s) => Math.min(s + 5, 20)); // Maksimum sallantı 20
+            playAudioPrompt('swaying');
+          }
+          // NEFES YOK -> Karakter durur
+          else {
+            setSway((s) => Math.max(s - 1, 0));
           }
 
-          // Köprünün sonuna ulaştıysa başa dön ve bonus ver
-          if (newPos >= 85) {
-            setScore((s) => s + 150); 
-            return 10; 
+          if (newProgress >= 100) {
+            setTreasureOpened(true);
+            setScore((s) => {
+              const newScore = s + 100;
+              setCrystals(Math.floor(newScore / 200));
+              return newScore;
+            });
+            playAudioPrompt('success');
+            
+            // 5 Saniye sonra yeni tura hazırla
+            setTimeout(() => {
+              setTreasureOpened(false);
+              setProgress(0);
+            }, 5000);
+            
+            return 100;
           }
-          
-          return newPos;
+
+          // Düzenli ilerleme puanı
+          if (currentDb >= 15 && currentDb <= 40) {
+            setScore((s) => s + 1);
+          }
+
+          return newProgress;
         });
-      }, 100);
+
+        // Uzun süre hareketsiz kalırsa motive et
+        if (Date.now() - lastBreathTime.current > 5000) {
+          playAudioPrompt('encourage');
+        }
+
+      }, 100); 
     }
 
     return () => clearInterval(gameLoop);
-  }, [isListening, gameOver]);
+  }, [isListening, gameOver, treasureOpened]);
 
   const handleFinishGame = async () => {
     stopListening();
     setGameOver(true);
-    
-    const earnedCrystals = Math.floor(score / 500);
+
     const progressData = {
       userId: "123e4567-e89b-12d3-a456-426614174000",
-      gameId: 6, // Denge Parkuru ID'si
+      gameId: 7, // 7. Hafta Oyunu
       score: score,
-      breathCrystals: earnedCrystals
+      breathCrystals: crystals,
+      dbPerformance: dbPercentage
     };
 
     try {
-      const response = await axios.post('http://localhost:8080/api/progress/save', progressData);
-      alert(response.data);
+      await axios.post('http://localhost:8080/api/progress/save', progressData);
+      alert(`Harika! ${crystals} Nefes Kristali Kazandın! 💎`);
     } catch (error) {
-      console.error("Hata:", error);
-      alert("Skor kaydedildi (Backend henüz kapalıysa bu uyarı normaldir).");
+      console.error("Skor kaydedilirken hata:", error);
+      alert(`7. Bölüm Tamamlandı! Kazanılan Kristal: ${crystals} 💎`);
     }
+  };
+
+  // Yüksek Kontrast Teması (Vahşi Orman ve Ahşap Köprü)
+  const themeColors = { 
+    bg: '#1B5E20', // Koyu Orman Yeşili
+    text: '#FFFFFF', // Beyaz
+    card: '#2E7D32', 
+    border: '#FFB300', // Hazine Sarısı/Altın
+    bridge: '#5D4037' // Ahşap Kahverengi
   };
 
   return (
     <div style={{
-      position: 'relative',
-      width: '100%',
-      height: 'calc(100vh - 70px)',
-      // Ormanın derinlikleri: Üst taraf açık yeşil/sarı ışık, alt taraf koyu orman yeşili
-      background: 'linear-gradient(to bottom, #C8E6C9 0%, #81C784 40%, #388E3C 70%, #1B5E20 100%)', 
-      overflow: 'hidden',
-      fontFamily: 'sans-serif'
+      position: 'relative', width: '100%', height: 'calc(100vh - 70px)',
+      backgroundColor: themeColors.bg, overflow: 'hidden', fontFamily: 'sans-serif',
+      color: themeColors.text
     }}>
       
-      {/* 1. SAĞ ÜST KÖŞE: Şeffaf (Glassmorphism) Bilgi Kartı */}
+      {/* CSS Animasyonları */}
+      <style>
+        {`
+          @keyframes walk {
+            0% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-10px) rotate(5deg); }
+            100% { transform: translateY(0px) rotate(0deg); }
+          }
+          @keyframes openChest {
+            0% { transform: scale(1); filter: brightness(1); }
+            50% { transform: scale(1.2); filter: brightness(1.5); }
+            100% { transform: scale(1.1); filter: brightness(1.2); }
+          }
+        `}
+      </style>
+
+      {/* 1. ÜST PANEL: Yüksek Kontrastlı Bilgi Kartı */}
       <div style={{
-        position: 'absolute',
-        top: '20px',
-        right: '30px',
-        backgroundColor: 'rgba(255, 255, 255, 0.25)', 
-        backdropFilter: 'blur(10px)', 
-        padding: '15px 25px',
-        borderRadius: '16px',
-        border: '1px solid rgba(255, 255, 255, 0.5)',
-        color: '#1B5E20',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'flex-end',
-        gap: '10px',
-        zIndex: 100,
-        boxShadow: '0 8px 32px rgba(0,0,0,0.1)'
+        position: 'absolute', top: '20px', right: '30px', left: '30px',
+        display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', zIndex: 100
       }}>
-        <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 'bold' }}>⚖️ Denge Kur Odaklan</h3>
-        <div style={{ fontSize: '15px', color: '#2E7D32', fontWeight: 'bold' }}>
-          Skor: <strong style={{color: '#1B5E20'}}>{score}</strong> | 💎 <strong style={{color: '#1B5E20'}}>{Math.floor(score / 500)}</strong>
+        
+        {/* Desibel Performans Göstergesi (Denge Hassasiyeti) */}
+        <div style={{
+          backgroundColor: themeColors.card, padding: '15px 25px', borderRadius: '16px',
+          border: `3px solid ${themeColors.border}`, boxShadow: '0 8px 20px rgba(0,0,0,0.4)',
+          display: 'flex', flexDirection: 'column', alignItems: 'center'
+        }}>
+          <h3 style={{ margin: '0 0 10px 0', fontSize: '18px', color: themeColors.border }}>🎙️ Denge Ritmi</h3>
+          <div style={{ width: '200px', height: '20px', backgroundColor: '#000', borderRadius: '10px', overflow: 'hidden', position: 'relative' }}>
+            
+            {/* İdeal Ritmik Nefes Aralığı (%15 - %40) */}
+            <div style={{ position: 'absolute', left: '15%', width: '25%', height: '100%', backgroundColor: 'rgba(255, 179, 0, 0.4)', zIndex: 1 }} />
+            
+            <div style={{ 
+              width: `${dbPercentage}%`, height: '100%', 
+              backgroundColor: dbPercentage > 40 ? '#FF1744' : '#FFB300', // Panik nefesinde kırmızı
+              transition: 'width 0.1s linear', zIndex: 2, position: 'relative'
+            }} />
+          </div>
+          <span style={{ marginTop: '5px', fontWeight: 'bold', color: '#FFF' }}>%{dbPercentage}</span>
+        </div>
+
+        {/* Skor ve Kristal */}
+        <div style={{
+          backgroundColor: themeColors.card, padding: '15px 30px', borderRadius: '16px',
+          border: `3px solid ${themeColors.border}`, boxShadow: '0 8px 20px rgba(0,0,0,0.4)',
+          display: 'flex', flexDirection: 'column', alignItems: 'flex-end'
+        }}>
+          <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '900', color: themeColors.border }}>🌉 7. Bölüm: Macera Köprüsü</h2>
+          <div style={{ fontSize: '18px', fontWeight: 'bold', marginTop: '5px', color: '#FFF' }}>
+            İlerleme: %{Math.floor(progress)} | Skor: {score} | 💎 Kristal: {crystals}
+          </div>
+          
+          {!isListening ? (
+            <button onClick={startListening} style={{...btnStyle, backgroundColor: themeColors.border, color: '#000', marginTop: '15px'}}>▶️ BAŞLA</button>
+          ) : (
+            <button onClick={handleFinishGame} style={{...btnStyle, backgroundColor: '#D50000', color: '#FFF', marginTop: '15px'}}>⏹️ BİTİR</button>
+          )}
+        </div>
+      </div>
+
+      {/* 2. OYUN ALANI: Asma Köprü, Karakter ve Hazine */}
+      <div style={{
+        position: 'absolute', top: '50%', width: '100%', height: '200px',
+        display: 'flex', alignItems: 'center', transform: 'translateY(-50%)'
+      }}>
+        
+        {/* Asma Köprü */}
+        <div style={{
+          position: 'absolute', left: '10%', right: '10%', height: '40px',
+          backgroundColor: themeColors.bridge, borderRadius: '10px',
+          borderBottom: '15px dashed #3E2723', // Köprü tahtaları
+          transform: `rotate(${Math.sin(Date.now() / 100) * sway}deg)`, // Sallantı mekaniği
+          transition: 'transform 0.1s ease',
+          boxShadow: '0 20px 30px rgba(0,0,0,0.5)',
+          zIndex: 5
+        }} />
+
+        {/* Başlangıç Platformu */}
+        <div style={{
+          position: 'absolute', left: '-5%', width: '15%', height: '150px',
+          backgroundColor: '#4E342E', borderRadius: '20px', zIndex: 4
+        }} />
+
+        {/* Bitiş Platformu ve Hazine */}
+        <div style={{
+          position: 'absolute', right: '-5%', width: '15%', height: '150px',
+          backgroundColor: '#4E342E', borderRadius: '20px', zIndex: 4,
+          display: 'flex', justifyContent: 'center', alignItems: 'flex-start'
+        }}>
+          <div style={{ 
+            fontSize: '80px', marginTop: '-60px', zIndex: 10,
+            animation: treasureOpened ? 'openChest 1s forwards' : 'none',
+            filter: treasureOpened ? 'drop-shadow(0px 0px 30px #FFEA00)' : 'drop-shadow(0px 10px 10px rgba(0,0,0,0.5))'
+          }}>
+            {treasureOpened ? '💎' : '🧰'}
+          </div>
+        </div>
+
+        {/* Yürüyen Çocuk Karakteri */}
+        <div style={{
+          position: 'absolute',
+          left: `calc(10% + ${progress * 0.75}%)`, // Köprü üzerinde %10 ile %85 arası hareket
+          bottom: '20px', // Köprünün üstünde durur
+          fontSize: '100px',
+          zIndex: 10,
+          // Karakter ilerlerken yürüme animasyonu, dururken sabit
+          animation: (dbPercentage >= 15 && dbPercentage <= 40) ? 'walk 0.5s infinite alternate' : 'none',
+          transition: 'left 0.2s linear',
+          filter: 'drop-shadow(0px 10px 10px rgba(0,0,0,0.5))'
+        }}>
+          🏃🏻
+        </div>
+
+      </div>
+
+      {/* 3. AI EĞİTMEN KARAKTERİ (Yanda Bekleyen Çocuk Avatarı) */}
+      <div style={{
+        position: 'absolute', bottom: '30px', left: '40px',
+        display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 100
+      }}>
+        <div style={{
+          width: '120px', height: '120px', backgroundColor: '#FFF', borderRadius: '50%',
+          border: `4px solid ${themeColors.border}`, display: 'flex', justifyContent: 'center',
+          alignItems: 'center', fontSize: '60px', boxShadow: '0 10px 20px rgba(0,0,0,0.8)',
+        }}>
+          👦🏻
         </div>
         
-        {!isListening ? (
-          <button onClick={startListening} style={actionBtnStyle('#4CAF50')}>Oyuna Başla</button>
-        ) : (
-          <button onClick={handleFinishGame} style={actionBtnStyle('#f44336')}>Görevi Bitir</button>
+        {/* Karakterin Konuşma Balonu */}
+        {isListening && (
+          <div style={{
+            marginTop: '15px', backgroundColor: '#FFF', color: '#000', padding: '10px 20px',
+            borderRadius: '20px', fontWeight: 'bold', fontSize: '16px', boxShadow: '0 5px 15px rgba(0,0,0,0.5)',
+            maxWidth: '250px', textAlign: 'center'
+          }}>
+            💬 {
+              treasureOpened ? 'Muazzam bir denge, tebrikler!' :
+              sway > 5 ? 'Köprü sallanıyor, dik dur ve sakinleş!' : 
+              'Ritmik nefes almaya devam et...'
+            }
+          </div>
         )}
       </div>
-
-      {/* 2. ALT ORTA KISIM: Yüzen (Floating) Dik Durma Butonu */}
-      <div style={{
-        position: 'absolute',
-        bottom: '40px',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        zIndex: 100
-      }}>
-        <button 
-          onMouseDown={() => setIsPostureCorrect(true)}
-          onMouseUp={() => setIsPostureCorrect(false)}
-          onMouseLeave={() => setIsPostureCorrect(false)}
-          onTouchStart={() => setIsPostureCorrect(true)}
-          onTouchEnd={() => setIsPostureCorrect(false)}
-          style={{
-            padding: '16px 40px', 
-            fontSize: '18px', 
-            color: 'white', 
-            border: '2px solid rgba(255,255,255,0.4)', 
-            borderRadius: '30px', 
-            cursor: 'pointer',
-            backgroundColor: isPostureCorrect ? 'rgba(33, 150, 243, 0.9)' : 'rgba(96, 125, 139, 0.9)',
-            backdropFilter: 'blur(5px)',
-            boxShadow: isPostureCorrect ? '0 0 15px rgba(33,150,243,0.6)' : '0 8px 20px rgba(0,0,0,0.2)',
-            transform: isPostureCorrect ? 'scale(0.98)' : 'scale(1)',
-            transition: 'all 0.2s',
-            fontWeight: 'bold',
-            whiteSpace: 'nowrap'
-          }}
-        >
-          {isPostureCorrect ? '✨ Dengedesin, İlerliyorsun!' : '⚠️ Denge İçin Dik Dur!'}
-        </button>
-      </div>
-
-      {/* 3. OYUN ALANI ELEMANLARI (Macera Parkuru) */}
-      
-      {/* Arka Plan Ağaçları */}
-      <div style={{ position: 'absolute', top: '15%', left: '10%', fontSize: '100px', opacity: 0.5, zIndex: 1 }}>🌲</div>
-      <div style={{ position: 'absolute', top: '25%', right: '15%', fontSize: '120px', opacity: 0.6, zIndex: 1 }}>🌳</div>
-      
-      {/* Asma Köprü (Zemin) */}
-      <div style={{ 
-        position: 'absolute', bottom: '35%', left: '5%', right: '5%', 
-        height: '25px', backgroundColor: '#795548', 
-        borderTop: '4px solid #5D4037', borderBottom: '4px solid #4E342E',
-        borderRadius: '10px', zIndex: 2,
-        boxShadow: '0 10px 15px rgba(0,0,0,0.3)'
-      }}>
-        {/* Köprü ipleri efekti */}
-        <div style={{ position: 'absolute', top: '-40px', left: '0', right: '0', borderBottom: '3px dashed #8D6E63', height: '40px', borderRadius: '50%' }}></div>
-      </div>
-
-      {/* Karakter (Yürüyen Çocuk Emoji) */}
-      <div style={{
-        position: 'absolute',
-        bottom: '38%', 
-        left: `${playerPos}%`, 
-        fontSize: '90px', 
-        transition: 'left 0.1s linear, transform 0.2s ease',
-        zIndex: 3,
-        filter: 'drop-shadow(0px 8px 5px rgba(0,0,0,0.4))',
-        // Dik durmazsa karakter sallanıyormuş gibi hissiyat verilir
-        transform: (!isPostureCorrect && isListening) ? 'rotate(-15deg)' : 'rotate(0deg)'
-      }}>
-        🏃‍♂️
-      </div>
-      
-      {/* Bitiş Noktası (Ağaç Ev veya Hedef) */}
-      <div style={{ position: 'absolute', bottom: '36%', right: '2%', fontSize: '100px', zIndex: 2 }}>
-        🏕️
-      </div>
-
-      {/* Dinamik Denge Uyarısı */}
-      {!isPostureCorrect && isListening && (
-        <div style={{
-          position: 'absolute', top: '30%', left: '50%', transform: 'translate(-50%, -50%)',
-          backgroundColor: 'rgba(255, 152, 0, 0.9)', color: 'white', padding: '15px 30px',
-          borderRadius: '16px', fontWeight: 'bold', fontSize: '20px', zIndex: 110,
-          boxShadow: '0 10px 25px rgba(0,0,0,0.3)', border: '2px solid rgba(255,255,255,0.5)'
-        }}>
-          ⚠️ Dengeni Kaybediyorsun, Dik Dur!
-        </div>
-      )}
 
     </div>
   );
 };
 
-// Sağ üstteki buton için stil
-const actionBtnStyle = (bgColor) => ({ 
-  padding: '8px 16px', fontSize: '15px', backgroundColor: bgColor, color: 'white', 
-  border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', 
-  boxShadow: '0 4px 6px rgba(0,0,0,0.1)', width: '100%', marginTop: '5px'
-});
+const btnStyle = { 
+  padding: '12px 24px', fontSize: '18px', border: 'none', 
+  borderRadius: '12px', cursor: 'pointer', fontWeight: '900', width: '100%',
+  textTransform: 'uppercase', boxShadow: '0 5px 10px rgba(0,0,0,0.5)'
+};
 
 export default BalanceGame;

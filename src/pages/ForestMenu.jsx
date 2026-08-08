@@ -16,20 +16,26 @@ const ForestMenu = () => {
     }
   };
 
-  // Tabelaların üzerine gelecek şeffaf ve tıklanabilir buton stili
+  // Tabelaların ve karakterlerin üzerine gelecek şeffaf ve tıklanabilir buton stili
   const hotspotStyle = {
     position: 'absolute',
-    backgroundColor: 'rgba(255, 255, 255, 0)',
+    backgroundColor: 'rgba(255, 255, 255, 0)', // Başlangıçta tamamen şeffaf
     cursor: 'pointer',
     border: 'none',
     outline: 'none',
     zIndex: 10,
-    borderRadius: '12px'
+    borderRadius: '20px', // Köşeleri yumuşatılmış tıklama alanları
+    transition: 'background-color 0.2s ease-in-out', // Hover için yumuşak geçiş
   };
+
+  // Hover efektleri (Üzerine gelince hafif beyaz parlama)
+  const handleMouseEnter = (e) => e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
+  const handleMouseLeave = (e) => e.target.style.backgroundColor = 'rgba(255, 255, 255, 0)';
 
   return (
     <div style={{
-      backgroundImage: 'url(/nefes-ormani.jpg)',
+      /* Not: Eğer yeni resmi nefes-ormani2.jpg olarak kaydettiysen buradaki url'i değiştir. */
+      backgroundImage: 'url(/nefes-ormani.jpg)', 
       backgroundSize: 'cover',
       backgroundPosition: 'center',
       backgroundRepeat: 'no-repeat',
@@ -39,60 +45,68 @@ const ForestMenu = () => {
       overflow: 'hidden'
     }}>
 
-      {/* 1. Dik Dur Güçlen (Sol Orta) */}
+      {/* 1. Hafta: Fark Et (Sol Alt - Yoga Yapan Çocuk) */}
       <button
-        onClick={() => goToGame('/oyun/dik-dur')}
-        title="Dik Dur Güçlen"
-        style={{ ...hotspotStyle, top: '28%', left: '6%', width: '14%', height: '9%' }}
+        onClick={() => goToGame('/oyun/hafta-1-fark-et')}
+        title="1. Hafta: Fark Et (Burun Nefesi)"
+        style={{ ...hotspotStyle, top: '55%', left: '3%', width: '13%', height: '30%' }}
+        onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}
       />
 
-      {/* 2. Yavaş Nefes Al Huzur Bul (Sol Üst) */}
+      {/* 2. Hafta: Hisset (Sol Alt/Orta - Kurbağa ve Nilüfer) */}
       <button
-        onClick={() => goToGame('/oyun/huzur')}
-        title="Yavaş Nefes Al Huzur Bul"
-        style={{ ...hotspotStyle, top: '23%', left: '22%', width: '14%', height: '7%' }}
+        onClick={() => goToGame('/oyun/hafta-2-hisset')}
+        title="2. Hafta: Hisset (Diyafram Aktivasyonu)"
+        style={{ ...hotspotStyle, top: '63%', left: '22%', width: '22%', height: '32%' }}
+        onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}
       />
 
-      {/* 3. Çiçeği Kokla Nefesini Tut (Orta Sol) */}
+      {/* 3. Hafta: Hareket Ettir (Sol Orta - Gökkuşağı) */}
       <button
-        onClick={() => goToGame('/oyun/cicek')}
-        title="Çiçeği Kokla Nefesini Tut"
-        style={{ ...hotspotStyle, top: '35%', left: '29%', width: '14%', height: '7%' }}
+        onClick={() => goToGame('/oyun/hafta-3-hareket-ettir')}
+        title="3. Hafta: Hareket Ettir (Torakal Mobilite)"
+        style={{ ...hotspotStyle, top: '26%', left: '8%', width: '20%', height: '28%' }}
+        onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}
       />
 
-      {/* 4. Karnını Şişir Balonu Büyüt (Sol Alt) */}
+      {/* 4. Hafta: Kontrol Et (Sağ Alt - Kristal Mağarası) */}
       <button
-        onClick={() => goToGame('/oyun/balon')}
-        title="Karnını Şişir Balonu Büyüt"
-        style={{ ...hotspotStyle, top: '59%', left: '3%', width: '14%', height: '7%' }}
+        onClick={() => goToGame('/oyun/hafta-4-kontrol-et')}
+        title="4. Hafta: Kontrol Et (Nefes Tutma)"
+        style={{ ...hotspotStyle, top: '62%', left: '48%', width: '22%', height: '35%' }}
+        onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}
       />
 
-      {/* 5. Denge Kur Odaklan (Tam Orta) */}
+      {/* 5. Hafta: Sürdür (Orta Üst - Yelkenli ve Göl) */}
       <button
-        onClick={() => goToGame('/oyun/denge')}
-        title="Denge Kur Odaklan"
-        style={{ ...hotspotStyle, top: '38%', left: '48%', width: '11%', height: '6%' }}
+        onClick={() => goToGame('/oyun/hafta-5-surdur')}
+        title="5. Hafta: Sürdür (Uzun Kontrollü Nefes)"
+        style={{ ...hotspotStyle, top: '20%', left: '34%', width: '18%', height: '25%' }}
+        onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}
       />
 
-      {/* 6. Uzun Üfle Yelkeni Yürüt (Orta Sağ) */}
+      {/* 6. Hafta: Güç Üret (Orta Merkez - Volkanın Önündeki Tabela) */}
       <button
-        onClick={() => goToGame('/oyun/yelkenli')}
-        title="Uzun Üfle Yelkeni Yürüt"
-        style={{ ...hotspotStyle, top: '40%', left: '61%', width: '14%', height: '7%' }}
+        onClick={() => goToGame('/oyun/hafta-6-guc-uret')}
+        title="6. Hafta: Güç Üret (Patlayıcı Güç / Roket)"
+        style={{ ...hotspotStyle, top: '55%', left: '35%', width: '13%', height: '16%' }}
+        onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}
       />
 
-      {/* 7. Güçlü Üfle Roketi Fırlat (Sağ Üst) */}
+      {/* 7. Hafta: Birleştir (Sağ Orta - Asma Köprü) */}
       <button
-        onClick={() => goToGame('/oyun/roket')}
-        title="Güçlü Üfle Roketi Fırlat"
-        style={{ ...hotspotStyle, top: '31%', left: '81%', width: '15%', height: '8%' }}
+        onClick={() => goToGame('/oyun/hafta-7-birlestir')}
+        title="7. Hafta: Birleştir (Macera Köprüsü)"
+        style={{ ...hotspotStyle, top: '24%', left: '58%', width: '15%', height: '22%' }}
+        onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}
       />
-      
-      {/* 8. Derin Çek Enerji Dol (Sağ Alt) */}
+
+      {/* 8. Hafta: Aktar (Sağ Üst - Elmas ve Tapınak Finali) */}
       <button
-        onClick={() => goToGame('/oyun/enerji')}
-        title="Derin Çek Enerji Dol"
-        style={{ ...hotspotStyle, top: '46%', left: '83%', width: '13%', height: '7%' }}
+        onClick={() => goToGame('/oyun/hafta-8-aktar')}
+        title="8. Hafta: Aktar (Büyük Final)"
+        style={{ ...hotspotStyle, top: '22%', left: '72%', width: '25%', height: '35%' }}
+        onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}
       />
 
     </div>

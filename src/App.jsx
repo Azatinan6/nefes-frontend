@@ -1,16 +1,22 @@
-// ===== MEVCUT SAYFA IMPORTLARI =====
-import BreathTest from './pages/BreathTest';
-import BalloonGame from './pages/BalloonGame';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Link, useNavigate } from 'react-router-dom';
+
+// Temel Sayfalar ve Paneller
+import LandingPage from './pages/LandingPage';
 import ForestMenu from './pages/ForestMenu';
-import FlowerGame from './pages/FlowerGame';
+import PhysiotherapistPanel from './pages/PhysiotherapistPanel';
+import FamilyAIReport from './pages/FamilyAIReport';
+import BreathTest from './pages/BreathTest';
+
+// 8 Haftalık DTx Oyunları
+import AwarenessGame from './pages/AwarenessGame';
+import FrogGame from './pages/FrogGame';
+import RainbowGame from './pages/RainbowGame';
+import CrystalGame from './pages/CrystalGame';
 import SailboatGame from './pages/SailboatGame';
 import RocketGame from './pages/RocketGames';
-import CalmBreathGame from './pages/CalmBreathGame';
 import BalanceGame from './pages/BalanceGame';
-import CrystalGame from './pages/CrystalGame';
-import FamilyAIReport from './pages/FamilyAIReport';
-import LandingPage from './pages/LandingPage';
-import PhysiotherapistPanel from './pages/PhysiotherapistPanel';
+import FinalAdventureGame from './pages/FinalAdventureGame';
 
 // ===== YENİ EKLENEN SAYFALAR — Kimlik doğrulama ve yönetim =====
 import LoginPage from './pages/LoginPage';
@@ -22,8 +28,6 @@ import AdminPanel from './pages/AdminPanel';
 // ===== AUTH SİSTEMİ — Context ve korumalı rota bileşenleri =====
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
-
-import { BrowserRouter as Router, Routes, Route, Link, useNavigate } from 'react-router-dom';
 
 /**
  * Ana Uygulama Bileşeni — Tüm routing ve yapı burada tanımlanır.
@@ -186,13 +190,14 @@ function AppContent() {
 
           {/* ===== OYUN SAYFALARI — Giriş yapılmış olması yeterli ===== */}
           <Route path="/test" element={<ProtectedRoute><BreathTest /></ProtectedRoute>} />
-          <Route path="/oyun/balon" element={<ProtectedRoute><BalloonGame /></ProtectedRoute>} />
-          <Route path="/oyun/cicek" element={<ProtectedRoute><FlowerGame /></ProtectedRoute>} />
-          <Route path="/oyun/yelkenli" element={<ProtectedRoute><SailboatGame /></ProtectedRoute>} />
-          <Route path="/oyun/roket" element={<ProtectedRoute><RocketGame /></ProtectedRoute>} />
-          <Route path="/oyun/huzur" element={<ProtectedRoute><CalmBreathGame /></ProtectedRoute>} />
-          <Route path="/oyun/denge" element={<ProtectedRoute><BalanceGame /></ProtectedRoute>} />
-          <Route path="/oyun/enerji" element={<ProtectedRoute><CrystalGame /></ProtectedRoute>} />
+          <Route path="/oyun/hafta-1-fark-et" element={<ProtectedRoute><AwarenessGame /></ProtectedRoute>} />
+          <Route path="/oyun/hafta-2-hisset" element={<ProtectedRoute><FrogGame /></ProtectedRoute>} />
+          <Route path="/oyun/hafta-3-hareket-ettir" element={<ProtectedRoute><RainbowGame /></ProtectedRoute>} />
+          <Route path="/oyun/hafta-4-kontrol-et" element={<ProtectedRoute><CrystalGame /></ProtectedRoute>} />
+          <Route path="/oyun/hafta-5-surdur" element={<ProtectedRoute><SailboatGame /></ProtectedRoute>} />
+          <Route path="/oyun/hafta-6-guc-uret" element={<ProtectedRoute><RocketGame /></ProtectedRoute>} />
+          <Route path="/oyun/hafta-7-birlestir" element={<ProtectedRoute><BalanceGame /></ProtectedRoute>} />
+          <Route path="/oyun/hafta-8-aktar" element={<ProtectedRoute><FinalAdventureGame /></ProtectedRoute>} />
 
           {/* ===== YETKİSİZ ERİŞİM SAYFASI ===== */}
           <Route path="/yetkisiz" element={

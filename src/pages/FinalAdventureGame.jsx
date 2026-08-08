@@ -13,22 +13,28 @@ const FinalAdventureGame = () => {
   const [crystals, setCrystals] = useState(0);
   const [gameOver, setGameOver] = useState(false);
   const [dbPercentage, setDbPercentage] = useState(0);
+  const [promptMessage, setPromptMessage] = useState("Kayıp kristalleri birleştirmek için tüm teknikleri kullan!");
 
   const blowIntensityRef = useRef(0);
   const phaseIndexRef = useRef(0);
   const warningGiven = useRef(false);
 
-  // Referansları güncel tutma
+  // Referansları ve Desibeli güncel tutma
   useEffect(() => {
     blowIntensityRef.current = blowIntensity;
     phaseIndexRef.current = phaseIndex;
     
-    // Desibel hesaplama (Max 100)
-    const currentDb = Math.min(Math.round((blowIntensity / 100) * 100), 100);
+    // Gürültü Filtresi: 20db altını yoksayar
+    const noiseThreshold = 20; 
+    let validIntensity = blowIntensity - noiseThreshold;
+    if (validIntensity < 0) validIntensity = 0;
+
+    // HASSASİYET AZALTILDI: Bölen 150 yapılarak nefesin daha kontrollü (yavaş) algılanması sağlandı
+    const currentDb = Math.min(Math.round((validIntensity / 150) * 100), 100);
     setDbPercentage(currentDb);
   }, [blowIntensity, phaseIndex]);
 
-  // Sesli Yönlendirme (Büyük Final Kombinasyonu)
+  // --- Sesli Yönlendirme ---
   const playAudioPrompt = (type) => {
     if (!warningGiven.current && !gameOver && isListening) {
       let message = "";
@@ -42,63 +48,76 @@ const FinalAdventureGame = () => {
         message = "Son adım! Tüm gücünle tek seferde devasa bir rüzgar üfle!";
       } else if (type === 'success') {
         message = "Başardın! Sen artık gerçek bir Nefes Kahramanısın!";
-      } else if (type === 'encourage') {
-        message = "Pes etme, harika gidiyorsun! Nefesine odaklan.";
       }
+
+      setPromptMessage(message);
 
       const speech = new SpeechSynthesisUtterance(message);
       speech.lang = 'tr-TR';
       speech.rate = 1.0;
       speech.pitch = 1.2;
       window.speechSynthesis.speak(speech);
-      warningGiven.current = true;
       
+      warningGiven.current = true;
       setTimeout(() => { warningGiven.current = false; }, 6000);
     }
   };
 
-  // Oyun başladığında ilk komutu ver
   useEffect(() => {
     if (isListening && phaseIndex === 0) playAudioPrompt('start_phase0');
   }, [isListening]);
 
-  // Tüm Becerileri Birleştiren Final Motoru
+  // HATA DÜZELTMESİ (Component unmount olunca sesi kes)
+  useEffect(() => {
+    return () => {
+      warningGiven.current = true;
+      window.speechSynthesis.cancel();
+    };
+  }, []);
+
+  // --- Tüm Becerileri Birleştiren Final Motoru ---
   useEffect(() => {
     let gameLoop;
     
     if (isListening && !gameOver && phaseIndex < 4) {
       gameLoop = setInterval(() => {
-        const currentDb = Math.min(Math.round((blowIntensityRef.current / 100) * 100), 100);
+        const noiseThreshold = 20; 
+        let validIntensity = blowIntensityRef.current - noiseThreshold;
+        if (validIntensity < 0) validIntensity = 0;
+
+        // Hassasiyet Azaltıldı (150'ye bölüyoruz ki bar anında fırlamasın, kontrollü dolsun)
+        const currentDb = Math.min(Math.round((validIntensity / 150) * 100), 100);
 
         setPhaseProgress((prev) => {
           let newProgress = prev;
+          const currentPhase = phaseIndexRef.current;
           
-          // AŞAMA 1: DERİN NEFES ALMA (Diyafram/Torakal Mobilite: %5 - %25 DB)
-          if (phaseIndexRef.current === 0) {
+          // AŞAMA 1: DERİN NEFES ALMA (%5 - %50 DB)
+          if (currentPhase === 0) {
             newProgress -= 0.5; // Düşme efekti
-            if (currentDb >= 5 && currentDb <= 25) newProgress += 1.5;
+            if (currentDb >= 5 && currentDb <= 50) newProgress += 1.5;
           }
-          // AŞAMA 2: NEFES TUTMA (İnspiratuvar Hold: < %8 DB)
-          else if (phaseIndexRef.current === 1) {
-            if (currentDb < 8) newProgress += 2.5; // Yaklaşık 4 saniyede dolar
-            else newProgress -= 1; // Ses çıkarsa yavaşça geriler (Ceza yok, telafi var)
+          // AŞAMA 2: NEFES TUTMA (Sessizlik: < %15 DB)
+          else if (currentPhase === 1) {
+            if (currentDb < 15) newProgress += 2.5; // Çok hızlı dolar
+            else newProgress -= 1; // Hata payı daha az düşürür
           }
-          // AŞAMA 3: UZUN ÜFLEME (Endurans: %15 - %40 DB)
-          else if (phaseIndexRef.current === 2) {
+          // AŞAMA 3: UZUN ÜFLEME (%15 - %70 DB)
+          else if (currentPhase === 2) {
             newProgress -= 0.5;
-            if (currentDb >= 15 && currentDb <= 40) newProgress += 1.2;
+            if (currentDb >= 15 && currentDb <= 70) newProgress += 1.2;
           }
-          // AŞAMA 4: GÜÇLÜ ÜFLEME (PEF/Güç Üret: > %50 DB)
-          else if (phaseIndexRef.current === 3) {
-            newProgress -= 2; // Çok hızlı düşer
-            if (currentDb > 50) newProgress += (currentDb / 5); // Güce bağlı çok hızlı dolar
+          // AŞAMA 4: GÜÇLÜ ÜFLEME (> %30 DB yeterli)
+          else if (currentPhase === 3) {
+            newProgress -= 1.5; 
+            if (currentDb > 30) newProgress += (currentDb / 5); 
           }
 
           if (newProgress < 0) newProgress = 0;
 
           // AŞAMA TAMAMLANDIĞINDA:
           if (newProgress >= 100) {
-            const nextPhase = phaseIndexRef.current + 1;
+            const nextPhase = currentPhase + 1;
             setPhaseIndex(nextPhase);
             
             setScore((s) => {
@@ -107,7 +126,6 @@ const FinalAdventureGame = () => {
               return newScore;
             });
 
-            // Yeni aşamanın sesli komutunu tetikle
             if (nextPhase === 1) playAudioPrompt('start_phase1');
             else if (nextPhase === 2) playAudioPrompt('start_phase2');
             else if (nextPhase === 3) playAudioPrompt('start_phase3');
@@ -125,203 +143,238 @@ const FinalAdventureGame = () => {
     return () => clearInterval(gameLoop);
   }, [isListening, gameOver, phaseIndex]);
 
+  // --- Oyunu Bitir ---
   const handleFinishGame = async () => {
     stopListening();
     setGameOver(true);
 
+    warningGiven.current = true;
+    window.speechSynthesis.cancel();
+    setPromptMessage("Muhteşem bir mücadeleydi!");
+
     const progressData = {
       userId: "123e4567-e89b-12d3-a456-426614174000",
-      gameId: 8, // 8. Hafta: Büyük Final
+      gameId: 8,
       score: score,
-      breathCrystals: crystals + (phaseIndex === 4 ? 5 : 0), // Final bonusu
+      breathCrystals: crystals + (phaseIndex === 4 ? 5 : 0),
       dbPerformance: dbPercentage
     };
 
     try {
       await axios.post('http://localhost:8080/api/progress/save', progressData);
-      alert(`TEBRİKLER! GERÇEK BİR NEFES KAHRAMANISIN! Toplam: ${crystals + 5} Kristal 💎`);
+      alert(`TEBRİKLER! GERÇEK BİR NEFES KAHRAMANISIN! Toplam: ${crystals + (phaseIndex===4?5:0)} Kristal 💎`);
     } catch (error) {
       console.error("Skor kaydedilirken hata:", error);
-      alert(`MÜTHİŞ! Final Tamamlandı! Kazanılan Kristal: ${crystals + 5} 💎`);
+      alert(`MÜTHİŞ! Final Tamamlandı! Kazanılan Kristal: ${crystals + (phaseIndex===4?5:0)} 💎`);
     }
   };
 
-  // Aşamalara Göre Dinamik Gösterge Metinleri ve Renkleri
+  // --- TASARIM VE FAZ BİLGİLERİ ---
   const phaseDetails = [
-    { title: "1. Aşama: Derin Nefes Al", color: "#00E676", target: [5, 25], icon: "🌸" },
-    { title: "2. Aşama: Nefesini Tut", color: "#FFEA00", target: [0, 8], icon: "🤫" },
-    { title: "3. Aşama: Uzun Üfle", color: "#00E5FF", target: [15, 40], icon: "⛵" },
-    { title: "4. Aşama: Tüm Gücünle Üfle", color: "#FF3D00", target: [50, 100], icon: "🚀" },
+    { title: "1. Aşama: Derin Nefes Al", color: "#69F0AE", target: [5, 50], icon: "🌸" },
+    { title: "2. Aşama: Nefesini Tut", color: "#FFD54F", target: [0, 15], icon: "🤫" },
+    { title: "3. Aşama: Uzun Üfle", color: "#4DD0E1", target: [15, 70], icon: "⛵" },
+    { title: "4. Aşama: Tüm Gücünle Üfle", color: "#FF8A65", target: [30, 100], icon: "🚀" },
     { title: "BÜYÜK FİNAL TAMAMLANDI!", color: "#E040FB", target: [0, 0], icon: "🏆" }
   ];
 
   const currentDetails = phaseDetails[phaseIndex];
 
-  // Yüksek Kontrast Teması (Destansı Final)
-  const themeColors = { 
-    bg: '#000000', // Tam Siyah (Uzay/Final)
-    text: '#FFFFFF', 
-    card: '#1A237E', 
-    border: currentDetails.color,
+  // --- PREMIUM TASARIM STİLLERİ ---
+  const styles = {
+    container: {
+      position: 'relative', width: '100%', height: 'calc(100vh - 70px)',
+      background: 'radial-gradient(ellipse at center, #1A237E 0%, #000000 100%)', // Uzay boşluğu
+      overflow: 'hidden', fontFamily: "'Segoe UI', Tahoma, sans-serif",
+      color: '#FFF', display: 'flex', flexDirection: 'column', alignItems: 'center',
+    },
+    glassCard: {
+      background: 'rgba(255, 255, 255, 0.05)',
+      backdropFilter: 'blur(15px)',
+      WebkitBackdropFilter: 'blur(15px)',
+      borderRadius: '24px',
+      border: `1px solid ${currentDetails.color}50`,
+      boxShadow: `0 8px 32px 0 rgba(0, 0, 0, 0.5)`,
+      transition: 'border 0.5s ease',
+    },
+    topPanel: {
+      position: 'absolute', top: '20px', width: '92%',
+      display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', zIndex: 10,
+    },
+    statBox: {
+      padding: '20px 30px', display: 'flex', flexDirection: 'column', alignItems: 'center',
+    },
+    aiCoach: {
+      position: 'absolute', bottom: '30px', left: '30px',
+      display: 'flex', alignItems: 'flex-end', gap: '20px', zIndex: 10,
+    },
+    coachAvatar: {
+      width: '110px', height: '110px', backgroundColor: '#FFF',
+      borderRadius: '50%', display: 'flex', justifyContent: 'center', alignItems: 'center',
+      fontSize: '60px', boxShadow: `0 15px 35px ${currentDetails.color}50`, border: `4px solid ${currentDetails.color}`,
+      transition: 'all 0.5s ease'
+    },
+    chatBubble: {
+      marginBottom: '35px', padding: '18px 25px', backgroundColor: 'rgba(255,255,255,0.95)',
+      borderRadius: '25px 25px 25px 0', boxShadow: '0 15px 35px rgba(0,0,0,0.5)',
+      maxWidth: '380px', fontWeight: '700', color: '#111', fontSize: '17px', lineHeight: '1.5',
+    },
+    btnStart: {
+      padding: '14px 35px', fontSize: '16px', fontWeight: 'bold', color: '#000',
+      background: `linear-gradient(45deg, ${currentDetails.color} 0%, #FFF 100%)`,
+      border: 'none', borderRadius: '15px', cursor: 'pointer',
+      boxShadow: `0 8px 20px ${currentDetails.color}50`, marginTop: '15px', transition: 'all 0.3s ease',
+    },
+    btnStop: {
+      padding: '14px 35px', fontSize: '16px', fontWeight: 'bold', color: '#fff',
+      background: 'linear-gradient(45deg, #FF1744 0%, #D50000 100%)',
+      border: 'none', borderRadius: '15px', cursor: 'pointer',
+      boxShadow: '0 8px 20px rgba(255, 23, 68, 0.5)', marginTop: '15px', transition: 'all 0.3s ease',
+    }
   };
 
   return (
-    <div style={{
-      position: 'relative', width: '100%', height: 'calc(100vh - 70px)',
-      backgroundColor: themeColors.bg, overflow: 'hidden', fontFamily: 'sans-serif',
-      color: themeColors.text, transition: 'background-color 0.5s ease'
-    }}>
+    <div style={styles.container}>
       
-      {/* 1. ÜST PANEL: Yüksek Kontrastlı Bilgi Kartı */}
-      <div style={{
-        position: 'absolute', top: '20px', right: '30px', left: '30px',
-        display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', zIndex: 100
-      }}>
+      {/* Arka Plan Yıldız Efektleri */}
+      <div style={{ position: 'absolute', top: '10%', left: '20%', fontSize: '20px', opacity: 0.5, animation: 'float 3s infinite' }}>✨</div>
+      <div style={{ position: 'absolute', top: '30%', right: '15%', fontSize: '30px', opacity: 0.3, animation: 'float 4s infinite 1s' }}>🌟</div>
+      <div style={{ position: 'absolute', bottom: '20%', right: '30%', fontSize: '15px', opacity: 0.6, animation: 'float 2s infinite' }}>✨</div>
+
+      {/* 1. ÜST PANEL */}
+      <div style={styles.topPanel}>
         
-        {/* Dinamik Hedef Göstergesi */}
-        {phaseIndex < 4 && (
-          <div style={{
-            backgroundColor: themeColors.card, padding: '15px 25px', borderRadius: '16px',
-            border: `3px solid ${themeColors.border}`, boxShadow: `0 8px 20px ${themeColors.border}40`,
-            display: 'flex', flexDirection: 'column', alignItems: 'center', transition: 'border 0.5s'
-          }}>
-            <h3 style={{ margin: '0 0 10px 0', fontSize: '18px', color: themeColors.border }}>
+        {/* Görev ve Nefes Barı */}
+        {phaseIndex < 4 ? (
+          <div style={{ ...styles.glassCard, ...styles.statBox }}>
+            <h3 style={{ margin: '0 0 15px 0', fontSize: '19px', color: currentDetails.color, transition: 'color 0.5s' }}>
               {currentDetails.icon} {currentDetails.title}
             </h3>
-            <div style={{ width: '200px', height: '20px', backgroundColor: '#000', borderRadius: '10px', overflow: 'hidden', position: 'relative' }}>
+            <div style={{ width: '280px', height: '22px', backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: '11px', overflow: 'hidden', position: 'relative', border: '1px solid rgba(255,255,255,0.1)' }}>
               
-              {/* Dinamik Hedef Aralığı Kutusu */}
+              {/* İdeal Nefes Alanı */}
               <div style={{ 
                 position: 'absolute', 
                 left: `${currentDetails.target[0]}%`, 
                 width: `${currentDetails.target[1] - currentDetails.target[0]}%`, 
-                height: '100%', backgroundColor: `${themeColors.border}60`, zIndex: 1 
+                height: '100%', backgroundColor: `${currentDetails.color}60`, zIndex: 1,
+                transition: 'all 0.5s ease'
               }} />
               
+              {/* Canlı İlerleme */}
               <div style={{ 
                 width: `${dbPercentage}%`, height: '100%', 
-                backgroundColor: themeColors.border, 
-                transition: 'width 0.1s linear', zIndex: 2, position: 'relative'
+                backgroundColor: currentDetails.color, 
+                transition: 'width 0.15s ease-out, background-color 0.5s', zIndex: 2, position: 'relative',
+                borderRadius: '11px'
               }} />
             </div>
-            <span style={{ marginTop: '5px', fontWeight: 'bold' }}>%{dbPercentage}</span>
+            <span style={{ marginTop: '10px', fontWeight: 'bold', fontSize: '16px', color: '#FFF' }}>%{dbPercentage}</span>
           </div>
-        )}
+        ) : <div />}
 
-        {/* Skor ve Kristal */}
-        <div style={{
-          backgroundColor: themeColors.card, padding: '15px 30px', borderRadius: '16px',
-          border: `3px solid ${themeColors.border}`, boxShadow: `0 8px 20px ${themeColors.border}40`,
-          display: 'flex', flexDirection: 'column', alignItems: 'flex-end', marginLeft: 'auto'
-        }}>
-          <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '900', color: themeColors.border }}>👑 8. Bölüm: Büyük Final</h2>
-          <div style={{ fontSize: '18px', fontWeight: 'bold', marginTop: '5px' }}>
-            Skor: {score} | 💎 Kristal: {crystals}
+        {/* Skor Paneli */}
+        <div style={{ ...styles.glassCard, ...styles.statBox, alignItems: 'flex-end' }}>
+          <h2 style={{ margin: 0, fontSize: '26px', fontWeight: '900', color: '#E040FB', textShadow: '0 2px 10px rgba(224, 64, 251, 0.6)' }}>👑 8. Bölüm: Büyük Final</h2>
+          <div style={{ fontSize: '19px', fontWeight: 'bold', marginTop: '8px', color: '#E8F5E9' }}>
+            Skor: {Math.floor(score)} | 💎 Kristal: {crystals}
           </div>
           
           {!isListening ? (
-            <button onClick={startListening} style={{...btnStyle, backgroundColor: '#00E676', color: '#000', marginTop: '15px'}}>▶️ FİNALİ BAŞLAT</button>
+            <button onClick={startListening} style={styles.btnStart} onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'} onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}>
+              ▶️ FİNALİ BAŞLAT
+            </button>
           ) : (
-            <button onClick={handleFinishGame} style={{...btnStyle, backgroundColor: '#FF1744', color: '#FFF', marginTop: '15px'}}>⏹️ BİTİR</button>
+            <button onClick={handleFinishGame} style={styles.btnStop} onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'} onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}>
+              ⏹️ BİTİR
+            </button>
           )}
         </div>
       </div>
 
-      {/* 2. OYUN ALANI: Büyük Nefes Kristali Birleştirme */}
+      {/* 2. OYUN ALANI: Parçalanmış Kristal Geometrisi */}
       <div style={{
         position: 'absolute', top: '50%', left: '50%',
         transform: 'translate(-50%, -50%)',
         display: 'flex', flexDirection: 'column', alignItems: 'center'
       }}>
         
-        {/* Parçalanmış Kristal Efekti (Fazlara göre birleşir) */}
-        <div style={{ position: 'relative', width: '300px', height: '300px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+        {/* Merkez Kristal Düzeneği */}
+        <div style={{ position: 'relative', width: '350px', height: '350px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
           
           {phaseIndex === 4 ? (
             // KAZANILDI - TAM VE DEV KRİSTAL
             <div style={{ 
-              fontSize: '250px', zIndex: 10, animation: 'float 2s infinite, glowPulse 1.5s infinite alternate',
+              fontSize: '280px', zIndex: 10, animation: 'float 3s ease-in-out infinite, finalGlow 2s infinite alternate',
               filter: 'drop-shadow(0px 0px 100px #E040FB)'
             }}>
               💎
             </div>
           ) : (
-            // DEVAM EDİYOR - PARÇALAR
+            // DEVAM EDİYOR - 4 KÖŞEDE PARÇALAR VE ORTADA ÇEKİRDEK
             <>
-              {/* Ortadaki Kristal Özü (İlerlemeye göre parlar) */}
+              {/* Ortadaki Parlayan Büyü Çekirdeği */}
               <div style={{
-                position: 'absolute', width: `${100 + phaseProgress}px`, height: `${100 + phaseProgress}px`,
-                backgroundColor: currentDetails.color, borderRadius: '50%', opacity: 0.2 + (phaseProgress/200),
-                boxShadow: `0 0 ${phaseProgress}px ${currentDetails.color}`, transition: 'all 0.2s', zIndex: 1
+                position: 'absolute', width: `${100 + (phaseProgress * 1.5)}px`, height: `${100 + (phaseProgress * 1.5)}px`,
+                backgroundColor: currentDetails.color, borderRadius: '50%', opacity: 0.15 + (phaseProgress/150),
+                boxShadow: `0 0 ${50 + phaseProgress}px ${currentDetails.color}, inset 0 0 50px rgba(255,255,255,0.5)`, 
+                transition: 'all 0.2s linear', zIndex: 1
               }} />
               
-              {/* Faz Sayısına Göre Görünen Kristal Parçaları */}
-              <div style={{ fontSize: '80px', position: 'absolute', top: '20px', left: '20px', opacity: phaseIndex >= 1 ? 1 : 0.2 }}>💎</div>
-              <div style={{ fontSize: '80px', position: 'absolute', top: '20px', right: '20px', opacity: phaseIndex >= 2 ? 1 : 0.2 }}>💎</div>
-              <div style={{ fontSize: '80px', position: 'absolute', bottom: '20px', left: '20px', opacity: phaseIndex >= 3 ? 1 : 0.2 }}>💎</div>
-              <div style={{ fontSize: '80px', position: 'absolute', bottom: '20px', right: '20px', opacity: phaseIndex >= 4 ? 1 : 0.2 }}>💎</div>
+              {/* Dört Ana Parça - Kristaller */}
+              <div style={{ fontSize: '90px', position: 'absolute', top: '10px', left: '10px', opacity: phaseIndex >= 1 ? 1 : 0.15, transform: phaseIndex >= 1 ? 'scale(1.1)' : 'scale(0.8)', transition: 'all 1s ease', animation: 'float 2s infinite alternate' }}>💎</div>
+              <div style={{ fontSize: '90px', position: 'absolute', top: '10px', right: '10px', opacity: phaseIndex >= 2 ? 1 : 0.15, transform: phaseIndex >= 2 ? 'scale(1.1)' : 'scale(0.8)', transition: 'all 1s ease', animation: 'float 2.5s infinite alternate-reverse' }}>💎</div>
+              <div style={{ fontSize: '90px', position: 'absolute', bottom: '10px', left: '10px', opacity: phaseIndex >= 3 ? 1 : 0.15, transform: phaseIndex >= 3 ? 'scale(1.1)' : 'scale(0.8)', transition: 'all 1s ease', animation: 'float 3s infinite alternate' }}>💎</div>
+              <div style={{ fontSize: '90px', position: 'absolute', bottom: '10px', right: '10px', opacity: phaseIndex >= 4 ? 1 : 0.15, transform: phaseIndex >= 4 ? 'scale(1.1)' : 'scale(0.8)', transition: 'all 1s ease', animation: 'float 2.2s infinite alternate-reverse' }}>💎</div>
             </>
           )}
 
         </div>
 
-        {/* Görev Başlık Metni */}
+        {/* Görev Başlık Metni (Altta ortalanmış) */}
         {phaseIndex < 4 && (
           <div style={{
-            marginTop: '40px', fontSize: '30px', fontWeight: 'bold', color: currentDetails.color,
-            textShadow: '0 5px 15px rgba(0,0,0,0.8)', letterSpacing: '2px'
+            marginTop: '60px', fontSize: '35px', fontWeight: '900', color: currentDetails.color,
+            textShadow: `0 5px 20px ${currentDetails.color}80, 0 2px 4px rgba(0,0,0,0.8)`, letterSpacing: '2px',
+            animation: 'pulseText 2s infinite alternate'
           }}>
             {currentDetails.title}
           </div>
         )}
       </div>
 
-      {/* 3. AI EĞİTMEN KARAKTERİ (Yanda Bekleyen Çocuk Avatarı) */}
-      <div style={{
-        position: 'absolute', bottom: '30px', left: '40px',
-        display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 100
-      }}>
-        <div style={{
-          width: '120px', height: '120px', backgroundColor: '#FFF', borderRadius: '50%',
-          border: `4px solid ${currentDetails.color}`, display: 'flex', justifyContent: 'center',
-          alignItems: 'center', fontSize: '60px', boxShadow: '0 10px 20px rgba(0,0,0,0.8)', transition: 'border 0.5s'
-        }}>
+      {/* 3. AI EĞİTMEN KARAKTERİ */}
+      <div style={styles.aiCoach}>
+        <div style={styles.coachAvatar}>
           👦🏻
         </div>
         
-        {/* Karakterin Konuşma Balonu */}
         {isListening && (
-          <div style={{
-            marginTop: '15px', backgroundColor: '#FFF', color: '#000', padding: '10px 20px',
-            borderRadius: '20px', fontWeight: 'bold', fontSize: '16px', boxShadow: '0 5px 15px rgba(0,0,0,0.5)',
-            maxWidth: '300px', textAlign: 'center'
-          }}>
-            💬 {
-              phaseIndex === 0 ? 'Önce derin bir nefes...' :
-              phaseIndex === 1 ? 'Şimdi nefesini tut (Sessiz)...' :
-              phaseIndex === 2 ? 'Dudaklarını büz ve uzun nefes ver...' :
-              phaseIndex === 3 ? 'Tüm gücünle tek seferde üfle!' :
-              'MUHTEŞEM! GERÇEK BİR NEFES KAHRAMANISIN!'
-            }
+          <div style={styles.chatBubble}>
+            💬 {promptMessage}
           </div>
         )}
       </div>
 
-      {/* CSS Efektleri */}
+      {/* CSS Animasyonları */}
       <style>
         {`
-          @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-20px); } 100% { transform: translateY(0px); } }
-          @keyframes glowPulse { 0% { filter: drop-shadow(0px 0px 50px #E040FB); } 100% { filter: drop-shadow(0px 0px 150px #E040FB) brightness(1.5); } }
+          @keyframes float { 
+            0% { transform: translateY(0px); } 
+            100% { transform: translateY(-15px); } 
+          }
+          @keyframes finalGlow { 
+            0% { filter: drop-shadow(0px 0px 80px #E040FB); transform: scale(1); } 
+            100% { filter: drop-shadow(0px 0px 200px #E040FB) brightness(1.3); transform: scale(1.05); } 
+          }
+          @keyframes pulseText {
+            0% { opacity: 0.8; transform: scale(1); }
+            100% { opacity: 1; transform: scale(1.03); }
+          }
         `}
       </style>
     </div>
   );
-};
-
-const btnStyle = { 
-  padding: '12px 24px', fontSize: '18px', border: 'none', 
-  borderRadius: '12px', cursor: 'pointer', fontWeight: '900', width: '100%',
-  textTransform: 'uppercase', boxShadow: '0 5px 10px rgba(0,0,0,0.5)'
 };
 
 export default FinalAdventureGame;

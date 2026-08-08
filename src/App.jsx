@@ -76,23 +76,26 @@ function AppContent() {
         <Route path="/kayit" element={null} />
         <Route path="/sifremi-unuttum" element={null} />
         <Route path="/sifre-sifirla" element={null} />
-        {/* Diğer tüm sayfalarda navbar gösterilir */}
         <Route path="*" element={
           <nav style={{
-            height: '75px',
+            minHeight: '85px',
+            padding: '10px 40px',
             backgroundColor: '#2E7D32',
             color: 'white',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            padding: '0 40px',
             boxShadow: '0 4px 15px rgba(0,0,0,0.15)',
             zIndex: 100
           }}>
-            {/* Sol Taraf — Logo */}
-            <Link to="/" style={{ fontSize: '26px', fontWeight: '900', letterSpacing: '1px', color: '#FFEB3B', textDecoration: 'none', textShadow: '1px 1px 2px rgba(0,0,0,0.2)' }}>
-              🌿 N.E.F.E.S. AI
-            </Link>
+            {/* Sol Taraf — Logo ve Sponsorlar */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+              <Link to="/" style={{ fontSize: '26px', fontWeight: '900', letterSpacing: '1px', color: '#FFEB3B', textDecoration: 'none', textShadow: '1px 1px 2px rgba(0,0,0,0.2)', lineHeight: '1', textAlign: 'center' }}>
+                🌿 N.E.F.E.S. AI
+              </Link>
+              {/* Navbar logoları (Resmi public klasörüne sponsors.png adıyla eklemelisin) */}
+              <img src="/sponsors.png" alt="Sponsorlar" style={{ width: '85%', height: 'auto', objectFit: 'contain', boxSizing: 'border-box' }} />
+            </div>
 
             {/* Orta — Panel Bağlantıları */}
             <div style={{ display: 'flex', gap: '25px', alignItems: 'center' }}>
@@ -214,6 +217,41 @@ function AppContent() {
           } />
 
         </Routes>
+
+        {/* ===== FOOTER ===== */}
+        <footer style={{
+          backgroundColor: '#1B5E20', // Navbardan bir tık daha koyu yeşil
+          color: '#E8F5E9',
+          padding: '20px 40px',
+          display: 'flex',
+          flexWrap: 'wrap', // Mobilde logolar ve yazılar alt alta geçebilsin diye
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: '20px', // Mobilde alt alta geçince araya boşluk koysun
+          marginTop: 'auto',
+          borderTop: '4px solid #4CAF50'
+        }}>
+          {/* Sol Taraf: Marka */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: '1 1 200px' }}>
+            <span style={{ fontSize: '24px' }}>🌿</span>
+            <div>
+              <h4 style={{ margin: '0 0 4px 0', fontSize: '16px', color: '#FFEB3B', letterSpacing: '0.5px' }}>N.E.F.E.S. AI</h4>
+              <p style={{ margin: 0, fontSize: '13px', opacity: 0.8 }}>Dijital Nefes Terapisi</p>
+            </div>
+          </div>
+          
+          {/* Orta Taraf: Sponsor Logoları (Footer boyunu büyütmeden max genişlik/yükseklikte) */}
+          <div style={{ flex: '1 1 300px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+            <img src="/footer-sponsors.png" alt="Footer Sponsorlar" style={{ width: '100%', maxWidth: '380px', maxHeight: '60px', objectFit: 'contain', backgroundColor: 'rgba(255,255,255,0.95)', padding: '6px 12px', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.2)' }} />
+          </div>
+
+          {/* Sağ Taraf: Telif Hakkı */}
+          <div style={{ fontSize: '13px', textAlign: 'right', opacity: 0.9, flex: '1 1 200px' }}>
+            &copy; {new Date().getFullYear()} Tüm Hakları Saklıdır.<br/>
+            <span style={{ fontSize: '11px', opacity: 0.7 }}>Destekleyen Kurumlar Ortadadır</span>
+          </div>
+        </footer>
+
       </div>
     </div>
   );

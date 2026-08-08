@@ -22,8 +22,8 @@ const SailboatGame = () => {
   useEffect(() => {
     blowIntensityRef.current = blowIntensity;
     
-    // Üfleme (Ekspirasyon) olduğu için mikrofon daha yüksek ses alır.
-    const currentDb = Math.min(Math.round((blowIntensity / 80) * 100), 100);
+    // Üfleme (Ekspirasyon) olduğu için mikrofon daha yüksek ses alır. Duyarlılık azaltıldı (Bölen 150)
+    const currentDb = Math.min(Math.round((blowIntensity / 150) * 100), 100);
     setDbPercentage(currentDb);
 
     if (currentDb > 5) {
@@ -61,13 +61,21 @@ const SailboatGame = () => {
     if (isListening) playAudioPrompt('start');
   }, [isListening]);
 
+  // HATA DÜZELTMESİ (Component unmount olunca sesi kes)
+  useEffect(() => {
+    return () => {
+      warningGiven.current = true;
+      window.speechSynthesis.cancel();
+    };
+  }, []);
+
   // Endurans Motoru (Yelkenli İlerletme)
   useEffect(() => {
     let gameLoop;
     
     if (isListening && !gameOver) {
       gameLoop = setInterval(() => {
-        const currentDb = Math.min(Math.round((blowIntensityRef.current / 80) * 100), 100);
+        const currentDb = Math.min(Math.round((blowIntensityRef.current / 150) * 100), 100);
 
         setBoatPosition((prev) => {
           let newPosition = prev;
@@ -127,6 +135,10 @@ const SailboatGame = () => {
   const handleFinishGame = async () => {
     stopListening();
     setGameOver(true);
+    
+    // HATA DÜZELTMESİ (Konuşmayı kesin keser)
+    warningGiven.current = true;
+    window.speechSynthesis.cancel();
 
     const progressData = {
       userId: "123e4567-e89b-12d3-a456-426614174000",

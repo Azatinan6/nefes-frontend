@@ -5,51 +5,60 @@ import axios from 'axios';
 const CrystalGame = () => {
   const { blowIntensity, isListening, startListening, stopListening } = useBreathSensor();
   
-  // Oyun ve Fizyolojik Durumlar
+  // --- Oyun Durumları ---
   const [gamePhase, setGamePhase] = useState('inhale'); // 'inhale' (nefes al), 'hold' (nefes tut), 'success' (kelebek kondu)
   const [crystalGlow, setCrystalGlow] = useState(0); // 0 ile 100 arası parlaklık
-  const [holdProgress, setHoldProgress] = useState(0); // 3 saniyelik nefes tutma süresi (0-100)
+  const [holdProgress, setHoldProgress] = useState(0); // Nefes tutma süresi (0-100)
   
   const [score, setScore] = useState(0);
   const [crystals, setCrystals] = useState(0);
   const [gameOver, setGameOver] = useState(false);
   const [dbPercentage, setDbPercentage] = useState(0);
+  const [promptMessage, setPromptMessage] = useState("Derin bir nefesle kristali doldur, sonra nefesini tut!");
 
-  const blowIntensityRef = useRef(0);
+  // --- Referanslar ---
+  const intensityRef = useRef(0);
   const phaseRef = useRef('inhale');
   const warningGiven = useRef(false);
+  const animationFrameId = useRef(null);
 
-  // Referansları güncel tutma
+  // Ses Şiddetini Hesapla (Gürültü filtreli)
   useEffect(() => {
-    blowIntensityRef.current = blowIntensity;
-    phaseRef.current = gamePhase;
+    intensityRef.current = blowIntensity;
     
-    // Desibel hesaplama (Max 100)
-    const currentDb = Math.min(Math.round((blowIntensity / 50) * 100), 100);
+    // Gürültü filtresi eklendi (Örn: klavye sesi)
+    const noiseThreshold = 30; 
+    let validIntensity = blowIntensity - noiseThreshold;
+    if (validIntensity < 0) validIntensity = 0;
+
+    // Nefes alma veya hafif üfleme
+    const currentDb = Math.min(Math.round((validIntensity / 100) * 100), 100);
     setDbPercentage(currentDb);
   }, [blowIntensity, gamePhase]);
 
-  // Sesli Yönlendirme (Nefes Tutma/Kontrol odaklı, pozitif destek)
+  // --- Sesli Yönlendirme ---
   const playAudioPrompt = (type) => {
     if (!warningGiven.current && !gameOver && isListening) {
       let message = "";
       if (type === 'start') {
-        message = "Derin bir nefes alarak kristali doldur, sonra kelebek için nefesini tut!";
+        message = "Derin bir nefes alarak kristali parlat, sonra sihirli kelebeğin gelmesi için nefesini tut!";
       } else if (type === 'hold_now') {
         message = "Harika! Şimdi nefesini tut ve hiç ses çıkarma, kelebek geliyor...";
       } else if (type === 'scared') {
-        message = "Kelebek sesten biraz ürktü, hadi tekrar kristali doldurup sessizce bekleyelim.";
+        message = "Ah! Sesten ürktü. Tekrar kristali parlatıp sessizce bekleyelim.";
       } else if (type === 'success') {
-        message = "Süper! Kelebek kondu. Nefesini harika kontrol ediyorsun!";
+        message = "Muhteşem! Kelebek kondu. Nefesini harika kontrol ediyorsun!";
       }
+
+      setPromptMessage(message);
 
       const speech = new SpeechSynthesisUtterance(message);
       speech.lang = 'tr-TR';
       speech.rate = 1.0;
       speech.pitch = 1.2;
       window.speechSynthesis.speak(speech);
-      warningGiven.current = true;
       
+      warningGiven.current = true;
       setTimeout(() => { warningGiven.current = false; }, 6000);
     }
   };
@@ -58,29 +67,39 @@ const CrystalGame = () => {
     if (isListening) playAudioPrompt('start');
   }, [isListening]);
 
-  // Nefes Kontrol ve Tutma Motoru (Inspiratuvar Hold)
+  // Component unmount olduğunda sesi kes
   useEffect(() => {
-    let gameLoop;
-    
-    if (isListening && !gameOver) {
-      gameLoop = setInterval(() => {
-        const currentDb = Math.min(Math.round((blowIntensityRef.current / 50) * 100), 100);
+    return () => {
+      window.speechSynthesis.cancel();
+    };
+  }, []);
 
-        // AŞAMA 1: NEFES AL VE KRİSTALİ DOLDUR
+  // --- Oyun Motoru ---
+  useEffect(() => {
+    if (isListening && !gameOver) {
+      const updateGame = () => {
+        const noiseThreshold = 30; 
+        let validIntensity = intensityRef.current - noiseThreshold;
+        if (validIntensity < 0) validIntensity = 0;
+        const currentDb = Math.min(Math.round((validIntensity / 100) * 100), 100);
+
+        // AŞAMA 1: NEFES AL VE KRİSTALİ PARLAT
         if (phaseRef.current === 'inhale') {
           setCrystalGlow((prev) => {
-            let newGlow = prev - 1; // Nefes alınmadığında kristal söner
+            let newGlow = prev - 0.5; // Nefes alınmadığında sönmeye başlar
             
-            // İdeal Nefes Alma (%5 - %30)
-            if (currentDb >= 5 && currentDb <= 30) {
-              newGlow = prev + 2; 
+            // Yeşil Alan: %5 - %50
+            if (currentDb >= 5 && currentDb <= 50) {
+              newGlow = prev + 1.5; 
+              setScore(s => s + 1);
             }
             
             if (newGlow <= 0) newGlow = 0;
             
-            // Kristal tamamen dolduğunda Nefes Tutma (Hold) aşamasına geç
+            // Tamamen Parladıysa:
             if (newGlow >= 100) {
               setGamePhase('hold');
+              phaseRef.current = 'hold';
               playAudioPrompt('hold_now');
               return 100;
             }
@@ -88,26 +107,24 @@ const CrystalGame = () => {
           });
         }
 
-        // AŞAMA 2: NEFESİNİ TUT (Sessizlik Beklentisi)
+        // AŞAMA 2: NEFESİNİ TUT (Sessizlik)
         else if (phaseRef.current === 'hold') {
-          // Nefes tutarken (sessizlikte) desibel çok düşük olmalı (< %8)
-          if (currentDb < 8) {
+          // Sessizlik Beklentisi: (Gürültü filtresinden sonra %0-25 arası tolerans)
+          if (currentDb <= 25) {
             setHoldProgress((prev) => {
-              const newProgress = prev + 3; // Yaklaşık 3 saniyede %100 olur (100ms * 30 = 3000ms)
+              const newProgress = prev + 0.5; // Yaklaşık 3.5 saniyede dolar (60fps * 0.5 = saniyede 30 birim)
               
-              // 3 Saniye Başarıyla Tutulduysa:
               if (newProgress >= 100) {
                 setGamePhase('success');
-                setScore((s) => {
-                  const newScore = s + 50;
-                  setCrystals(Math.floor(newScore / 200));
-                  return newScore;
-                });
+                phaseRef.current = 'success';
+                setScore(s => s + 50);
+                setCrystals(c => c + 1);
                 playAudioPrompt('success');
                 
-                // 4 saniye sonra yeni tur için sıfırla
+                // 4 saniye sonra yeni tur
                 setTimeout(() => {
                   setGamePhase('inhale');
+                  phaseRef.current = 'inhale';
                   setCrystalGlow(0);
                   setHoldProgress(0);
                 }, 4000);
@@ -117,28 +134,48 @@ const CrystalGame = () => {
               return newProgress;
             });
           } 
-          // ÇOCUK NEFESİNİ TUTAMAZ VEYA SES ÇIKARIRSA (Kelebek kaçar)
-          else if (currentDb >= 8) {
-            setGamePhase('inhale');
-            setCrystalGlow(50); // Ceza yok, sadece kristal biraz söner
-            setHoldProgress(0);
-            playAudioPrompt('scared'); // Olumsuz değil, motive edici uyarı
+          // Ses çıkarsa / nefes verirse
+          else if (currentDb > 25) {
+            setHoldProgress((prev) => {
+              const newProgress = prev - 1.5; // Ses yapınca kelebek hemen kaçmaz, yavaşça geriler (tolerans)
+              
+              if (newProgress <= 0) {
+                // Tamamen sıfırlanırsa başa döner
+                setGamePhase('inhale');
+                phaseRef.current = 'inhale';
+                setCrystalGlow(40); // Tamamen sönmez, oyuncuya şans tanır
+                
+                if (!warningGiven.current) {
+                  playAudioPrompt('scared'); 
+                }
+                return 0;
+              }
+              return newProgress;
+            });
           }
         }
 
-      }, 100); 
+        animationFrameId.current = requestAnimationFrame(updateGame);
+      };
+
+      animationFrameId.current = requestAnimationFrame(updateGame);
     }
 
-    return () => clearInterval(gameLoop);
+    return () => {
+      if (animationFrameId.current) cancelAnimationFrame(animationFrameId.current);
+    };
   }, [isListening, gameOver]);
 
+  // --- Oyunu Bitir ---
   const handleFinishGame = async () => {
     stopListening();
     setGameOver(true);
+    window.speechSynthesis.cancel();
+    setPromptMessage("Oyun Bitti! Nefesini harika kontrol ettin.");
 
     const progressData = {
       userId: "123e4567-e89b-12d3-a456-426614174000",
-      gameId: 4, // 4. Hafta Oyunu
+      gameId: 4, 
       score: score,
       breathCrystals: crystals,
       dbPerformance: dbPercentage
@@ -149,162 +186,186 @@ const CrystalGame = () => {
       alert(`Harika! ${crystals} Nefes Kristali Kazandın! 💎`);
     } catch (error) {
       console.error("Skor kaydedilirken hata:", error);
-      alert(`4. Bölüm Tamamlandı! Kazanılan Kristal: ${crystals} 💎`);
+      alert(`Oyun Tamamlandı! Kazanılan Kristal: ${crystals} 💎`);
     }
   };
 
-  // Yüksek Kontrast Teması (Karanlık Mağara ve Parlak Kristal)
-  const themeColors = { 
-    bg: '#121212', // Çok Koyu Gri/Siyah
-    text: '#E0F7FA', // Açık Camgöbeği
-    card: '#263238', 
-    border: '#00E5FF', // Parlak Turkuaz (Kristal Rengi)
-    butterfly: '#FFEA00' // Parlak Sarı (Yüksek Kontrast)
+  // --- TASARIM SİSTEMİ ---
+  const styles = {
+    container: {
+      position: 'relative', width: '100%', height: 'calc(100vh - 70px)',
+      background: 'radial-gradient(circle at center, #1E1E2C 0%, #0B0B10 100%)', // Mağara karanlığı
+      overflow: 'hidden', fontFamily: "'Segoe UI', Tahoma, sans-serif",
+      color: '#FFF', display: 'flex', flexDirection: 'column', alignItems: 'center',
+    },
+    glassCard: {
+      background: 'rgba(20, 20, 35, 0.6)',
+      backdropFilter: 'blur(10px)',
+      WebkitBackdropFilter: 'blur(10px)',
+      borderRadius: '24px',
+      border: '1px solid rgba(0, 229, 255, 0.3)',
+      boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.5)',
+    },
+    topPanel: {
+      position: 'absolute', top: '20px', width: '90%',
+      display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', zIndex: 10,
+    },
+    statBox: {
+      padding: '15px 25px', display: 'flex', flexDirection: 'column', alignItems: 'center',
+    },
+    sceneContainer: {
+      position: 'absolute', top: '55%', left: '50%',
+      transform: 'translate(-50%, -50%)', width: '100%', height: '100%',
+      display: 'flex', justifyContent: 'center', alignItems: 'center', pointerEvents: 'none',
+    },
+    aiCoach: {
+      position: 'absolute', bottom: '30px', left: '30px',
+      display: 'flex', alignItems: 'flex-end', gap: '15px', zIndex: 10,
+    },
+    coachAvatar: {
+      width: '100px', height: '100px', backgroundColor: '#FFF',
+      borderRadius: '50%', display: 'flex', justifyContent: 'center', alignItems: 'center',
+      fontSize: '50px', boxShadow: '0 10px 25px rgba(0, 229, 255, 0.3)', border: '4px solid #00E5FF',
+    },
+    chatBubble: {
+      marginBottom: '30px', padding: '15px 25px', backgroundColor: 'rgba(255,255,255,0.95)',
+      borderRadius: '20px 20px 20px 0', boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
+      maxWidth: '350px', fontWeight: '600', color: '#111', fontSize: '16px', lineHeight: '1.5',
+    },
+    btnStart: {
+      padding: '12px 30px', fontSize: '16px', fontWeight: 'bold', color: '#000',
+      background: 'linear-gradient(45deg, #00E5FF 0%, #00B0FF 100%)',
+      border: 'none', borderRadius: '12px', cursor: 'pointer',
+      boxShadow: '0 4px 15px rgba(0, 229, 255, 0.4)', marginTop: '10px', transition: 'transform 0.2s',
+    },
+    btnStop: {
+      padding: '12px 30px', fontSize: '16px', fontWeight: 'bold', color: '#fff',
+      background: 'linear-gradient(45deg, #FF1744 0%, #D50000 100%)',
+      border: 'none', borderRadius: '12px', cursor: 'pointer',
+      boxShadow: '0 4px 15px rgba(255, 23, 68, 0.4)', marginTop: '10px', transition: 'transform 0.2s',
+    }
   };
 
   return (
-    <div style={{
-      position: 'relative', width: '100%', height: 'calc(100vh - 70px)',
-      backgroundColor: themeColors.bg, overflow: 'hidden', fontFamily: 'sans-serif',
-      color: themeColors.text
-    }}>
+    <div style={styles.container}>
       
-      {/* 1. ÜST PANEL: Yüksek Kontrastlı Bilgi Kartı */}
-      <div style={{
-        position: 'absolute', top: '20px', right: '30px', left: '30px',
-        display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', zIndex: 100
-      }}>
+      {/* 1. ÜST PANEL */}
+      <div style={styles.topPanel}>
         
-        {/* Desibel Performans Göstergesi */}
-        <div style={{
-          backgroundColor: themeColors.card, padding: '15px 25px', borderRadius: '16px',
-          border: `3px solid ${themeColors.border}`, boxShadow: '0 8px 20px rgba(0,229,255,0.2)',
-          display: 'flex', flexDirection: 'column', alignItems: 'center'
-        }}>
-          <h3 style={{ margin: '0 0 10px 0', fontSize: '18px', color: '#FFF' }}>🎙️ Nefes Sesi</h3>
-          <div style={{ width: '200px', height: '20px', backgroundColor: '#000', borderRadius: '10px', overflow: 'hidden', position: 'relative' }}>
+        {/* Nefes Sesi Göstergesi */}
+        <div style={{ ...styles.glassCard, ...styles.statBox }}>
+          <h3 style={{ margin: '0 0 10px 0', fontSize: '16px', color: '#00E5FF' }}>🎙️ Nefes Kontrolü</h3>
+          <div style={{ width: '200px', height: '16px', backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '8px', overflow: 'hidden', position: 'relative' }}>
             
-            {/* Dinamik Hedef Göstergesi: 'inhale' aşamasında nefes alma alanı (%5-%30) yeşil, 'hold' aşamasında sessizlik alanı (%0-%8) yeşil */}
+            {/* Hedef Göstergeleri: 'inhale' için Mavi alan, 'hold' için Sarı sessizlik alanı */}
             {gamePhase === 'inhale' ? (
-              <div style={{ position: 'absolute', left: '5%', width: '25%', height: '100%', backgroundColor: 'rgba(0, 229, 255, 0.4)', zIndex: 1 }} />
+              <div style={{ position: 'absolute', left: '5%', width: '45%', height: '100%', backgroundColor: 'rgba(0, 229, 255, 0.3)', zIndex: 1 }} />
             ) : (
-              <div style={{ position: 'absolute', left: '0%', width: '8%', height: '100%', backgroundColor: 'rgba(255, 234, 0, 0.6)', zIndex: 1 }} />
+              <div style={{ position: 'absolute', left: '0%', width: '5%', height: '100%', backgroundColor: 'rgba(255, 234, 0, 0.5)', zIndex: 1 }} />
             )}
             
             <div style={{ 
               width: `${dbPercentage}%`, height: '100%', 
-              backgroundColor: dbPercentage > 30 ? '#FF1744' : themeColors.border, 
-              transition: 'width 0.1s linear', zIndex: 2, position: 'relative'
+              backgroundColor: dbPercentage > 50 ? '#FF1744' : '#00E5FF', 
+              transition: 'width 0.1s linear, background-color 0.3s', zIndex: 2, position: 'relative',
+              borderRadius: '8px'
             }} />
           </div>
-          <span style={{ marginTop: '5px', fontWeight: 'bold', color: '#FFF' }}>
-            {gamePhase === 'hold' ? '🤫 Sessiz Ol...' : `%{dbPercentage}`}
+          <span style={{ marginTop: '8px', fontWeight: 'bold', color: '#FFF' }}>
+            {gamePhase === 'hold' ? '🤫 Sessiz Ol...' : `%${dbPercentage}`}
           </span>
         </div>
 
-        {/* Skor ve Kristal */}
-        <div style={{
-          backgroundColor: themeColors.card, padding: '15px 30px', borderRadius: '16px',
-          border: `3px solid ${themeColors.border}`, boxShadow: '0 8px 20px rgba(0,229,255,0.2)',
-          display: 'flex', flexDirection: 'column', alignItems: 'flex-end'
-        }}>
-          <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '900', color: themeColors.border }}>💎 4. Bölüm: Kristal Mağara</h2>
-          <div style={{ fontSize: '20px', fontWeight: 'bold', marginTop: '5px', color: '#FFF' }}>
-            Skor: {score} | 💎 Kristal: {crystals}
+        {/* Skor Paneli */}
+        <div style={{ ...styles.glassCard, ...styles.statBox, alignItems: 'flex-end' }}>
+          <h2 style={{ margin: 0, fontSize: '22px', fontWeight: '800', color: '#00E5FF', textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>💎 4. Bölüm: Kristal Mağara</h2>
+          <div style={{ fontSize: '18px', fontWeight: '600', marginTop: '5px', color: '#E0F7FA' }}>
+            Skor: {Math.floor(score)} | 💎 Kristal: {crystals}
           </div>
           
           {!isListening ? (
-            <button onClick={startListening} style={{...btnStyle, backgroundColor: '#00E5FF', color: '#000', marginTop: '15px'}}>▶️ BAŞLA</button>
+            <button onClick={startListening} style={styles.btnStart} onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'} onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}>
+              ▶️ BAŞLA
+            </button>
           ) : (
-            <button onClick={handleFinishGame} style={{...btnStyle, backgroundColor: '#FF1744', color: '#FFF', marginTop: '15px'}}>⏹️ BİTİR</button>
+            <button onClick={handleFinishGame} style={styles.btnStop} onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'} onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}>
+              ⏹️ BİTİR
+            </button>
           )}
         </div>
       </div>
 
-      {/* 2. OYUN ALANI: Parlayan Kristal ve Kelebek */}
-      <div style={{
-        position: 'absolute', top: '55%', left: '50%',
-        transform: 'translate(-50%, -50%)',
-        display: 'flex', flexDirection: 'column', alignItems: 'center'
-      }}>
+      {/* 2. OYUN ALANI */}
+      <div style={styles.sceneContainer}>
         
+        {/* Parlayan Kristal */}
         <div style={{ position: 'relative', width: '200px', height: '200px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
           
-          {/* Kristal Emojisi (Nefes aldıkça parlar) */}
+          {/* Kristal Arkası Aura */}
+          <div style={{
+            position: 'absolute', width: '150px', height: '150px', borderRadius: '50%',
+            background: `radial-gradient(circle, rgba(0, 229, 255, ${crystalGlow / 100}) 0%, rgba(0,0,0,0) 70%)`,
+            transform: `scale(${1 + (crystalGlow / 50)})`,
+            transition: 'all 0.1s linear', zIndex: 1
+          }} />
+
+          {/* Kristal İkonu */}
           <div style={{ 
-            fontSize: '150px', 
-            zIndex: 2,
-            filter: `drop-shadow(0px 0px ${crystalGlow / 2}px rgba(0, 229, 255, ${crystalGlow / 100}))`,
-            transform: `scale(${1 + (crystalGlow / 500)})`,
-            transition: 'all 0.2s ease'
+            fontSize: '120px', zIndex: 2,
+            filter: `drop-shadow(0px 0px ${crystalGlow / 3}px rgba(0, 229, 255, 1))`,
+            transform: `scale(${1 + (crystalGlow / 200)})`,
+            transition: 'all 0.2s ease',
+            animation: gamePhase === 'success' ? 'pulse 1s infinite' : 'none'
           }}>
             💎
           </div>
 
-          {/* Kelebek (Nefes tutuldukça kristale yaklaşır) */}
+          {/* Sihirli Kelebek */}
           <div style={{
-            position: 'absolute',
-            fontSize: '80px',
-            zIndex: 3,
-            // Nefes alırken uzakta uçar, nefes tutarken kristale yaklaşır, success olunca tam kristalin üstüne konar
-            top: gamePhase === 'success' ? '-40px' : '-150px',
-            left: gamePhase === 'success' ? '50px' : `${150 - holdProgress}px`,
-            opacity: gamePhase === 'inhale' ? 0.5 : 1,
-            transform: gamePhase === 'success' ? 'scale(1)' : `scale(${0.5 + (holdProgress/200)}) rotate(${Math.sin(Date.now() / 100) * 15}deg)`,
+            position: 'absolute', fontSize: '80px', zIndex: 3,
+            top: gamePhase === 'success' ? '-20px' : '-200px',
+            left: gamePhase === 'success' ? '40px' : `${200 - holdProgress * 2}px`,
+            opacity: gamePhase === 'inhale' ? 0.3 : 1,
+            transform: gamePhase === 'success' ? 'scale(1)' : `scale(${0.5 + (holdProgress/200)}) rotate(${Math.sin(Date.now() / 200) * 20}deg)`,
             transition: 'all 0.3s ease-out',
-            filter: 'drop-shadow(0px 5px 10px rgba(255, 234, 0, 0.5))'
+            filter: 'drop-shadow(0px 5px 15px rgba(255, 234, 0, 0.8))'
           }}>
             🦋
           </div>
-
         </div>
         
-        {/* Nefes Tutma Çubuğu (Sadece 'hold' aşamasında görünür) */}
+        {/* Nefes Tutma (Sessizlik) Çubuğu */}
         {gamePhase === 'hold' && (
-          <div style={{ marginTop: '40px', width: '300px', height: '15px', backgroundColor: '#424242', borderRadius: '10px', overflow: 'hidden', border: '2px solid #FFEA00' }}>
-            <div style={{ width: `${holdProgress}%`, height: '100%', backgroundColor: '#FFEA00', transition: 'width 0.1s linear' }} />
+          <div style={{ position: 'absolute', bottom: '25%', width: '300px', height: '15px', backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: '10px', overflow: 'hidden', border: '2px solid #FFEA00', boxShadow: '0 0 10px rgba(255,234,0,0.5)' }}>
+            <div style={{ width: `${holdProgress}%`, height: '100%', backgroundColor: '#FFEA00', transition: 'width 0.1s linear', boxShadow: '0 0 10px #FFEA00' }} />
           </div>
         )}
-        
       </div>
 
-      {/* 3. AI EĞİTMEN KARAKTERİ (Yanda Bekleyen Çocuk Avatarı) */}
-      <div style={{
-        position: 'absolute', bottom: '30px', left: '40px',
-        display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 100
-      }}>
-        <div style={{
-          width: '120px', height: '120px', backgroundColor: '#FFF', borderRadius: '50%',
-          border: `4px solid ${themeColors.border}`, display: 'flex', justifyContent: 'center',
-          alignItems: 'center', fontSize: '60px', boxShadow: '0 10px 20px rgba(0,0,0,0.8)',
-        }}>
-          👧🏻
+      {/* 3. AI EĞİTMEN KARAKTERİ */}
+      <div style={styles.aiCoach}>
+        <div style={styles.coachAvatar}>
+          🧚‍♀️ {/* Peri Kızı konsepti */}
         </div>
         
-        {/* Karakterin Konuşma Balonu */}
-        {isListening && (
-          <div style={{
-            marginTop: '15px', backgroundColor: '#FFF', color: '#000', padding: '10px 20px',
-            borderRadius: '20px', fontWeight: 'bold', fontSize: '16px', boxShadow: '0 5px 15px rgba(0,0,0,0.5)',
-            maxWidth: '250px', textAlign: 'center'
-          }}>
-            💬 {
-              gamePhase === 'inhale' ? 'Kristali doldurmak için nefes al...' : 
-              gamePhase === 'hold' ? 'Harika! Şimdi nefesini tut (Sessiz ol).' : 
-              'Süper! Kelebek kondu.'
-            }
-          </div>
-        )}
+        <div style={styles.chatBubble}>
+          {promptMessage}
+        </div>
       </div>
+
+      {/* CSS Animasyonları */}
+      <style>
+        {`
+          @keyframes pulse {
+            0% { transform: scale(1.5); filter: drop-shadow(0px 0px 50px rgba(0, 229, 255, 1)); }
+            50% { transform: scale(1.6); filter: drop-shadow(0px 0px 80px rgba(0, 229, 255, 1)); }
+            100% { transform: scale(1.5); filter: drop-shadow(0px 0px 50px rgba(0, 229, 255, 1)); }
+          }
+        `}
+      </style>
 
     </div>
   );
-};
-
-const btnStyle = { 
-  padding: '12px 24px', fontSize: '18px', border: 'none', 
-  borderRadius: '12px', cursor: 'pointer', fontWeight: '900', width: '100%',
-  textTransform: 'uppercase', boxShadow: '0 5px 10px rgba(0,0,0,0.5)'
 };
 
 export default CrystalGame;

@@ -22,8 +22,13 @@ const RocketGame = () => {
   useEffect(() => {
     blowIntensityRef.current = blowIntensity;
     
-    // Güçlü ekspirasyon (PEF) hedeflediğimiz için maksimum sınır biraz daha yüksek (100 üzerinden)
-    const currentDb = Math.min(Math.round((blowIntensity / 100) * 100), 100);
+    // Gürültü Filtresi: Arka plan seslerini ve klavye tıkırtılarını yok sayar
+    const noiseThreshold = 30; 
+    let validIntensity = blowIntensity - noiseThreshold;
+    if (validIntensity < 0) validIntensity = 0;
+
+    // Roketin daha dengeli havalanması için
+    const currentDb = Math.min(Math.round((validIntensity / 100) * 100), 100);
     setDbPercentage(currentDb);
 
     if (currentDb > 10) {
@@ -59,21 +64,33 @@ const RocketGame = () => {
     if (isListening) playAudioPrompt('start');
   }, [isListening]);
 
+  // HATA DÜZELTMESİ (Component unmount olunca sesi kes)
+  useEffect(() => {
+    return () => {
+      warningGiven.current = true;
+      window.speechSynthesis.cancel();
+    };
+  }, []);
+
   // Güç Üretme Motoru (PEF / Roket Fırlatma)
   useEffect(() => {
     let gameLoop;
     
     if (isListening && !gameOver) {
       gameLoop = setInterval(() => {
-        const currentDb = Math.min(Math.round((blowIntensityRef.current / 100) * 100), 100);
+        const noiseThreshold = 30; 
+        let validIntensity = blowIntensityRef.current - noiseThreshold;
+        if (validIntensity < 0) validIntensity = 0;
+
+        const currentDb = Math.min(Math.round((validIntensity / 100) * 100), 100);
 
         setRocketHeight((prev) => {
           let newHeight = prev;
           
-          // GÜÇLÜ ÜFLEME BEKLENTİSİ: Tek nefeste fırlatma (%50 ve üzeri desibel roket havalandırır)
-          if (currentDb > 40) {
-            // Şiddete göre roket hızla yükselir (Maksimum güçte 1-2 saniyede 100'e ulaşır)
-            newHeight += (currentDb / 10); 
+          // GÜÇLÜ ÜFLEME BEKLENTİSİ: Tek nefeste fırlatma (%20 ve üzeri desibel roket havalandırır)
+          if (currentDb > 20) {
+            // Şiddete göre roket 2 kat daha hızlı yükselir
+            newHeight += (currentDb / 5); 
             peakReached.current = false;
           } 
           // ÜFLEME BİTTİ (Yerçekimi roketi aşağı çeker)
@@ -97,7 +114,7 @@ const RocketGame = () => {
           }
 
           // Kısmi Yükselme Puanı (Yukarı çıktıkça minik puanlar alır)
-          if (newHeight > prev && currentDb > 40) {
+          if (newHeight > prev && currentDb > 20) {
             setScore((s) => s + 1);
           }
 
@@ -118,6 +135,10 @@ const RocketGame = () => {
   const handleFinishGame = async () => {
     stopListening();
     setGameOver(true);
+    
+    // HATA DÜZELTMESİ (Konuşmayı kesin keser)
+    warningGiven.current = true;
+    window.speechSynthesis.cancel();
 
     const progressData = {
       userId: "123e4567-e89b-12d3-a456-426614174000",
@@ -181,12 +202,12 @@ const RocketGame = () => {
           <h3 style={{ margin: '0 0 10px 0', fontSize: '18px', color: themeColors.border }}>🎙️ Patlama Gücü</h3>
           <div style={{ width: '200px', height: '20px', backgroundColor: '#000', borderRadius: '10px', overflow: 'hidden', position: 'relative' }}>
             
-            {/* İdeal Güçlü Üfleme Aralığı (Ters mantık: %60 ve üzeri yeşil alan) */}
-            <div style={{ position: 'absolute', left: '60%', width: '40%', height: '100%', backgroundColor: 'rgba(0, 230, 118, 0.4)', zIndex: 1 }} />
+            {/* İdeal Güçlü Üfleme Aralığı (Ters mantık: %20 ve üzeri yeşil alan) */}
+            <div style={{ position: 'absolute', left: '20%', width: '80%', height: '100%', backgroundColor: 'rgba(0, 230, 118, 0.4)', zIndex: 1 }} />
             
             <div style={{ 
               width: `${dbPercentage}%`, height: '100%', 
-              backgroundColor: dbPercentage > 60 ? '#00E676' : '#FF9100', // Yüksek güç isteniyor
+              backgroundColor: dbPercentage > 20 ? '#00E676' : '#FF9100', // Yüksek güç isteniyor
               transition: 'width 0.1s linear', zIndex: 2, position: 'relative'
             }} />
           </div>
@@ -229,7 +250,7 @@ const RocketGame = () => {
         }}>
           🚀
           {/* Ateş Efekti (Sadece güçlü üflerken çıkar) */}
-          {dbPercentage > 40 && (
+          {dbPercentage > 20 && (
             <div style={{ position: 'absolute', bottom: '-40px', left: '50%', transform: 'translateX(-50%)', fontSize: '60px', animation: 'fire 0.2s infinite alternate' }}>
               🔥
             </div>
@@ -270,7 +291,7 @@ const RocketGame = () => {
           }}>
             💬 {
               rocketHeight > 90 ? 'Mükemmel! Uzaya çıktık!' : 
-              dbPercentage > 40 ? 'Daha güçlü, devam et!' : 
+              dbPercentage > 20 ? 'Daha güçlü, devam et!' : 
               'Tüm gücünle tek seferde üfle!'
             }
           </div>

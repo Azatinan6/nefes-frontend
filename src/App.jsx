@@ -1,16 +1,22 @@
-import BreathTest from './pages/BreathTest';
-import BalloonGame from './pages/BalloonGame';
-import ForestMenu from './pages/ForestMenu';
-import FlowerGame from './pages/FlowerGame';
-import SailboatGame from './pages/SailboatGame';
-import RocketGame from './pages/RocketGames';
-import CalmBreathGame from './pages/CalmBreathGame';
-import BalanceGame from './pages/BalanceGame';
-import CrystalGame from './pages/CrystalGame';
-import FamilyAIReport from './pages/FamilyAIReport';
-import LandingPage from './pages/LandingPage';
-import PhysiotherapistPanel from './pages/PhysiotherapistPanel';
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+
+// Temel Sayfalar ve Paneller
+import LandingPage from './pages/LandingPage';
+import ForestMenu from './pages/ForestMenu';
+import PhysiotherapistPanel from './pages/PhysiotherapistPanel';
+import FamilyAIReport from './pages/FamilyAIReport';
+import BreathTest from './pages/BreathTest';
+
+// 8 Haftalık DTx Oyunları
+import AwarenessGame from './pages/AwarenessGame';
+import FrogGame from './pages/FrogGame';
+import RainbowGame from './pages/RainbowGame';
+import CrystalGame from './pages/CrystalGame';
+import SailboatGame from './pages/SailboatGame';
+import RocketGame from './pages/RocketGames'; // Eğer dosya adın RocketGames.jsx kaldıysa burayı RocketGames olarak güncelle
+import BalanceGame from './pages/BalanceGame';
+import FinalAdventureGame from './pages/FinalAdventureGame';
 
 function App() {
   return (
@@ -31,7 +37,7 @@ function App() {
         }}>
           {/* Sol Taraf - Logo */}
           <Link to="/" style={{ fontSize: '26px', fontWeight: '900', letterSpacing: '1px', color: '#FFEB3B', textDecoration: 'none', textShadow: '1px 1px 2px rgba(0,0,0,0.2)' }}>
-            🌿 N.E.F.E.S. AI
+            🌿 N.E.F.E.S. Rehab
           </Link>
 
           {/* Orta - Tüm Sayfalar ve Paneller Bir Arada */}
@@ -52,21 +58,22 @@ function App() {
         {/* Alt Kısım (Sayfa İçerikleri) */}
         <div style={{ flex: 1, position: 'relative', overflow: 'auto' }}>
           <Routes>
+            {/* Temel Paneller */}
             <Route path="/" element={<LandingPage />} />
             <Route path="/cocuk-paneli" element={<ForestMenu />} />
-            
-            {/* HATA BURADAYDI: Geçici div silindi, asıl panel eklendi */}
             <Route path="/fizyoterapist" element={<PhysiotherapistPanel />} />
-            
+            <Route path="/aile-paneli" element={<FamilyAIReport />} /> 
             <Route path="/test" element={<BreathTest />} />
-            <Route path="/oyun/balon" element={<BalloonGame />} />
-            <Route path="/oyun/cicek" element={<FlowerGame />} />
-            <Route path='/oyun/yelkenli' element={<SailboatGame />} />
-            <Route path='/oyun/roket' element={<RocketGame />} /> 
-            <Route path='/oyun/huzur' element={<CalmBreathGame />} /> 
-            <Route path='/oyun/denge' element={<BalanceGame />} /> 
-            <Route path='/oyun/enerji' element={<CrystalGame />} /> 
-            <Route path='/aile-paneli' element={<FamilyAIReport />} /> 
+
+            {/* 8 Haftalık Nefes Kahramanı Oyun Rotası (ForestMenu ile eşleştirildi) */}
+            <Route path="/oyun/hafta-1-fark-et" element={<AwarenessGame />} />
+            <Route path="/oyun/hafta-2-hisset" element={<FrogGame />} />
+            <Route path="/oyun/hafta-3-hareket-ettir" element={<RainbowGame />} />
+            <Route path="/oyun/hafta-4-kontrol-et" element={<CrystalGame />} />
+            <Route path="/oyun/hafta-5-surdur" element={<SailboatGame />} />
+            <Route path="/oyun/hafta-6-guc-uret" element={<RocketGame />} /> 
+            <Route path="/oyun/hafta-7-birlestir" element={<BalanceGame />} /> 
+            <Route path="/oyun/hafta-8-aktar" element={<FinalAdventureGame />} /> 
           </Routes>
         </div>
       </div>

@@ -2,11 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import useBreathSensor from '../components/useBreathSensor';
 import axios from 'axios';
 
-const FlowerGame = () => {
+const RainbowGame = () => {
   const { blowIntensity, isListening, startListening, stopListening } = useBreathSensor();
   
   // Oyun ve Fizyolojik Durumlar
-  const [progress, setProgress] = useState(0); // 0 (Karanlık) ile 100 (Açık Gökyüzü ve Gökkuşağı) arası
+  const [progress, setProgress] = useState(0); // 0 (Bulutlu) ile 100 (Açık Gökyüzü ve Gökkuşağı)
   const [score, setScore] = useState(0);
   const [crystals, setCrystals] = useState(0);
   const [gameOver, setGameOver] = useState(false);
@@ -20,7 +20,7 @@ const FlowerGame = () => {
   useEffect(() => {
     blowIntensityRef.current = blowIntensity;
     
-    // Desibel hesaplama (Max 100)
+    // Desibel hesaplama (Max 100). Göğüs açarak alınan derin nefes sabit bir hışırtı üretir.
     const currentDb = Math.min(Math.round((blowIntensity / 50) * 100), 100);
     setDbPercentage(currentDb);
 
@@ -30,16 +30,18 @@ const FlowerGame = () => {
     }
   }, [blowIntensity]);
 
-  // Sesli Yönlendirme (Sadece pozitif destek ve torakal mobilite yönlendirmesi)
+  // Sesli Yönlendirme (Torakal mobiliteye özel, pozitif destek)
   const playAudioPrompt = (type) => {
     if (!warningGiven.current && !gameOver && isListening) {
       let message = "";
-      if (type === 'encourage') {
-        message = "Kollarını iki yana kocaman aç ve derin bir nefes al!";
+      if (type === 'start') {
+        message = "Kollarını iki yana kocaman aç ve göğsünü açarak derin bir nefes al!";
+      } else if (type === 'encourage') {
+        message = "Çok iyi! Göğsünü açmaya ve gökkuşağını büyütmeye devam et.";
       } else if (type === 'calm_down') {
-        message = "Çok güçlüsün! Gökkuşağı için daha yavaş nefes almalıyız.";
+        message = "Çok güçlüsün! Bulutları dağıtmak için nefesimizi yavaşça içimize çekelim.";
       } else if (type === 'success') {
-        message = "Harika, bulutlar dağılıyor! Böyle devam et.";
+        message = "Harika, gökyüzü pırıl pırıl oldu!";
       }
 
       const speech = new SpeechSynthesisUtterance(message);
@@ -54,29 +56,45 @@ const FlowerGame = () => {
     }
   };
 
-  // Torakal Mobilite Motoru (Gökkuşağı Büyütme)
+  // Oyun başladığında ilk yönlendirmeyi yap
+  useEffect(() => {
+    if (isListening) {
+      playAudioPrompt('start');
+    }
+  }, [isListening]);
+
+  // Torakal Mobilite Motoru (Gökkuşağı ve Bulutlar)
   useEffect(() => {
     let gameLoop;
     
     if (isListening && !gameOver) {
       gameLoop = setInterval(() => {
         setProgress((prev) => {
-          let newProgress = prev - 0.3; // Nefes alınmadığında bulutlar yavaşça kapanır
+          let newProgress = prev - 0.5; // Nefes alınmadığında bulutlar yavaşça kapanır
           const currentDb = Math.min(Math.round((blowIntensityRef.current / 50) * 100), 100);
           
-          // İDEAL NEFES ALMA: Göğsü açacak yavaş ve derin nefes (%5 - %30 arası)
+          // İDEAL NEFES: Toraks ekspansiyonu için yavaş ve derin nefes (%5 - %30 arası)
           if (currentDb >= 5 && currentDb <= 30) {
-            newProgress = prev + 1.2; // Bulutlar açılır, gökkuşağı büyür
+            newProgress = prev + 1.5; // Bulutlar açılır, gökkuşağı belirir
           } 
-          // ÇOK SESLİ: Hızlı/Sert çekilen veya üflenen nefes
+          // ÇOK SESLİ: Hızlı üfleme veya bağırma
           else if (currentDb > 30) {
+            newProgress = prev - 0.2; // Gelişim durur
             playAudioPrompt('calm_down');
           }
 
-          if (newProgress >= 100) newProgress = 100;
+          if (newProgress >= 100) {
+            // Tamamen açıldığında ekstra bonus ver
+            setScore((prevScore) => {
+              const newScore = prevScore + 5;
+              setCrystals(Math.floor(newScore / 200));
+              return newScore;
+            });
+            return 100;
+          }
           if (newProgress <= 0) newProgress = 0;
 
-          // Puanlama ve Geri Bildirim
+          // Düzenli nefes ve hareket puanı
           if (newProgress > 20 && currentDb >= 5 && currentDb <= 30) {
             setScore((prevScore) => {
               const newScore = prevScore + 1;
@@ -88,12 +106,12 @@ const FlowerGame = () => {
           return newProgress;
         });
 
-        // 4.5 Saniye boyunca nefes yoksa kollarını açıp nefes almasını iste
-        if (Date.now() - lastBreathTime.current > 4500) {
+        // 4 Saniye boyunca nefes/ses yoksa teşvik edici prompt ver
+        if (Date.now() - lastBreathTime.current > 4000) {
           playAudioPrompt('encourage');
-        } 
-        // Gelişimi fark edip motive etme
-        else if (progress > 40 && progress < 45 && !warningGiven.current) {
+        }
+        // Gökkuşağı tam açılmaya yaklaştığında başarı mesajı
+        else if (progress > 85 && progress < 90 && !warningGiven.current) {
           playAudioPrompt('success');
         }
 
@@ -124,10 +142,10 @@ const FlowerGame = () => {
     }
   };
 
-  // Dinamik Arka Plan Rengi: İlerlemeye göre koyu griden parlak maviye geçer
+  // İlerlemeye göre dinamik arka plan (Karanlık griden parlak maviye)
   const skyColor = progress > 50 
-    ? `rgba(41, 182, 246, ${progress / 100})`  // Aydınlık Gökyüzü
-    : `rgba(38, 50, 56, ${1 - (progress / 100)})`; // Karanlık/Bulutlu
+    ? `rgba(2, 136, 209, ${progress / 100})`  // Parlak Mavi
+    : `rgba(38, 50, 56, ${1 - (progress / 100)})`; // Koyu Gri/Bulutlu
 
   return (
     <div style={{
@@ -142,45 +160,46 @@ const FlowerGame = () => {
         display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', zIndex: 100
       }}>
         
-        {/* Desibel Performans Göstergesi */}
+        {/* Desibel Performans Göstergesi (Derin Nefes Hassasiyeti) */}
         <div style={{
-          backgroundColor: '#37474F', padding: '15px 25px', borderRadius: '16px',
-          border: '3px solid #FFC107', boxShadow: '0 8px 20px rgba(0,0,0,0.5)',
+          backgroundColor: '#263238', padding: '15px 25px', borderRadius: '16px',
+          border: '3px solid #FFEB3B', boxShadow: '0 8px 20px rgba(255,235,59,0.3)',
           display: 'flex', flexDirection: 'column', alignItems: 'center'
         }}>
-          <h3 style={{ margin: '0 0 10px 0', fontSize: '18px', color: '#FFD54F' }}>🎙️ Nefes Sesi</h3>
+          <h3 style={{ margin: '0 0 10px 0', fontSize: '18px', color: '#FFF' }}>🎙️ Nefes Sesi</h3>
           <div style={{ width: '200px', height: '20px', backgroundColor: '#000', borderRadius: '10px', overflow: 'hidden', position: 'relative' }}>
-            {/* İdeal Nefes Alma Aralığı (%5 - %30) */}
-            <div style={{ position: 'absolute', left: '5%', width: '25%', height: '100%', backgroundColor: 'rgba(0, 230, 118, 0.4)', zIndex: 1 }} />
+            {/* İdeal Torakal Nefes Aralığı (%5 - %30) */}
+            <div style={{ position: 'absolute', left: '5%', width: '25%', height: '100%', backgroundColor: 'rgba(255, 235, 59, 0.4)', zIndex: 1 }} />
+            
             <div style={{ 
               width: `${dbPercentage}%`, height: '100%', 
-              backgroundColor: dbPercentage > 30 ? '#FF1744' : '#00E676', 
+              backgroundColor: dbPercentage > 30 ? '#FF1744' : '#FFEB3B', 
               transition: 'width 0.1s linear', zIndex: 2, position: 'relative'
             }} />
           </div>
-          <span style={{ marginTop: '5px', fontWeight: 'bold', color: '#FFD54F' }}>%{dbPercentage}</span>
+          <span style={{ marginTop: '5px', fontWeight: 'bold', color: '#FFF' }}>%{dbPercentage}</span>
         </div>
 
         {/* Skor ve Kristal */}
         <div style={{
-          backgroundColor: '#37474F', padding: '15px 30px', borderRadius: '16px',
-          border: '3px solid #FFC107', boxShadow: '0 8px 20px rgba(0,0,0,0.5)',
+          backgroundColor: '#263238', padding: '15px 30px', borderRadius: '16px',
+          border: '3px solid #FFEB3B', boxShadow: '0 8px 20px rgba(255,235,59,0.3)',
           display: 'flex', flexDirection: 'column', alignItems: 'flex-end'
         }}>
-          <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '900', color: '#FFD54F' }}>🌈 3. Bölüm: Göğsümü Açıyorum</h2>
+          <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '900', color: '#FFEB3B' }}>🌈 3. Bölüm: Göğsümü Açıyorum</h2>
           <div style={{ fontSize: '20px', fontWeight: 'bold', marginTop: '5px', color: '#FFF' }}>
             Skor: {score} | 💎 Kristal: {crystals}
           </div>
           
           {!isListening ? (
-            <button onClick={startListening} style={{...btnStyle, backgroundColor: '#00E676', color: '#000', marginTop: '15px'}}>▶️ BAŞLA</button>
+            <button onClick={startListening} style={{...btnStyle, backgroundColor: '#FFEB3B', color: '#000', marginTop: '15px'}}>▶️ BAŞLA</button>
           ) : (
             <button onClick={handleFinishGame} style={{...btnStyle, backgroundColor: '#FF1744', color: '#FFF', marginTop: '15px'}}>⏹️ BİTİR</button>
           )}
         </div>
       </div>
 
-      {/* 2. OYUN ALANI (Bulutlar ve Gökkuşağı) */}
+      {/* 2. OYUN ALANI: Bulutlar ve Gökkuşağı */}
       <div style={{
         position: 'absolute', top: '50%', left: '50%',
         transform: 'translate(-50%, -50%)', width: '100%', height: '100%',
@@ -190,33 +209,33 @@ const FlowerGame = () => {
         {/* Gökkuşağı (Nefes aldıkça büyür ve belirginleşir) */}
         <div style={{
           position: 'absolute',
-          fontSize: '300px',
-          opacity: Math.max(progress / 100, 0.1), // Tamamen kaybolmaz, hafifçe silüeti kalır
-          transform: `scale(${0.5 + (progress / 200)}) translateY(${30 - (progress * 0.3)}px)`, // Aşağıdan yukarıya doğru yükselerek büyür
+          fontSize: '250px',
+          opacity: Math.max(progress / 100, 0), // Tamamen gizliden görünürlüğe geçer
+          transform: `scale(${0.2 + (progress / 125)}) translateY(${50 - (progress * 0.5)}px)`, 
           transition: 'all 0.2s ease-out',
           zIndex: 1,
-          filter: 'drop-shadow(0px 0px 30px rgba(255,255,255,0.4))'
+          filter: 'drop-shadow(0px 0px 40px rgba(255,255,255,0.6))'
         }}>
           🌈
         </div>
 
         {/* Sol Bulut (Nefes aldıkça sola kayar) */}
         <div style={{
-          position: 'absolute', left: '30%',
+          position: 'absolute', left: '35%',
           fontSize: '180px', zIndex: 2,
-          transform: `translateX(-${progress * 4}px)`,
+          transform: `translateX(-${progress * 6}px)`,
           opacity: 1 - (progress / 150), // Dağılırken hafif silikleşir
           transition: 'all 0.2s linear',
-          filter: `brightness(${50 + (progress * 0.5)}%)` // Aydınlanır
+          filter: `brightness(${50 + (progress * 0.5)}%)` // Karanlıktan aydınlığa geçer
         }}>
           ☁️
         </div>
 
         {/* Sağ Bulut (Nefes aldıkça sağa kayar) */}
         <div style={{
-          position: 'absolute', right: '30%',
+          position: 'absolute', right: '35%',
           fontSize: '180px', zIndex: 2,
-          transform: `translateX(${progress * 4}px)`,
+          transform: `translateX(${progress * 6}px)`,
           opacity: 1 - (progress / 150),
           transition: 'all 0.2s linear',
           filter: `brightness(${50 + (progress * 0.5)}%)`
@@ -226,27 +245,27 @@ const FlowerGame = () => {
 
       </div>
 
-      {/* 3. AI EĞİTMEN KARAKTERİ (Yanda Bekleyen Avatar) */}
+      {/* 3. AI EĞİTMEN KARAKTERİ (Yanda Bekleyen Çocuk Avatarı) */}
       <div style={{
         position: 'absolute', bottom: '30px', left: '40px',
         display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 100
       }}>
         <div style={{
           width: '120px', height: '120px', backgroundColor: '#FFF', borderRadius: '50%',
-          border: '4px solid #FFC107', display: 'flex', justifyContent: 'center',
-          alignItems: 'center', fontSize: '60px', boxShadow: '0 10px 20px rgba(0,0,0,0.5)',
+          border: '4px solid #FFEB3B', display: 'flex', justifyContent: 'center',
+          alignItems: 'center', fontSize: '60px', boxShadow: '0 10px 20px rgba(0,0,0,0.8)',
         }}>
           👦🏻
         </div>
         
-        {/* Karakterin Konuşma Balonu */}
+        {/* Karakterin Konuşma Balonu (Pozitif Yönlendirme) */}
         {isListening && (
           <div style={{
             marginTop: '15px', backgroundColor: '#FFF', color: '#000', padding: '10px 20px',
             borderRadius: '20px', fontWeight: 'bold', fontSize: '16px', boxShadow: '0 5px 15px rgba(0,0,0,0.5)',
-            maxWidth: '220px', textAlign: 'center'
+            maxWidth: '250px', textAlign: 'center'
           }}>
-            {progress < 50 ? '💬 Kollarını kocaman aç ve nefes al!' : '💬 Süper, gökkuşağı çıkıyor!'}
+            💬 {progress < 80 ? 'Kollarını kocaman aç ve nefes al!' : 'Harika! Gökyüzü açılıyor.'}
           </div>
         )}
       </div>
@@ -258,7 +277,7 @@ const FlowerGame = () => {
 const btnStyle = { 
   padding: '12px 24px', fontSize: '18px', border: 'none', 
   borderRadius: '12px', cursor: 'pointer', fontWeight: '900', width: '100%',
-  textTransform: 'uppercase', boxShadow: '0 5px 10px rgba(0,0,0,0.3)'
+  textTransform: 'uppercase', boxShadow: '0 5px 10px rgba(0,0,0,0.5)'
 };
 
-export default FlowerGame;
+export default RainbowGame;

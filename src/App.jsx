@@ -12,11 +12,12 @@ import BreathTest from './pages/BreathTest';
 import AwarenessGame from './pages/AwarenessGame';
 import FrogGame from './pages/FrogGame';
 import RainbowGame from './pages/RainbowGame';
-import CrystalGame from './pages/CrystalGame';
+import CarGame from './pages/CarGame';
 import SailboatGame from './pages/SailboatGame';
 import RocketGame from './pages/RocketGames';
 import BalanceGame from './pages/BalanceGame';
 import FinalAdventureGame from './pages/FinalAdventureGame';
+import FlowerGame from './pages/FlowerGame';
 
 // ===== YENİ EKLENEN SAYFALAR — Kimlik doğrulama ve yönetim =====
 import LoginPage from './pages/LoginPage';
@@ -194,12 +195,12 @@ function AppContent() {
           {/* ===== OYUN SAYFALARI — Giriş yapılmış olması yeterli ===== */}
           <Route path="/test" element={<ProtectedRoute><BreathTest /></ProtectedRoute>} />
           <Route path="/oyun/hafta-1-fark-et" element={<ProtectedRoute><AwarenessGame /></ProtectedRoute>} />
-          <Route path="/oyun/hafta-2-hisset" element={<ProtectedRoute><FrogGame /></ProtectedRoute>} />
+          <Route path="/oyun/hafta-2-hisset" element={<ProtectedRoute><SailboatGame /></ProtectedRoute>} />
           <Route path="/oyun/hafta-3-hareket-ettir" element={<ProtectedRoute><RainbowGame /></ProtectedRoute>} />
-          <Route path="/oyun/hafta-4-kontrol-et" element={<ProtectedRoute><CrystalGame /></ProtectedRoute>} />
-          <Route path="/oyun/hafta-5-surdur" element={<ProtectedRoute><SailboatGame /></ProtectedRoute>} />
-          <Route path="/oyun/hafta-6-guc-uret" element={<ProtectedRoute><RocketGame /></ProtectedRoute>} />
-          <Route path="/oyun/hafta-7-birlestir" element={<ProtectedRoute><BalanceGame /></ProtectedRoute>} />
+          <Route path="/oyun/hafta-4-kontrol-et" element={<ProtectedRoute><CarGame /></ProtectedRoute>} />
+          <Route path="/oyun/hafta-5-surdur" element={<ProtectedRoute><FrogGame /></ProtectedRoute>} />
+          <Route path="/oyun/hafta-6-guc-uret" element={<ProtectedRoute><FlowerGame /></ProtectedRoute>} />
+          <Route path="/oyun/hafta-7-birlestir" element={<ProtectedRoute><RocketGame /></ProtectedRoute>} />
           <Route path="/oyun/hafta-8-aktar" element={<ProtectedRoute><FinalAdventureGame /></ProtectedRoute>} />
 
           {/* ===== YETKİSİZ ERİŞİM SAYFASI ===== */}

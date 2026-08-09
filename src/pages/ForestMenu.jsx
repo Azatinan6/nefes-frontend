@@ -53,10 +53,10 @@ const ForestMenu = () => {
         onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}
       />
 
-      {/* 2. Hafta: Hisset (Sol Alt/Orta - Kurbağa ve Nilüfer) */}
+      {/* 2. Hafta: Hisset (Sol Alt/Orta - Rüzgarlı Göl Macerası) */}
       <button
         onClick={() => goToGame('/oyun/hafta-2-hisset')}
-        title="Kurbağa ile Zıpla!"
+        title="Rüzgarlı Göl Macerası"
         style={{ ...hotspotStyle, top: '63%', left: '22%', width: '22%', height: '32%' }}
         onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}
       />
@@ -69,34 +69,34 @@ const ForestMenu = () => {
         onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}
       />
 
-      {/* 4. Hafta: Kontrol Et (Sağ Alt - Kristal Mağarası) */}
+      {/* 4. Hafta: Kontrol Et (Sağ Alt - Gözün Arabada!) */}
       <button
         onClick={() => goToGame('/oyun/hafta-4-kontrol-et')}
-        title="Gizemli Kristal Mağarası"
+        title="Gözün Arabada!"
         style={{ ...hotspotStyle, top: '62%', left: '48%', width: '22%', height: '35%' }}
         onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}
       />
 
-      {/* 5. Hafta: Sürdür (Orta Üst - Yelkenli ve Göl) */}
+      {/* 5. Hafta: Sürdür (Orta Üst - Kurbağayı Zıplat!) */}
       <button
         onClick={() => goToGame('/oyun/hafta-5-surdur')}
-        title="Rüzgarlı Göl Macerası"
+        title="Kurbağayı Zıplat!"
         style={{ ...hotspotStyle, top: '20%', left: '34%', width: '18%', height: '25%' }}
         onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}
       />
 
-      {/* 6. Hafta: Güç Üret (Orta Merkez - Volkanın Önündeki Tabela) */}
+      {/* 6. Hafta: Güç Üret (Orta Merkez - Çiçeği Kokla!) */}
       <button
         onClick={() => goToGame('/oyun/hafta-6-guc-uret')}
-        title="Süper Gücünü Kullan!"
+        title="Çiçeği Kokla!"
         style={{ ...hotspotStyle, top: '55%', left: '35%', width: '13%', height: '16%' }}
         onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}
       />
 
-      {/* 7. Hafta: Birleştir (Sağ Orta - Asma Köprü) */}
+      {/* 7. Hafta: Birleştir (Sağ Orta - Roketi Fırlat!) */}
       <button
         onClick={() => goToGame('/oyun/hafta-7-birlestir')}
-        title="Cesaret Köprüsü"
+        title="Roketi Fırlat!"
         style={{ ...hotspotStyle, top: '24%', left: '58%', width: '15%', height: '22%' }}
         onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}
       />

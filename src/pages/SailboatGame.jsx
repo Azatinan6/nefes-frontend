@@ -3,8 +3,11 @@ import useBreathSensor from '../components/useBreathSensor';
 import BellyBreathGuide from '../components/BellyBreathGuide';
 import axios from 'axios';
 import { cpTheme } from '../theme/colors';
+import { useNavigate } from 'react-router-dom';
+
 const SailboatGame = () => {
   const { blowIntensity, isListening, startListening, stopListening } = useBreathSensor();
+  const navigate = useNavigate();
   
   // Oyun ve Fizyolojik Durumlar
   const [boatPosition, setBoatPosition] = useState(0); // 0 (Başlangıç) ile 100 (Liman) arası
@@ -14,6 +17,7 @@ const SailboatGame = () => {
   const [gameOver, setGameOver] = useState(false);
   const [dbPercentage, setDbPercentage] = useState(0);
   const [laps, setLaps] = useState(0); // Kaç kez limana ulaştı
+  const [promptMessage, setPromptMessage] = useState("");
 
   const blowIntensityRef = useRef(0);
   const lastBreathTime = useRef(Date.now());
@@ -33,59 +37,22 @@ const SailboatGame = () => {
     }
   }, [blowIntensity]);
 
-  // Yeni Sözel Komut Havuzu (Hafta 3 - Yelken Oyunu)
-  const promptsPool = {
-    start: [
-      "Hazır mısın? Yelkenimizi yüzdürelim! Daha önce öğrendiğin gibi, şimdi burnundan derin ve yavaş bir nefes al."
-    ],
-    idle: [
-      "Karnındaki balonu şişirdiğini düşün.",
-      "Hadi, bir kez daha burnundan derin bir nefes al."
-    ],
-    active: [
-      "Şimdi dudaklarını büz ve yavaşça üfleyerek uzun bir nefes ver.",
-      "Ağzından yavaşça ve uzun uzun üfle.",
-      "Şimdi yavaşça ve dudaklarını büzerek uzun uzun üfle."
-    ],
-    motivational: [
-      "Harika! Yelkenimiz ilerliyor!",
-      "Şahane gidiyorsun!",
-      "Çok güzel! Yavaşça üflemeye devam et."
-    ],
-    calm_down: [
-      "Çok hızlı üflersen yelkenimiz devrilebilir."
-    ],
-    success: [
-      "Bravo sana! Yelkeni karşıya ulaştırdın!"
-    ]
-  };
-
-  // Sesli Yönlendirme (Dudak büzme ve kontrollü uzun nefes odaklı)
-  const playAudioPrompt = (type) => {
-    if (!warningGiven.current && !gameOver && isListening) {
-      let message = "";
-      
-      if (promptsPool[type] && promptsPool[type].length > 0) {
-        // Rastgele bir cümle seç
-        const randomIndex = Math.floor(Math.random() * promptsPool[type].length);
-        message = promptsPool[type][randomIndex];
-      }
-
-      if (!message) return;
-
-      const speech = new SpeechSynthesisUtterance(message);
-      speech.lang = 'tr-TR';
-      speech.rate = 1.0;
-      speech.pitch = 1.2;
-      window.speechSynthesis.speak(speech);
-      warningGiven.current = true;
-      
-      setTimeout(() => { warningGiven.current = false; }, 6500);
-    }
+  const speak = (message) => {
+    if (gameOver || !isListening) return;
+    setPromptMessage(message);
+    const speech = new SpeechSynthesisUtterance(message);
+    speech.lang = 'tr-TR';
+    speech.rate = 1.0;
+    speech.pitch = 1.2;
+    window.speechSynthesis.speak(speech);
   };
 
   useEffect(() => {
-    if (isListening) playAudioPrompt('start');
+    if (isListening && !gameOver) {
+      speak("Hazır mısın? Çiçek koklar gibi derin nefes al.");
+      setTimeout(() => speak("Karnını şişir. Dudaklarını hafifçe büz."), 5000);
+      setTimeout(() => speak("Yavaş ve uzun nefes ver."), 10000);
+    }
   }, [isListening]);
 
   // HATA DÜZELTMESİ (Component unmount olunca sesi kes)
@@ -116,7 +83,6 @@ const SailboatGame = () => {
           else if (currentDb > 60) {
             newPosition += 0.1; // İlerleme cezası (Durmaz ama çok yavaşlar)
             setWaveIntensity(10); // Gemi şiddetle sallanır
-            playAudioPrompt('calm_down');
           }
           // NEFES YOK (Rüzgar durur, gemi çok yavaş geriler veya durur)
           else {
@@ -126,13 +92,7 @@ const SailboatGame = () => {
 
           // LİMANA ULAŞMA (Tamamlama)
           if (newPosition >= 100) {
-            setScore((s) => {
-              const newScore = s + 100;
-              setCrystals(Math.floor(newScore / 200));
-              return newScore;
-            });
             setLaps((l) => l + 1);
-            playAudioPrompt('success');
             return 0; // Gemiyi başa al, yeni tur başlasın
           }
 
@@ -148,18 +108,12 @@ const SailboatGame = () => {
           return newPosition;
         });
 
-        // 5 saniye hareketsizlikte teşvik
-        const timeSinceLastBreath = Date.now() - lastBreathTime.current;
-        if (timeSinceLastBreath > 6000 && !warningGiven.current) {
-          playAudioPrompt('idle');
-        } else if (timeSinceLastBreath > 4000 && !warningGiven.current) {
-          playAudioPrompt('start');
-        }
-
-        // Düzenli ilerleyişte motivasyon
-        if (currentDb > 10 && currentDb < 60 && !warningGiven.current) {
-           if (Math.random() < 0.005) {
-             playAudioPrompt(Math.random() > 0.5 ? 'motivational' : 'active');
+        // Düzenli ilerleyişte motivasyon (yan etki updater dışında yapılır)
+        if (currentDb > 15 && currentDb < 60 && !warningGiven.current) {
+           if (Math.random() < 0.01) { // %1 ihtimalle her 100ms'de
+             speak("Yelkenimiz hareket ediyor!");
+             warningGiven.current = true;
+             setTimeout(() => { warningGiven.current = false; }, 8000);
            }
         }
 
@@ -169,17 +123,33 @@ const SailboatGame = () => {
     return () => clearInterval(gameLoop);
   }, [isListening, gameOver]);
 
+  // Tur tamamlandığında çalışacak yan etkiler
+  useEffect(() => {
+    if (laps > 0) {
+      if (laps >= 5) {
+        handleFinishGame();
+      } else {
+        speak("Harika! Yelkeni karşı kıyıya ulaştırdık!");
+        setScore((s) => {
+          const newScore = s + 100;
+          setCrystals(Math.floor(newScore / 200));
+          return newScore;
+        });
+      }
+    }
+  }, [laps]);
+
   const handleFinishGame = async () => {
     stopListening();
     setGameOver(true);
     
-    // HATA DÜZELTMESİ (Konuşmayı kesin keser)
+    // Konuşmayı kesin keser
     warningGiven.current = true;
     window.speechSynthesis.cancel();
 
     const progressData = {
       userId: "123e4567-e89b-12d3-a456-426614174000",
-      gameId: 5, // 5. Hafta Oyunu
+      gameId: 3, // 3. Hafta Oyunu
       score: score,
       breathCrystals: crystals,
       dbPerformance: dbPercentage
@@ -187,11 +157,13 @@ const SailboatGame = () => {
 
     try {
       await axios.post('http://localhost:8080/api/progress/save', progressData);
-      alert(`Harika! ${crystals} Nefes Kristali Kazandın! 💎`);
+      alert(`Harika! Oyun Tamamlandı! Kazanılan Kristal: ${crystals} 💎 \nMenüye dönülüyor...`);
     } catch (error) {
       console.error("Skor kaydedilirken hata:", error);
-      alert(`5. Bölüm Tamamlandı! Kazanılan Kristal: ${crystals} 💎`);
+      alert(`Oyun Tamamlandı! Kazanılan Kristal: ${crystals} 💎 \nMenüye dönülüyor...`);
     }
+    
+    navigate('/cocuk-paneli');
   };
 
   // Yüksek Kontrast Teması (Açık Deniz)
@@ -206,12 +178,20 @@ const SailboatGame = () => {
   return (
     <div style={{
       position: 'relative', width: '100%', height: 'calc(100vh - 70px)',
-      backgroundColor: themeColors.bg, overflow: 'hidden', fontFamily: 'sans-serif',
+      background: 'linear-gradient(to bottom, #87CEEB, #E0F6FF)', // Gökyüzü Gradient
+      overflow: 'hidden', fontFamily: 'sans-serif',
       color: themeColors.text
     }}>
-      <BellyBreathGuide isListening={isListening} blowIntensity={blowIntensity} />
+      <BellyBreathGuide isListening={isListening} blowIntensity={blowIntensity} scale={2.0} theme="lightBg" customStyle={{ top: '48%' }} />
 
-      
+      {/* Gökyüzü Süslemeleri (Sabit) */}
+      <div style={{ position: 'absolute', top: '10%', right: '15%', fontSize: '80px', filter: 'drop-shadow(0 0 20px rgba(255, 235, 59, 0.5))' }}>☀️</div>
+      <div style={{ position: 'absolute', top: '20%', left: '10%', fontSize: '50px', opacity: 0.8 }}>☁️</div>
+      <div style={{ position: 'absolute', top: '30%', left: '50%', fontSize: '60px', opacity: 0.6 }}>☁️</div>
+      <div style={{ position: 'absolute', top: '15%', left: '80%', fontSize: '40px', opacity: 0.7 }}>☁️</div>
+      <div style={{ position: 'absolute', top: '25%', left: '30%', fontSize: '30px', opacity: 0.8 }}>🦅</div>
+      <div style={{ position: 'absolute', top: '18%', left: '35%', fontSize: '20px', opacity: 0.6 }}>🦅</div>
+
       {/* Dalga Efekti (Arka Plan CSS) */}
       <style>
         {`
@@ -226,6 +206,11 @@ const SailboatGame = () => {
             50% { transform: translateY(10px) rotate(-15deg); }
             75% { transform: translateY(-5px) rotate(10deg); }
             100% { transform: translateY(0px) rotate(-10deg); }
+          }
+          @keyframes floatCloud {
+            0% { transform: translateX(0); }
+            50% { transform: translateX(50px); }
+            100% { transform: translateX(0); }
           }
         `}
       </style>
@@ -278,8 +263,15 @@ const SailboatGame = () => {
 
       {/* 2. OYUN ALANI: Deniz, Yelkenli ve Liman */}
       <div style={{
+        position: 'absolute', bottom: 0, width: '100%', height: '40%',
+        background: 'linear-gradient(to bottom, #0288D1, #01579B)', // Deniz Gradient
+        borderTop: '5px solid #4FC3F7',
+        zIndex: 0
+      }}></div>
+
+      <div style={{
         position: 'absolute', bottom: '15%', width: '100%', height: '40%',
-        display: 'flex', alignItems: 'flex-end', borderBottom: '20px solid #0288D1' // Deniz yüzeyi
+        display: 'flex', alignItems: 'flex-end', zIndex: 5
       }}>
         
         {/* Hedef Liman (Sağ Kenar) */}
@@ -349,11 +341,7 @@ const SailboatGame = () => {
             borderRadius: '20px', fontWeight: 'bold', fontSize: '16px', boxShadow: '0 5px 15px rgba(0,0,0,0.5)',
             maxWidth: '250px', textAlign: 'center'
           }}>
-            💬 {
-              waveIntensity > 0 ? 'Gemi sallanıyor, yumuşak üfle!' : 
-              boatPosition > 80 ? 'Limana çok az kaldı!' : 
-              'Dudaklarını büz ve uzun üfle...'
-            }
+            💬 {promptMessage || 'Dudaklarını büz ve uzun üfle...'}
           </div>
         )}
       </div>

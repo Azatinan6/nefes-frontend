@@ -3,9 +3,11 @@ import useBreathSensor from '../components/useBreathSensor';
 import BellyBreathGuide from '../components/BellyBreathGuide';
 import axios from 'axios';
 import { cpTheme } from '../theme/colors';
+import { useNavigate } from 'react-router-dom';
 
 const FlowerGame = () => {
   const { blowIntensity, isListening, startListening, stopListening } = useBreathSensor();
+  const navigate = useNavigate();
   
   // gamePhase: start, inhale, hold, exhale, success
   const [gamePhase, setGamePhase] = useState('start');
@@ -16,9 +18,11 @@ const FlowerGame = () => {
   
   const [flowerOpen, setFlowerOpen] = useState(0); // 0 (kapalı) - 100 (tam açık)
   const [holdTimer, setHoldTimer] = useState(0); // 0, 1, 2, 3
+  const [cycleCount, setCycleCount] = useState(0);
 
   const intensityRef = useRef(0);
   const phaseRef = useRef('start');
+  const gameOverRef = useRef(false);
   const animationFrameId = useRef(null);
 
   useEffect(() => {
@@ -31,7 +35,7 @@ const FlowerGame = () => {
   }, [blowIntensity]);
 
   const playAudioPrompt = (message) => {
-    if (!gameOver && isListening) {
+    if (!gameOverRef.current && isListening) {
       setPromptMessage(message);
       const speech = new SpeechSynthesisUtterance(message);
       speech.lang = 'tr-TR';
@@ -41,26 +45,33 @@ const FlowerGame = () => {
     }
   };
 
+  // Sayfadan çıkıldığında veya oyun bittiğinde konuşmayı sustur
   useEffect(() => {
-    if (isListening && !gameOver) {
+    return () => {
+      window.speechSynthesis.cancel();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (isListening && !gameOver && cycleCount === 0 && gamePhase === 'start') {
       const scheduleSequence = () => {
         // Start phase
-        playAudioPrompt("Öncelikle öğrendiğimiz gibi dik duralım! Hazır mısın? Çiçeğimizi koklayalım!");
+        playAudioPrompt("Hazır mısın?");
         
         setTimeout(() => {
           setGamePhase('inhale');
           phaseRef.current = 'inhale';
-          playAudioPrompt("Burnundan yavaşça nefes al. Çiçeği kokla… Mis gibi!");
-        }, 7000);
+          playAudioPrompt("Çiçek koklar gibi burnundan derin nefes al.");
+        }, 3000);
       };
       
       scheduleSequence();
     }
-  }, [isListening, gameOver]);
+  }, [isListening]);
 
   // Oyun Döngüsü
   useEffect(() => {
-    if (isListening && !gameOver) {
+    if (isListening && !gameOverRef.current) {
       const updateGame = () => {
         const noiseThreshold = 30; 
         let validIntensity = intensityRef.current - noiseThreshold;
@@ -70,17 +81,7 @@ const FlowerGame = () => {
         if (phaseRef.current === 'inhale') {
           // Nefes alarak çiçeği aç (sessiz nefes alma)
           if (currentDb >= 5 && currentDb <= 50) {
-            setFlowerOpen(prev => {
-              const next = prev + 0.5;
-              if (next >= 100) {
-                // Çiçek tam açıldı, hold fazına geç
-                phaseRef.current = 'hold';
-                setGamePhase('hold');
-                triggerHoldPhase();
-                return 100;
-              }
-              return next;
-            });
+            setFlowerOpen(prev => (prev >= 100 ? 100 : prev + 0.5));
           } else {
             // Nefes almayı bırakırsa biraz kapanabilir
             setFlowerOpen(prev => (prev > 0 ? prev - 0.2 : 0));
@@ -97,54 +98,65 @@ const FlowerGame = () => {
     };
   }, [isListening, gameOver]);
 
+  // Çiçek tam açıldığında hold fazına geç (Strict Mode çift çağırmasını önler)
+  useEffect(() => {
+    if (flowerOpen >= 100 && phaseRef.current === 'inhale') {
+      phaseRef.current = 'hold';
+      setGamePhase('hold');
+      triggerHoldPhase();
+    }
+  }, [flowerOpen]);
+
   const triggerHoldPhase = () => {
-    playAudioPrompt("Şimdi nefesini tut.");
+    playAudioPrompt("Karnının yükseldiğini hisset.");
+    setGamePhase('hold');
+    phaseRef.current = 'hold';
     
-    setTimeout(() => {
-      playAudioPrompt("Tut… 1");
-      setHoldTimer(1);
-    }, 2000);
-    
-    setTimeout(() => {
-      playAudioPrompt("2");
-      setHoldTimer(2);
-    }, 3500);
-
-    setTimeout(() => {
-      playAudioPrompt("3");
-      setHoldTimer(3);
-    }, 5000);
-
+    // Hold 3 seconds
     setTimeout(() => {
       setGamePhase('exhale');
       phaseRef.current = 'exhale';
-      playAudioPrompt("Harika! Şimdi yavaşça ağzından nefes ver.");
-    }, 6500);
+      playAudioPrompt("Şimdi balon şişirir gibi ağzından yavaşça nefes ver.");
+    }, 3000);
 
     setTimeout(() => {
       setGamePhase('success');
       phaseRef.current = 'success';
-      playAudioPrompt("Çiçeğimiz canlandı! Bravo! Çok güzel yaptın!");
+      playAudioPrompt("Harika! Çok güzel yaptın!");
       setScore(s => s + 100);
       
-      setTimeout(() => {
-        setFlowerOpen(0);
-        setHoldTimer(0);
-        setGamePhase('start');
-        phaseRef.current = 'start';
-        playAudioPrompt("Hazır mısın? Çiçeğimizi tekrar koklayalım!");
-        setTimeout(() => {
-          setGamePhase('inhale');
-          phaseRef.current = 'inhale';
-          playAudioPrompt("Burnundan yavaşça nefes al. Çiçeği kokla… Mis gibi!");
-        }, 5000);
-      }, 5000);
-    }, 10000);
+      setCycleCount(c => {
+        const nextCycle = c + 1;
+        if (nextCycle >= 5) {
+          // Finish game
+          setTimeout(() => {
+            handleFinishGame();
+          }, 4000);
+          return nextCycle;
+        } else {
+          // Next loop
+          setTimeout(() => {
+            setFlowerOpen(0);
+            setHoldTimer(0);
+            setGamePhase('start');
+            phaseRef.current = 'start';
+            playAudioPrompt("Hazır mısın?");
+            setTimeout(() => {
+              setGamePhase('inhale');
+              phaseRef.current = 'inhale';
+              playAudioPrompt("Çiçek koklar gibi burnundan derin nefes al.");
+            }, 3000);
+          }, 4000);
+          return nextCycle;
+        }
+      });
+    }, 7000);
   };
 
   const handleFinishGame = async () => {
     stopListening();
     setGameOver(true);
+    gameOverRef.current = true;
     window.speechSynthesis.cancel();
     setPromptMessage("Oyun Bitti! Süpersin.");
 
@@ -157,10 +169,12 @@ const FlowerGame = () => {
 
     try {
       await axios.post('http://localhost:8080/api/progress/save', progressData);
-      alert(`Harika! Oyun Tamamlandı! Skor: ${score}`);
+      alert(`Harika! Oyun Tamamlandı! Skor: ${score} \nMenüye dönülüyor...`);
     } catch (error) {
-      alert(`Oyun Tamamlandı! Skor: ${score}`);
+      alert(`Oyun Tamamlandı! Skor: ${score} \nMenüye dönülüyor...`);
     }
+
+    navigate('/cocuk-paneli');
   };
 
   const styles = {
@@ -182,16 +196,26 @@ const FlowerGame = () => {
 
   return (
     <div style={styles.container}>
+      {/* Arka Plan Dekoratif Çiçekleri (Sabit) */}
+      <div style={{ position: 'absolute', top: '15%', left: '15%', fontSize: '60px', opacity: 0.3, transform: 'rotate(-20deg)' }}>🌸</div>
+      <div style={{ position: 'absolute', top: '10%', right: '25%', fontSize: '50px', opacity: 0.4, transform: 'rotate(15deg)' }}>🌺</div>
+      <div style={{ position: 'absolute', bottom: '20%', left: '10%', fontSize: '70px', opacity: 0.2, transform: 'rotate(-10deg)' }}>🌼</div>
+      <div style={{ position: 'absolute', bottom: '25%', right: '15%', fontSize: '80px', opacity: 0.25, transform: 'rotate(20deg)' }}>🌸</div>
+      <div style={{ position: 'absolute', top: '45%', left: '5%', fontSize: '40px', opacity: 0.3, transform: 'rotate(5deg)' }}>🌻</div>
+      <div style={{ position: 'absolute', top: '35%', right: '10%', fontSize: '50px', opacity: 0.35, transform: 'rotate(-15deg)' }}>🌼</div>
+
       <BellyBreathGuide isListening={isListening} blowIntensity={blowIntensity} phase={gamePhase} />
       
       <div style={styles.topPanel}>
         <div style={{ ...styles.glassCard, padding: '15px 25px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <h3 style={{ margin: '0 0 10px 0', fontSize: '16px', color: cpTheme.primary.teal }}>🎙️ Nefes Sesi</h3>
-          <div style={{ width: '200px', height: '16px', backgroundColor: cpTheme.elements.progressBg, borderRadius: '8px', overflow: 'hidden' }}>
+          <div style={{ width: '200px', height: '16px', backgroundColor: cpTheme.elements.progressBg, borderRadius: '8px', overflow: 'hidden', position: 'relative' }}>
+            {/* İdeal Üfleme Aralığı Rehberi (%5 - %50) */}
+            <div style={{ position: 'absolute', left: '5%', width: '45%', height: '100%', backgroundColor: 'rgba(16, 185, 129, 0.2)', zIndex: 1 }} />
             <div style={{ 
               width: `${dbPercentage}%`, height: '100%', 
               backgroundColor: dbPercentage > 50 ? cpTheme.primary.coral : cpTheme.primary.emerald, 
-              transition: 'width 0.1s linear', borderRadius: '8px'
+              transition: 'width 0.1s linear', borderRadius: '8px', zIndex: 2, position: 'relative'
             }} />
           </div>
           <span style={{ marginTop: '8px', fontWeight: 'bold' }}>%{dbPercentage}</span>
@@ -200,7 +224,7 @@ const FlowerGame = () => {
         <div style={{ ...styles.glassCard, padding: '15px 25px', display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
           <h2 style={{ margin: 0, fontSize: '22px', fontWeight: '800' }}>Çiçeği Kokla!</h2>
           <div style={{ fontSize: '18px', fontWeight: '600', marginTop: '5px' }}>
-            Skor: {Math.floor(score)}
+            Skor: {Math.floor(score)} | İlerleme: {cycleCount}/5
           </div>
           {!isListening ? (
             <button onClick={startListening} style={{ padding: '10px 20px', background: cpTheme.primary.teal, color: '#fff', border: 'none', borderRadius: '12px', marginTop: '10px', cursor: 'pointer' }}>▶️ BAŞLA</button>
@@ -213,18 +237,55 @@ const FlowerGame = () => {
       <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         
         {/* Çiçek ve Yıldızlar */}
-        <div style={{ position: 'relative', fontSize: '150px', 
+        <div style={{ 
+          position: 'relative', width: '200px', height: '200px', perspective: '800px',
           transform: `scale(${0.8 + (flowerOpen / 200)})`, // nefes aldıkça büyür
-          filter: gamePhase === 'success' || gamePhase === 'exhale' ? 'drop-shadow(0px 0px 30px #FFEB3B)' : 'none',
-          animation: gamePhase === 'exhale' || gamePhase === 'success' ? 'shake 2s ease-in-out infinite' : 'none',
-          transition: 'transform 0.1s linear'
+          filter: gamePhase === 'success' || gamePhase === 'exhale' ? 'drop-shadow(0px 0px 30px rgba(255, 235, 59, 0.6))' : 'none',
+          animation: gamePhase === 'exhale' || gamePhase === 'success' ? 'shake 3s ease-in-out infinite' : 'none',
+          transition: 'transform 0.1s linear',
+          zIndex: 5
         }}>
-          {flowerOpen > 80 ? '🌻' : flowerOpen > 40 ? '🌷' : '🌱'}
+          {/* Çiçeğin Sapı */}
+          <div style={{
+            position: 'absolute', bottom: '-150px', left: '50%', width: '12px', height: '200px',
+            background: 'linear-gradient(to right, #4CAF50, #81C784)',
+            transform: 'translateX(-50%)', borderRadius: '6px', zIndex: 1,
+            filter: `grayscale(${100 - flowerOpen}%)`
+          }}></div>
+
+          {/* Taç Yapraklar (Nefes aldıkça açılır ve renklenir) */}
+          {[0, 45, 90, 135, 180, 225, 270, 315].map((angle, i) => (
+            <div key={i} style={{
+              position: 'absolute', top: '50%', left: '50%',
+              width: '40px', height: '110px',
+              background: 'linear-gradient(to top, #EC4899, #F472B6)',
+              borderRadius: '50% 50% 20% 20%',
+              transformOrigin: 'bottom center',
+              // 85 derece ile yatık (kapalı) başlar, açıldıkça 0 dereceye (dik/açık) gelir
+              transform: `translate(-50%, -100%) rotateZ(${angle}deg) rotateX(${85 - (flowerOpen * 0.85)}deg) translateY(${10 - (flowerOpen * 0.2)}px)`,
+              transition: 'transform 0.1s linear',
+              zIndex: 5,
+              filter: `grayscale(${100 - flowerOpen}%)`,
+              boxShadow: '0 0 15px rgba(244, 114, 182, 0.4)'
+            }} />
+          ))}
+
+          {/* Çiçeğin Tohum (Orta) Kısmı */}
+          <div style={{
+            position: 'absolute', top: '50%', left: '50%', width: '60px', height: '60px',
+            background: 'radial-gradient(circle, #FDE047, #EAB308)',
+            borderRadius: '50%',
+            transform: `translate(-50%, -50%) scale(${0.6 + (flowerOpen * 0.004)})`,
+            transition: 'transform 0.1s linear',
+            zIndex: 10,
+            filter: `grayscale(${100 - flowerOpen}%)`,
+            boxShadow: '0 0 25px rgba(250, 204, 21, 0.6)'
+          }}></div>
 
           {/* Yıldızlar (Hold Fazı) */}
-          {gamePhase === 'hold' && holdTimer >= 1 && <div style={{ position: 'absolute', top: '-20px', left: '-20px', fontSize: '50px', animation: 'blink 1s infinite' }}>✨</div>}
-          {gamePhase === 'hold' && holdTimer >= 2 && <div style={{ position: 'absolute', top: '10px', right: '-40px', fontSize: '60px', animation: 'blink 1.2s infinite' }}>✨</div>}
-          {gamePhase === 'hold' && holdTimer >= 3 && <div style={{ position: 'absolute', bottom: '20px', left: '-40px', fontSize: '55px', animation: 'blink 0.8s infinite' }}>✨</div>}
+          {gamePhase === 'hold' && holdTimer >= 1 && <div style={{ position: 'absolute', top: '-60px', left: '-40px', fontSize: '50px', animation: 'blink 1s infinite', zIndex: 20 }}>✨</div>}
+          {gamePhase === 'hold' && holdTimer >= 2 && <div style={{ position: 'absolute', top: '20px', right: '-80px', fontSize: '60px', animation: 'blink 1.2s infinite', zIndex: 20 }}>✨</div>}
+          {gamePhase === 'hold' && holdTimer >= 3 && <div style={{ position: 'absolute', bottom: '-40px', left: '-60px', fontSize: '55px', animation: 'blink 0.8s infinite', zIndex: 20 }}>✨</div>}
         </div>
 
         {/* Sayaç Görseli */}

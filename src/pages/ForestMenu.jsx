@@ -45,26 +45,26 @@ const ForestMenu = () => {
       overflow: 'hidden'
     }}>
 
-      {/* 1. Hafta: Fark Et (Sol Alt - Yoga Yapan Çocuk) */}
+      {/* 1. Hafta: Çiçek Kokla (Sol Alt - Yoga Yapan Çocuk) */}
       <button
-        onClick={() => goToGame('/oyun/hafta-1-fark-et')}
-        title="Dik Dur, Gücünü Hisset!"
+        onClick={() => goToGame('/oyun/hafta-1-cicek')}
+        title="1. Hafta: Çiçek Kokla"
         style={{ ...hotspotStyle, top: '55%', left: '3%', width: '13%', height: '30%' }}
         onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}
       />
 
-      {/* 2. Hafta: Hisset (Sol Alt/Orta - Rüzgarlı Göl Macerası) */}
+      {/* 2. Hafta: Balon Şişir (Sol Alt/Orta - Rüzgarlı Göl Macerası) */}
       <button
-        onClick={() => goToGame('/oyun/hafta-2-hisset')}
-        title="Rüzgarlı Göl Macerası"
+        onClick={() => goToGame('/oyun/hafta-2-balon')}
+        title="2. Hafta: Balon Şişir"
         style={{ ...hotspotStyle, top: '63%', left: '22%', width: '22%', height: '32%' }}
         onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}
       />
 
-      {/* 3. Hafta: Hareket Ettir (Sol Orta - Gökkuşağı) */}
+      {/* 3. Hafta: Yelkeni Yüzdür (Sol Orta - Gökkuşağı/Göl) */}
       <button
-        onClick={() => goToGame('/oyun/hafta-3-hareket-ettir')}
-        title="Gökkuşağı Çiz!"
+        onClick={() => goToGame('/oyun/hafta-3-yelken')}
+        title="3. Hafta: Yelkeni Yüzdür"
         style={{ ...hotspotStyle, top: '26%', left: '8%', width: '20%', height: '28%' }}
         onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}
       />
@@ -85,10 +85,10 @@ const ForestMenu = () => {
         onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}
       />
 
-      {/* 6. Hafta: Güç Üret (Orta Merkez - Çiçeği Kokla!) */}
+      {/* 6. Hafta: Güç Üret (Orta Merkez - Çorbanı Soğut!) */}
       <button
         onClick={() => goToGame('/oyun/hafta-6-guc-uret')}
-        title="Çiçeği Kokla!"
+        title="Çorbanı Soğut!"
         style={{ ...hotspotStyle, top: '55%', left: '35%', width: '13%', height: '16%' }}
         onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}
       />
@@ -101,11 +101,11 @@ const ForestMenu = () => {
         onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}
       />
 
-      {/* 8. Hafta: Aktar (Sağ Üst - Elmas ve Tapınak Finali) */}
+      {/* 8. Hafta: Nefes Kristalleri (Sağ Üst - Zirve) */}
       <button
         onClick={() => goToGame('/oyun/hafta-8-aktar')}
-        title="Büyük Hazine Peşinde"
-        style={{ ...hotspotStyle, top: '22%', left: '72%', width: '25%', height: '35%' }}
+        title="Nefes Kristalleri Macerası"
+        style={{ ...hotspotStyle, top: '2%', left: '74%', width: '16%', height: '18%' }}
         onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}
       />
 

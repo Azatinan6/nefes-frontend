@@ -18,6 +18,8 @@ import RocketGame from './pages/RocketGames';
 import BalanceGame from './pages/BalanceGame';
 import FinalAdventureGame from './pages/FinalAdventureGame';
 import FlowerGame from './pages/FlowerGame';
+import BalloonGame from './pages/BalloonGame';
+import SoupGame from './pages/SoupGame';
 
 // ===== YENİ EKLENEN SAYFALAR — Kimlik doğrulama ve yönetim =====
 import LoginPage from './pages/LoginPage';
@@ -92,7 +94,7 @@ function AppContent() {
             {/* Sol Taraf — Logo ve Sponsorlar */}
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
               <Link to="/" style={{ fontSize: '26px', fontWeight: '900', letterSpacing: '1px', color: '#FFEB3B', textDecoration: 'none', textShadow: '1px 1px 2px rgba(0,0,0,0.2)', lineHeight: '1', textAlign: 'center' }}>
-                🌿 N.E.F.E.S. AI
+                🌿 N.E.F.E.S. AL
               </Link>
               {/* Navbar logoları (Resmi public klasörüne sponsors.png adıyla eklemelisin) */}
               <img src="/sponsors.png" alt="Sponsorlar" style={{ width: '85%', height: 'auto', objectFit: 'contain', boxSizing: 'border-box' }} />
@@ -154,8 +156,9 @@ function AppContent() {
       </Routes>
 
       {/* ===== SAYFA İÇERİKLERİ ===== */}
-      <div style={{ flex: 1, position: 'relative', overflow: 'auto' }}>
-        <Routes>
+      <div style={{ flex: 1, position: 'relative', overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ flex: '1 0 auto' }}>
+          <Routes>
 
           {/* Ana sayfa — herkese açık */}
           <Route path="/" element={<LandingPage />} />
@@ -189,17 +192,24 @@ function AppContent() {
             </ProtectedRoute>
           } />
 
-          {/* Çocuk Paneli — herkese açık, ama oyunlar içinde giriş kontrolü var */}
-          <Route path="/cocuk-paneli" element={<ForestMenu />} />
+          {/* Çocuk Paneli — giriş yapılmamışsa kayıt sayfasına yönlendirilir */}
+          <Route path="/cocuk-paneli" element={
+            <ProtectedRoute redirectTo="/kayit">
+              <ForestMenu />
+            </ProtectedRoute>
+          } />
 
           {/* ===== OYUN SAYFALARI — Giriş yapılmış olması yeterli ===== */}
           <Route path="/test" element={<ProtectedRoute><BreathTest /></ProtectedRoute>} />
+          <Route path="/oyun/hafta-1-cicek" element={<ProtectedRoute><FlowerGame /></ProtectedRoute>} />
+          <Route path="/oyun/hafta-2-balon" element={<ProtectedRoute><BalloonGame /></ProtectedRoute>} />
+          {/* Eski rotalar (şimdilik tutuluyor) */}
           <Route path="/oyun/hafta-1-fark-et" element={<ProtectedRoute><AwarenessGame /></ProtectedRoute>} />
-          <Route path="/oyun/hafta-2-hisset" element={<ProtectedRoute><SailboatGame /></ProtectedRoute>} />
+          <Route path="/oyun/hafta-3-yelken" element={<ProtectedRoute><SailboatGame /></ProtectedRoute>} />
           <Route path="/oyun/hafta-3-hareket-ettir" element={<ProtectedRoute><RainbowGame /></ProtectedRoute>} />
           <Route path="/oyun/hafta-4-kontrol-et" element={<ProtectedRoute><CarGame /></ProtectedRoute>} />
           <Route path="/oyun/hafta-5-surdur" element={<ProtectedRoute><FrogGame /></ProtectedRoute>} />
-          <Route path="/oyun/hafta-6-guc-uret" element={<ProtectedRoute><FlowerGame /></ProtectedRoute>} />
+          <Route path="/oyun/hafta-6-guc-uret" element={<ProtectedRoute><SoupGame /></ProtectedRoute>} />
           <Route path="/oyun/hafta-7-birlestir" element={<ProtectedRoute><RocketGame /></ProtectedRoute>} />
           <Route path="/oyun/hafta-8-aktar" element={<ProtectedRoute><FinalAdventureGame /></ProtectedRoute>} />
 
@@ -218,6 +228,7 @@ function AppContent() {
           } />
 
         </Routes>
+        </div>
 
         {/* ===== FOOTER ===== */}
         <footer style={{
@@ -236,8 +247,8 @@ function AppContent() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: '1 1 200px' }}>
             <span style={{ fontSize: '24px' }}>🌿</span>
             <div>
-              <h4 style={{ margin: '0 0 4px 0', fontSize: '16px', color: '#FFEB3B', letterSpacing: '0.5px' }}>N.E.F.E.S. AI</h4>
-              <p style={{ margin: 0, fontSize: '13px', opacity: 0.8 }}>Dijital Nefes Terapisi</p>
+              <h4 style={{ margin: '0 0 4px 0', fontSize: '16px', color: '#FFEB3B', letterSpacing: '0.5px' }}>N.E.F.E.S. AL</h4>
+              <p style={{ margin: 0, fontSize: '13px', opacity: 0.8 }}>Dijital Oyunlaştırılmış Nefes ve Postür Platformu</p>
             </div>
           </div>
           

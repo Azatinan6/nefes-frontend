@@ -3,267 +3,355 @@ import useBreathSensor from '../components/useBreathSensor';
 import BellyBreathGuide from '../components/BellyBreathGuide';
 import axios from 'axios';
 import { cpTheme } from '../theme/colors';
+import { useNavigate } from 'react-router-dom';
 
 const RocketGame = () => {
   const { blowIntensity, isListening, startListening, stopListening } = useBreathSensor();
+  const navigate = useNavigate();
   
-  const [gamePhase, setGamePhase] = useState('start'); // start, inhale, ready, blow, fly, rest
+  const [energy, setEnergy] = useState(0); // 0 ile 100 arası
   const [score, setScore] = useState(0);
   const [gameOver, setGameOver] = useState(false);
   const [dbPercentage, setDbPercentage] = useState(0);
-  const [promptMessage, setPromptMessage] = useState("Haydi yeniden dik duralım. Kollarını yukarı uzat ve aşağı indir.");
-  
-  const [rocketY, setRocketY] = useState(80); // 80% (yerde) -> 0% (uzayda)
-  const [firePower, setFirePower] = useState(0); // 0 -> 100
+  const [laps, setLaps] = useState(0); // Toplam 5 tur
+  const [promptMessage, setPromptMessage] = useState("");
+  const [isLaunching, setIsLaunching] = useState(false);
+  const [phase, setPhase] = useState('start'); // start, charge, launch, rest
 
-  const intensityRef = useRef(0);
-  const phaseRef = useRef('start');
+  const blowIntensityRef = useRef(0);
   const animationFrameId = useRef(null);
-  
-  // Döngü için timer referansları
-  const phaseTimer1 = useRef(null);
-  const phaseTimer2 = useRef(null);
+  const phaseTimerRef = useRef(null);
+  const gameOverRef = useRef(false);
 
+  // Ses Şiddetini Yüzdeye Çevir
   useEffect(() => {
-    intensityRef.current = blowIntensity;
-    const noiseThreshold = 30; 
-    let validIntensity = blowIntensity - noiseThreshold;
-    if (validIntensity < 0) validIntensity = 0;
-    const currentDb = Math.min(Math.round((validIntensity / 180) * 100), 100);
+    blowIntensityRef.current = blowIntensity;
+    const currentDb = Math.min(Math.round((blowIntensity / 220) * 100), 100);
     setDbPercentage(currentDb);
   }, [blowIntensity]);
 
-  const playAudioPrompt = (message) => {
-    if (!gameOver && isListening) {
-      setPromptMessage(message);
-      const speech = new SpeechSynthesisUtterance(message);
-      speech.lang = 'tr-TR';
-      speech.rate = 1.0;
-      speech.pitch = 1.1;
-      window.speechSynthesis.speak(speech);
-    }
+  // Sesli Komut (Sadece state günceller ve okur)
+  const speak = (message) => {
+    if (gameOverRef.current || !isListening) return;
+    setPromptMessage(message);
+    const speech = new SpeechSynthesisUtterance(message);
+    speech.lang = 'tr-TR';
+    speech.rate = 1.0;
+    speech.pitch = 1.2;
+    window.speechSynthesis.speak(speech);
   };
 
-  const startSequence = () => {
-    // 1. Start
-    setGamePhase('start');
-    phaseRef.current = 'start';
-    setRocketY(80);
-    setFirePower(0);
-    playAudioPrompt("Hazır mısın? Roketi fırlatalım!");
+  const startLapSequence = () => {
+    if (!isListening || gameOver) return;
+    setPhase('start');
+    setEnergy(0);
+    setIsLaunching(false);
+
+    speak("Dik dur.");
+    setTimeout(() => speak("Kollarını yukarı uzat."), 2000);
+    setTimeout(() => speak("Hazır mısın?"), 4500);
+    setTimeout(() => speak("Burnundan derin bir nefes al."), 7000);
     
-    // 2. Inhale
-    phaseTimer1.current = setTimeout(() => {
-      setGamePhase('inhale');
-      phaseRef.current = 'inhale';
-      playAudioPrompt("Derin ve güçlü bir nefesi burnundan al.");
-    }, 4000);
-
-    // 3. Ready
-    phaseTimer2.current = setTimeout(() => {
-      setGamePhase('ready');
-      phaseRef.current = 'ready';
-      playAudioPrompt("Roket hazır! Şimdi tek seferde güçlü üfle!");
-    }, 9000);
+    // Nefes alma sonrası
+    setTimeout(() => speak("Roket hazır!"), 11000);
+    
+    setTimeout(() => {
+      speak("Şimdi tek ve kontrollü bir üfleme yap.");
+      setPhase('charge');
+    }, 13000);
   };
 
+  // İlk başlangıç
   useEffect(() => {
-    if (isListening && !gameOver) {
-      // İlk yönlendirmeler
-      playAudioPrompt("Haydi yeniden dik duralım. Kollarını yukarı uzat ve aşağı indir.");
-      setTimeout(() => {
-        startSequence();
-      }, 7000);
+    if (isListening && !gameOver && laps === 0) {
+      startLapSequence();
     }
+  }, [isListening]);
+
+  // Yeni Tur (Döngü Kontrolü)
+  useEffect(() => {
+    if (laps > 0 && laps < 5 && !gameOver && isListening) {
+      startLapSequence();
+    } else if (laps >= 5) {
+      handleFinishGame();
+    }
+  }, [laps]);
+
+  // Component unmount temizliği
+  useEffect(() => {
     return () => {
-      if (phaseTimer1.current) clearTimeout(phaseTimer1.current);
-      if (phaseTimer2.current) clearTimeout(phaseTimer2.current);
+      window.speechSynthesis.cancel();
+      if (phaseTimerRef.current) clearTimeout(phaseTimerRef.current);
     };
-  }, [isListening, gameOver]);
+  }, []);
 
   // Oyun Döngüsü
   useEffect(() => {
     if (isListening && !gameOver) {
       const updateGame = () => {
-        const noiseThreshold = 30; 
-        let validIntensity = intensityRef.current - noiseThreshold;
-        if (validIntensity < 0) validIntensity = 0;
-        const currentDb = Math.min(Math.round((validIntensity / 180) * 100), 100);
+        const currentDb = Math.min(Math.round((blowIntensityRef.current / 220) * 100), 100);
 
-        if (phaseRef.current === 'ready' || phaseRef.current === 'blow') {
-          // Güçlü üfleme bekleniyor (> %50)
-          if (currentDb > 50) {
-            setGamePhase('blow');
-            phaseRef.current = 'blow';
-            setFirePower(prev => {
-              const next = prev + 5;
-              if (next >= 100) {
-                // Roketi fırlat
-                triggerLaunch();
-                return 100;
-              }
-              return next;
-            });
-          }
-        }
-        
-        // Uçuş sırasında
-        if (phaseRef.current === 'fly') {
-          setRocketY(prev => {
-            if (prev > -20) return prev - 2; // Yukarı doğru uçar
-            return prev;
+        if (phase === 'charge' && !isLaunching) {
+          setEnergy((prev) => {
+            let newEnergy = prev;
+            
+            // Güçlü Üfleme Hedefi (%30 - %100)
+            if (currentDb >= 30) {
+              newEnergy += 0.5; // Daha hızlı dolar, tek ve güçlü üfleme için
+              setScore(s => s + 1);
+            } 
+            // Çok Zayıf Üfleme veya Yok
+            else {
+              newEnergy = Math.max(prev - 0.2, 0); 
+            }
+
+            if (newEnergy >= 100) {
+              triggerLaunch();
+              return 100;
+            }
+
+            return newEnergy;
           });
         }
-        
+
         animationFrameId.current = requestAnimationFrame(updateGame);
       };
 
       animationFrameId.current = requestAnimationFrame(updateGame);
     }
+
     return () => {
       if (animationFrameId.current) cancelAnimationFrame(animationFrameId.current);
     };
-  }, [isListening, gameOver]);
+  }, [isListening, gameOver, phase, isLaunching]);
 
   const triggerLaunch = () => {
-    setGamePhase('fly');
-    phaseRef.current = 'fly';
-    playAudioPrompt("Vuuu! Roket fırladı! Harika! Roketi uzaya gönderdin!");
-    setScore(s => s + 100);
+    setIsLaunching(true);
+    setPhase('launch');
+    speak("Roket fırladı!");
+    
+    setTimeout(() => {
+      speak("Harika! Roketi uzaya gönderdin.");
+    }, 3000);
 
     setTimeout(() => {
-      setGamePhase('rest');
-      phaseRef.current = 'rest';
-      playAudioPrompt("Şimdi biraz dinlen.");
-    }, 6000);
+      speak("Şimdi dinlen.");
+      setPhase('rest');
+    }, 6500);
 
+    // Yeni tura geçiş
     setTimeout(() => {
-      playAudioPrompt("Hazırsan bir roket daha fırlatalım!");
-      setTimeout(() => {
-        startSequence();
-      }, 4000);
-    }, 12000);
+      setLaps(l => l + 1);
+    }, 10000); // Dinlenmesi için fazladan zaman veriyoruz
   };
 
   const handleFinishGame = async () => {
     stopListening();
     setGameOver(true);
+    gameOverRef.current = true;
+    
     window.speechSynthesis.cancel();
-    setPromptMessage("Oyun Bitti! Süpersin.");
+    speak("Tüm roketleri başarıyla fırlattın! Harikasın!");
 
     const progressData = {
       userId: "123e4567-e89b-12d3-a456-426614174000",
-      gameId: 7,
-      score: score,
+      gameId: 7, // 7. Hafta Oyunu
+      score: Math.floor(score),
       dbPerformance: dbPercentage
     };
 
     try {
       await axios.post('http://localhost:8080/api/progress/save', progressData);
-      alert(`Harika! Oyun Tamamlandı! Skor: ${score}`);
+      setTimeout(() => {
+        alert(`Harika! Oyun Tamamlandı! Skor: ${Math.floor(score)}\nMenüye dönülüyor...`);
+        navigate('/cocuk-paneli');
+      }, 3000);
     } catch (error) {
-      alert(`Oyun Tamamlandı! Skor: ${score}`);
+      setTimeout(() => {
+        alert(`Oyun Tamamlandı! Skor: ${Math.floor(score)}\nMenüye dönülüyor...`);
+        navigate('/cocuk-paneli');
+      }, 3000);
     }
   };
 
-  const styles = {
-    container: {
-      position: 'relative', width: '100%', height: 'calc(100vh - 70px)',
-      background: 'linear-gradient(to top, #4FC3F7 0%, #1565C0 50%, #000000 100%)', // Yere yakın gökyüzü, yukarıda uzay
-      overflow: 'hidden', fontFamily: "'Segoe UI', sans-serif",
-      display: 'flex', flexDirection: 'column', alignItems: 'center',
-    },
-    glassCard: {
-      background: cpTheme.card.white, backdropFilter: 'blur(10px)',
-      borderRadius: '24px', border: `1px solid ${cpTheme.elements.border}`,
-      boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.1)',
-    },
-    topPanel: {
-      position: 'absolute', top: '20px', width: '90%',
-      display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', zIndex: 10,
-    },
-    ground: {
-      position: 'absolute', bottom: '0', width: '100%', height: '10%',
-      background: '#795548', borderTop: '5px solid #4CAF50',
-    }
+  // Yüksek Kontrast Teması (Uzay)
+  const themeColors = { 
+    bg: '#0F172A', // Koyu uzay mavisi
+    text: cpTheme.text.light, 
+    card: 'rgba(255, 255, 255, 0.1)', 
+    border: '#38BDF8', 
+    accent: '#0EA5E9'
   };
 
   return (
-    <div style={styles.container}>
-      {/* Gökyüzü ve Uzay Görselleri */}
-      <div style={{ position: 'absolute', top: '10%', left: '10%', fontSize: '40px' }}>⭐</div>
-      <div style={{ position: 'absolute', top: '20%', right: '15%', fontSize: '50px' }}>🌍</div>
-      <div style={{ position: 'absolute', top: '5%', right: '40%', fontSize: '30px' }}>✨</div>
-      <div style={{ position: 'absolute', top: '30%', left: '30%', fontSize: '40px', opacity: 0.8 }}>☁️</div>
-      <div style={{ position: 'absolute', top: '40%', right: '25%', fontSize: '50px', opacity: 0.9 }}>☁️</div>
+    <div style={{
+      position: 'relative', width: '100%', height: 'calc(100vh - 70px)',
+      backgroundColor: themeColors.bg, overflow: 'hidden', fontFamily: 'sans-serif',
+      color: themeColors.text
+    }}>
+      {/* Arka Plan Uzay Efektleri */}
+      <div style={{ position: 'absolute', top: '20%', left: '15%', fontSize: '40px', opacity: 0.8 }}>⭐</div>
+      <div style={{ position: 'absolute', top: '50%', left: '80%', fontSize: '20px', opacity: 0.5 }}>⭐</div>
+      <div style={{ position: 'absolute', top: '10%', left: '60%', fontSize: '30px', opacity: 0.9 }}>🌟</div>
+      <div style={{ position: 'absolute', top: '40%', left: '20%', fontSize: '80px', opacity: 0.6 }}>🌍</div>
+      <div style={{ position: 'absolute', top: '70%', left: '85%', fontSize: '100px', opacity: 0.3 }}>🪐</div>
 
-      <div style={styles.ground}>
-        {/* Fırlatma Rampası */}
-        <div style={{ position: 'absolute', bottom: '100%', left: '50%', transform: 'translateX(-50%)', width: '100px', height: '20px', background: '#9E9E9E', borderRadius: '5px 5px 0 0' }}></div>
-        <div style={{ position: 'absolute', bottom: '100%', left: '45%', width: '10px', height: '60px', background: '#616161' }}></div>
-        <div style={{ position: 'absolute', bottom: '100%', right: '45%', width: '10px', height: '60px', background: '#616161' }}></div>
-      </div>
+      <BellyBreathGuide isListening={isListening} blowIntensity={blowIntensity} scale={2.0} theme="darkBg" customStyle={{ top: '48%', right: '30px' }} />
 
-      <BellyBreathGuide isListening={isListening} blowIntensity={blowIntensity} phase={gamePhase === 'blow' ? 'exhale' : 'inhale'} />
-      
-      <div style={styles.topPanel}>
-        <div style={{ ...styles.glassCard, padding: '15px 25px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <h3 style={{ margin: '0 0 10px 0', fontSize: '16px', color: cpTheme.primary.teal }}>🎙️ Üfleme Gücü</h3>
-          <div style={{ width: '200px', height: '16px', backgroundColor: cpTheme.elements.progressBg, borderRadius: '8px', overflow: 'hidden' }}>
+      {/* 1. ÜST PANEL: Yüksek Kontrastlı Bilgi Kartı */}
+      <div style={{
+        position: 'absolute', top: '20px', right: '30px', left: '30px',
+        display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', zIndex: 100
+      }}>
+        
+        {/* Nefes Şiddeti Göstergesi */}
+        <div style={{
+          backgroundColor: themeColors.card, padding: '15px 25px', borderRadius: '16px',
+          border: `3px solid ${themeColors.border}`, boxShadow: '0 8px 20px rgba(0,0,0,0.3)',
+          display: 'flex', flexDirection: 'column', alignItems: 'center',
+          backdropFilter: 'blur(10px)',
+          opacity: phase === 'charge' ? 1 : 0.4,
+          transition: 'opacity 0.5s ease'
+        }}>
+          <h3 style={{ margin: '0 0 10px 0', fontSize: '18px', color: '#FFF' }}>💨 Üfleme Gücü</h3>
+          <div style={{ width: '200px', height: '20px', backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: '10px', overflow: 'hidden', position: 'relative' }}>
+            
+            {/* İdeal Üfleme Aralığı (%30 - %100) (Güçlü Üfleme) */}
+            <div style={{ position: 'absolute', left: '30%', width: '70%', height: '100%', backgroundColor: 'rgba(16, 185, 129, 0.6)', zIndex: 1 }} />
+            
             <div style={{ 
               width: `${dbPercentage}%`, height: '100%', 
-              backgroundColor: dbPercentage > 50 ? cpTheme.primary.coral : cpTheme.primary.emerald, 
-              transition: 'width 0.1s linear', borderRadius: '8px'
+              backgroundColor: dbPercentage < 30 ? '#F59E0B' : themeColors.accent, 
+              transition: 'width 0.1s linear', zIndex: 2, position: 'relative'
             }} />
           </div>
-          <span style={{ marginTop: '8px', fontWeight: 'bold' }}>%{dbPercentage}</span>
+          <span style={{ marginTop: '5px', fontWeight: 'bold', color: '#FFF' }}>%{dbPercentage}</span>
         </div>
 
-        <div style={{ ...styles.glassCard, padding: '15px 25px', display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-          <h2 style={{ margin: 0, fontSize: '22px', fontWeight: '800' }}>Roketi Fırlat!</h2>
-          <div style={{ fontSize: '18px', fontWeight: '600', marginTop: '5px' }}>
-            Skor: {Math.floor(score)}
+        {/* Skor */}
+        <div style={{
+          backgroundColor: themeColors.card, padding: '15px 30px', borderRadius: '16px',
+          border: `3px solid ${themeColors.border}`, boxShadow: '0 8px 20px rgba(0,0,0,0.3)',
+          display: 'flex', flexDirection: 'column', alignItems: 'flex-end',
+          backdropFilter: 'blur(10px)',
+        }}>
+          <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '900', color: '#FFF' }}>🚀 Roketi Fırlat!</h2>
+          <div style={{ fontSize: '18px', fontWeight: 'bold', marginTop: '5px', color: '#CBD5E1' }}>
+            Tur: {laps}/5 | Skor: {Math.floor(score)}
           </div>
+          
           {!isListening ? (
-            <button onClick={startListening} style={{ padding: '10px 20px', background: cpTheme.primary.teal, color: '#fff', border: 'none', borderRadius: '12px', marginTop: '10px', cursor: 'pointer' }}>▶️ BAŞLA</button>
+            <button onClick={startListening} style={{...btnStyle, backgroundColor: cpTheme.primary.teal, color: cpTheme.text.light, marginTop: '15px'}}>▶️ BAŞLA</button>
           ) : (
-            <button onClick={handleFinishGame} style={{ padding: '10px 20px', background: cpTheme.primary.coral, color: '#fff', border: 'none', borderRadius: '12px', marginTop: '10px', cursor: 'pointer' }}>⏹️ BİTİR</button>
+            <button onClick={handleFinishGame} style={{...btnStyle, backgroundColor: cpTheme.primary.coral, color: cpTheme.text.light, marginTop: '15px'}}>⏹️ BİTİR</button>
           )}
         </div>
       </div>
 
+      {/* 2. OYUN ALANI: Fırlatma Rampası ve Roket */}
+      
+      {/* Rampa Yüzeyi */}
+      <div style={{
+        position: 'absolute', bottom: 0, width: '100%', height: '15%',
+        backgroundColor: '#475569', // Koyu gri metalik zemin
+        borderTop: '10px solid #334155',
+        zIndex: 0
+      }}></div>
+
+      {/* Fırlatma Platformu */}
+      <div style={{
+        position: 'absolute', bottom: '15%', left: '50%',
+        width: '200px', height: '20px', backgroundColor: '#94A3B8',
+        transform: 'translateX(-50%)', borderRadius: '5px 5px 0 0',
+        zIndex: 1
+      }}></div>
+      
+      <div style={{
+        position: 'absolute', bottom: '15%', left: '42%',
+        width: '10px', height: '100px', backgroundColor: '#64748B',
+        zIndex: 2
+      }}></div>
+      <div style={{
+        position: 'absolute', bottom: '15%', left: '58%',
+        width: '10px', height: '100px', backgroundColor: '#64748B',
+        zIndex: 2
+      }}></div>
+
       {/* Roket */}
       <div style={{
         position: 'absolute',
-        top: `${rocketY}%`,
         left: '50%',
-        transform: 'translate(-50%, -100%)', // Roketin altı y ekseninde hizalansın
-        display: 'flex', flexDirection: 'column', alignItems: 'center',
-        zIndex: 5
+        bottom: isLaunching ? '150%' : '15%',
+        fontSize: '150px',
+        transform: `translate(-50%, 0)`,
+        transition: isLaunching ? 'bottom 2.5s cubic-bezier(0.5, 0, 0.2, 1)' : 'none',
+        zIndex: 10,
+        filter: 'drop-shadow(0px 10px 20px rgba(0,0,0,0.8))'
       }}>
-        <div style={{ fontSize: '120px', filter: 'drop-shadow(0 10px 10px rgba(0,0,0,0.5))' }}>🚀</div>
+        🚀
+      </div>
+
+      {/* Roket Ateşi (Sadece fırlarken veya enerji birikirken göster) */}
+      {!isLaunching && energy > 0 && phase === 'charge' && (
+        <div style={{
+          position: 'absolute',
+          left: '50%',
+          bottom: '15%',
+          transform: 'translateX(-50%)',
+          fontSize: `${50 + (energy)}px`,
+          zIndex: 9,
+          opacity: 0.8
+        }}>
+          🔥
+        </div>
+      )}
+      {isLaunching && (
+        <div style={{
+          position: 'absolute',
+          left: '50%',
+          bottom: '150%',
+          transform: 'translate(-50%, 150px)',
+          fontSize: '120px',
+          zIndex: 9,
+          transition: 'bottom 2.5s cubic-bezier(0.5, 0, 0.2, 1)'
+        }}>
+          🔥
+        </div>
+      )}
+
+      {/* 3. AI EĞİTMEN KARAKTERİ */}
+      <div style={{
+        position: 'absolute', bottom: '30px', left: '40px',
+        display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 100
+      }}>
+        <div style={{
+          width: '120px', height: '120px', backgroundColor: '#FFF', borderRadius: '50%',
+          border: `4px solid ${themeColors.border}`, display: 'flex', justifyContent: 'center',
+          alignItems: 'center', fontSize: '60px', boxShadow: '0 10px 20px rgba(0,0,0,0.8)',
+        }}>
+          👦🏻
+        </div>
         
-        {/* Ateş */}
-        {(gamePhase === 'blow' || gamePhase === 'fly') && (
-          <div style={{ fontSize: '60px', marginTop: '-20px', animation: 'fire 0.2s infinite alternate' }}>🔥</div>
+        {/* Karakterin Konuşma Balonu */}
+        {isListening && (
+          <div style={{
+            marginTop: '15px', backgroundColor: '#FFF', color: '#000', padding: '10px 20px',
+            borderRadius: '20px', fontWeight: 'bold', fontSize: '16px', boxShadow: '0 5px 15px rgba(0,0,0,0.5)',
+            maxWidth: '250px', textAlign: 'center'
+          }}>
+            💬 {promptMessage || 'Güçlü bir nefes için bekle...'}
+          </div>
         )}
       </div>
 
-      <div style={{ position: 'absolute', bottom: '30px', left: '30px', display: 'flex', alignItems: 'flex-end', gap: '15px', zIndex: 10 }}>
-        <div style={{ width: '80px', height: '80px', backgroundColor: '#fff', borderRadius: '50%', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '40px', border: '3px solid #ccc' }}>🧑‍🚀</div>
-        <div style={{ marginBottom: '20px', padding: '15px 20px', backgroundColor: '#fff', borderRadius: '20px 20px 20px 0', maxWidth: '300px', fontWeight: 'bold' }}>{promptMessage}</div>
-      </div>
-
-      <style>
-        {`
-          @keyframes fire {
-            from { transform: scale(1) translateY(0); opacity: 0.8; }
-            to { transform: scale(1.2) translateY(10px); opacity: 1; }
-          }
-        `}
-      </style>
     </div>
   );
+};
+
+const btnStyle = { 
+  padding: '12px 24px', fontSize: '18px', border: 'none', 
+  borderRadius: '12px', cursor: 'pointer', fontWeight: '900', width: '100%',
+  textTransform: 'uppercase', boxShadow: '0 5px 10px rgba(0,0,0,0.5)'
 };
 
 export default RocketGame;

@@ -8,20 +8,20 @@ const LandingPage = () => {
   // PDF'den alınan detaylı içerik verileri
   const modalContent = {
     sp: {
-      title: "🧠 Serebral Palsi (SP) Nedir?",
+      title: "Serebral Palsi (SP) Nedir?",
       color: "#E91E63",
       body: (
         <div style={modalBodyStyle}>
           <p><strong>Serebral Palsi (SP)</strong>, gelişmekte olan beyindeki ilerleyici olmayan bir hasarın neden olduğu, kalıcı hareket ve duruş bozuklukları grubunu tanımlayan bir terimdir. Çocuklarda fiziksel engelliliğin en yaygın nedenidir. Buna ek olarak, Serebral Palsili bireylerde epilepsi ile bilişsel, iletişim, beslenme, görme veya işitme sorunlarının yanı sıra ikincil kas-iskelet sistemi problemleri de görülebilir. Görülme sıklığı her 1000 canlı doğumda yaklaşık 2'dir.</p>
 
-          <h4 style={{ color: '#E91E63', marginTop: '20px', marginBottom: '10px' }}>📌 SP'nin 3 Ana Tipi</h4>
+          <h4 style={{ color: '#E91E63', marginTop: '20px', marginBottom: '10px' }}>SP'nin 3 Ana Tipi</h4>
           <ul style={{ lineHeight: '1.6', paddingLeft: '20px' }}>
             <li><strong>Spastik SP:</strong> Kas tonusunda artış (sertlik) ve patolojik reflekslerin varlığı ile karakterizedir.</li>
             <li><strong>Diskinetik SP:</strong> İstem dışı, kontrol edilemeyen, tekrarlayan ve bazen stereotipik hareketlerle kendini gösterir.</li>
             <li><strong>Ataksik SP:</strong> Normal kas koordinasyonunun kaybıdır. Hareketlerde güç, ritim ve isabetlilik (hedefi tutturamama gibi) sorunları yaşanır.</li>
           </ul>
 
-          <h4 style={{ color: '#E91E63', marginTop: '20px', marginBottom: '10px' }}>🚶‍♂️ Hareket Seviyeleri (GMFCS)</h4>
+          <h4 style={{ color: '#E91E63', marginTop: '20px', marginBottom: '10px' }}>Hareket Seviyeleri (GMFCS)</h4>
           <p>Hareketlilik (mobilite) ve kendi başlattığı hareket yetenekleri, Kaba Motor Fonksiyon Sınıflandırma Sistemine (GMFCS) göre 5 seviyede sınıflandırılabilir:</p>
           <ul style={{ lineHeight: '1.6', paddingLeft: '20px' }}>
             <li><strong>Seviye 1:</strong> Sadece ileri düzey kaba motor becerilerde (koşma, zıplama) kısıtlılık vardır.</li>
@@ -31,13 +31,13 @@ const LandingPage = () => {
             <li><strong>Seviye 5:</strong> Yardımcı cihazlar kullanılsa dahi bağımsız hareket ciddi şekilde kısıtlıdır.</li>
           </ul>
 
-          <h4 style={{ color: '#E91E63', marginTop: '20px', marginBottom: '10px' }}>🌟 Neden Erken Müdahale?</h4>
+          <h4 style={{ color: '#E91E63', marginTop: '20px', marginBottom: '10px' }}>Neden Erken Müdahale?</h4>
           <p>En iyi sonuçları, çocuğun ve ailenin ihtiyaçlarına göre uyarlanmış, bireyselleştirilmiş erken tedavi verir. Amaç, günlük yaşama en uygun düzeyde katılımdır.</p>
         </div>
       )
     },
     solunum: {
-      title: "🫁 Solunum ve Postürün Önemi",
+      title: "Solunum ve Postürün Önemi",
       color: "#03A9F4",
       body: (
         <div style={modalBodyStyle}>
@@ -45,23 +45,23 @@ const LandingPage = () => {
           <p>Bu durum, çocukların fiziksel aktivite düzeyinin azalmasına ve inaktivite ile birlikte günlük yaşama katılımlarının kısıtlanarak solunum fonksiyonlarında ve postural kontrolde bozulmalara neden olabilmektedir.</p>
           <p>Bu nedenle projede solunum ve postür farkındalık eğitiminin bir arada ele alınması ile SP'li çocukların günlük yaşam aktivitelerine daha aktif ve bağımsız katılımlarını desteklemek hedeflenmektedir.</p>
           
-          <h4 style={{ color: '#03A9F4', marginTop: '20px', marginBottom: '10px' }}>🎮 Oyunlaştırılmış Eğitim Modelinin Etkisi</h4>
+          <h4 style={{ color: '#03A9F4', marginTop: '20px', marginBottom: '10px' }}>Oyunlaştırılmış Eğitim Modelinin Etkisi</h4>
           <p>Oyunlaştırılmış Solunum ve Postür Farkındalık Eğitim Modeli'nin içerdiği oyunlaştırılmış solunum egzersiz eğitiminin solunum fonksiyonlarını ve fonksiyonel kapasiteyi iyileştirmesini, postural imgeleme egzersizlerinin ise bu çocuklarda postür farkındalığını arttırarak, aktivite katılımlarını ve yaşam kaliteleri üzerindeki etkilerinin ölçülmesi hedeflenmektedir.</p>
           <p>Ayrıca projede, geliştirilen bu modelin solunum, fonksiyonel kapasite, postür, öğrenme, yaşam kalitesi, aktivite ve sosyal katılım üzerine etkilerini ölçmek amaçlanmıştır.</p>
         </div>
       )
     },
     proje: {
-      title: "🎮 Projemiz: N.E.F.E.S. - SP",
+      title: "Projemiz: N.E.F.E.S. - SP",
       color: "#FF9800",
       body: (
         <div style={modalBodyStyle}>
           <h4 style={{ color: '#FF9800', marginTop: '0', marginBottom: '15px' }}>Nitelikli Eğitimle Farkındalık, Erişilebilir Solunum: Serebral Palsi</h4>
           
-          <h4 style={{ color: '#FF9800', marginTop: '20px', marginBottom: '10px' }}>🎯 Amacımız Nedir?</h4>
+          <h4 style={{ color: '#FF9800', marginTop: '20px', marginBottom: '10px' }}>Amacımız Nedir?</h4>
           <p>Serebral Palsili (SP) çocuklar, aileleri ve eğitimciler için mevcut klinik merkezli uygulamaların ötesine geçiyoruz. Öğrenme odaklı, aktif katılımı esas alan ve dijital teknoloji ile desteklenmiş oyunlaştırılmış bir solunum ve postür eğitim modeli sunarak çocukların motivasyonunu ve egzersiz uyumunu artırmayı hedefliyoruz.</p>
           
-          <h4 style={{ color: '#FF9800', marginTop: '20px', marginBottom: '10px' }}>🛠️ Nasıl Uyguluyoruz?</h4>
+          <h4 style={{ color: '#FF9800', marginTop: '20px', marginBottom: '10px' }}>Nasıl Uyguluyoruz?</h4>
           <ul style={{ lineHeight: '1.6', paddingLeft: '20px' }}>
             <li><strong>İnteraktif Egzersizler:</strong> Mum üfleme, gemi yüzdürme ve triflo simülasyonları gibi görsel/işitsel uyaranlarla desteklenen solunum egzersizleri ve postüral imgeleme teknikleri kullanıyoruz.</li>
             <li><strong>Uygulamalı Atölyeler:</strong> Türkiye Spastik Çocuklar Vakfı'nda (TSÇV) eğitmen eşliğinde haftada iki gün olmak üzere toplam 8 haftalık bir program yürütüyoruz.</li>
@@ -69,7 +69,7 @@ const LandingPage = () => {
             <li><strong>Farkındalık Seminerleri:</strong> Aileler, eğitimciler ve proje ekipleri için bilgilendirici çalıştaylar ve kapanış seminerleri düzenliyoruz.</li>
           </ul>
 
-          <h4 style={{ color: '#FF9800', marginTop: '20px', marginBottom: '10px' }}>👥 Hedef Kitlemiz Kimler?</h4>
+          <h4 style={{ color: '#FF9800', marginTop: '20px', marginBottom: '10px' }}>Hedef Kitlemiz Kimler?</h4>
           <p>Projemizin merkezinde SP'li çocuklar, onların kıymetli aileleri ve bu süreçte rol alan eğitimciler yer alıyor.</p>
           <ul style={{ lineHeight: '1.6', paddingLeft: '20px' }}>
             <li>TSÇV'de rehabilitasyon alan,</li>
@@ -77,7 +77,7 @@ const LandingPage = () => {
             <li>6-18 yaş arası 40 çocuk projemize (aile onayıyla) dahil edilmektedir.</li>
           </ul>
 
-          <h4 style={{ color: '#FF9800', marginTop: '20px', marginBottom: '10px' }}>💡 Yenilikçi ve Özgün Yönümüz</h4>
+          <h4 style={{ color: '#FF9800', marginTop: '20px', marginBottom: '10px' }}>Yenilikçi ve Özgün Yönümüz</h4>
           <p>N.E.F.E.S. modelinin en büyük farkı; solunum ve postür eğitimini yorucu bir klinik rutin olmaktan çıkarıp, oyun temelli, eğitsel ve sürdürülebilir bir öğrenme deneyimi dönüşümüdür. Modelimiz, çocukların solunum fonksiyonları, beden farkındalığı, sosyal katılımı ve yaşam kalitesi üzerindeki etkileri standart ölçüm yöntemleriyle değerlendirilecek şekilde tasarlanmıştır. Ayrıca diğer özel gereksinimli gruplara da uyarlanabilir yapısıyla toplumsal katkıyı en üst düzeye çıkarmayı amaçlar.</p>
         </div>
       )
@@ -113,10 +113,18 @@ const LandingPage = () => {
 
       {/* 2. BİLGİLENDİRME KARTLARI */}
       <div style={{ padding: '70px 20px', maxWidth: '1200px', margin: '0 auto', textAlign: 'center' }}>
-        <h2 style={{ fontSize: '38px', color: '#1565C0', marginBottom: '50px', fontWeight: '800' }}>Neden N.E.F.E.S. AI?</h2>
+        <h2 style={{ fontSize: '38px', color: '#1565C0', marginBottom: '50px', fontWeight: '800' }}>Neden N.E.F.E.S Projesi?</h2>
         
         <div style={{ display: 'flex', justifyContent: 'center', gap: '35px', flexWrap: 'wrap' }}>
           
+          {/* KART 3: Projemiz */}
+          <div className="hover-card" style={cardStyle}>
+            <div style={{ fontSize: '65px', marginBottom: '15px' }}>🌲</div>
+            <h3 style={{ color: '#333', fontSize: '22px', marginBottom: '15px', fontWeight: 'bold' }}>Projemiz Hakkında</h3>
+            <p style={{ color: '#666', fontSize: '15px', flex: 1, lineHeight: '1.5' }}>Öğrenme odaklı, aktif katılımı esas alan ve dijital teknoloji ile desteklenmiş oyunlaştırılmış solunum eğitim modeli.</p>
+            <button onClick={() => setActiveModal('proje')} className="card-btn" style={{...cardBtnStyle, backgroundColor: '#FF9800'}}>Projeyi İncele</button>
+          </div>
+
           {/* KART 1: SP Nedir? */}
           <div className="hover-card" style={cardStyle}>
             <div style={{ fontSize: '65px', marginBottom: '15px' }}>🧠</div>
@@ -131,14 +139,6 @@ const LandingPage = () => {
             <h3 style={{ color: '#333', fontSize: '22px', marginBottom: '15px' }}>Neden Solunum?</h3>
             <p style={{ color: '#666', fontSize: '15px', flex: 1, lineHeight: '1.5' }}>Solunum kaslarının yetersiz kullanımı ve hatalı postüral alışkanlıklar yorgunluk döngüsünü artırabilir.</p>
             <button onClick={() => setActiveModal('solunum')} className="card-btn" style={{...cardBtnStyle, backgroundColor: '#03A9F4'}}>Detaylı Bilgi</button>
-          </div>
-
-          {/* KART 3: Projemiz */}
-          <div className="hover-card" style={cardStyle}>
-            <div style={{ fontSize: '65px', marginBottom: '15px' }}>🎮</div>
-            <h3 style={{ color: '#333', fontSize: '22px', marginBottom: '15px' }}>Projemiz & Modeller</h3>
-            <p style={{ color: '#666', fontSize: '15px', flex: 1, lineHeight: '1.5' }}>Öğrenme odaklı, aktif katılımı esas alan ve dijital teknoloji ile desteklenmiş oyunlaştırılmış solunum eğitim modeli.</p>
-            <button onClick={() => setActiveModal('proje')} className="card-btn" style={{...cardBtnStyle, backgroundColor: '#FF9800'}}>Projeyi İncele</button>
           </div>
 
         </div>

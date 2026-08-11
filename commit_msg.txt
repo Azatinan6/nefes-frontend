@@ -1,0 +1,9 @@
+Oyunların görsel ve mekanik güncellemeleri tamamlandı
+
+- Oyun bittikten sonra arka planda konuşma/ses çalmaya devam etmesi hatası düzeltildi (gameOverRef eklendi).
+- 6. Hafta için yepyeni "Çorbanı Kokla ve Soğut" oyunu eklendi ve menüye bağlandı.
+- 8. Hafta final oyunu "Nefes Kristalleri Macerası" olarak tamamen yenilendi (kristal toplama ve dev madalya animasyonu eklendi).
+- 7. Hafta Roket oyunu yeni renkli nefes barı, zorluk ayarı ve sesli komutlarla güncellendi.
+- 1. Hafta Çiçek oyunu için emoji yerine nefes aldıkça açılıp renklenen CSS tabanlı 3D çiçek tasarımı yapıldı.
+- 2. Hafta (Balon) ve 3. Hafta (Yelkenli) oyunlarının arka planları gökyüzü, deniz ve süslemelerle zenginleştirildi (dikkat dağıtmaması adına hareketli animasyonlar kapatıldı).
+- Çocuk Paneli (Orman Menüsü) içerisindeki hafta başlıkları güncellendi.

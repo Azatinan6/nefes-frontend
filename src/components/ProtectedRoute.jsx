@@ -13,13 +13,13 @@ import { useAuth } from '../context/AuthContext';
  * @param {React.ReactNode} children Korunacak sayfa bileşeni
  * @param {string[]} roles İzin verilen roller (boşsa herhangi bir giriş yeterli)
  */
-const ProtectedRoute = ({ children, roles = [] }) => {
+const ProtectedRoute = ({ children, roles = [], redirectTo = "/giris" }) => {
   const { isAuthenticated, hasRole } = useAuth();
 
-  // Kullanıcı giriş yapmamışsa login sayfasına yönlendir
+  // Kullanıcı giriş yapmamışsa login sayfasına (veya belirtilen yola) yönlendir
   if (!isAuthenticated()) {
     // replace=true → tarayıcı geçmişinde "/login" üzerine yazar, geri tuşu sorun yaratmaz
-    return <Navigate to="/giris" replace />;
+    return <Navigate to={redirectTo} replace />;
   }
 
   // Yetkilendirme: Belirli roller tanımlanmışsa kullanıcının rolünü kontrol et

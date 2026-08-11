@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getAllUsers, getPendingFizyos, approveFizyo, rejectFizyo, deleteUser } from '../services/api';
 
@@ -11,6 +12,7 @@ import { getAllUsers, getPendingFizyos, approveFizyo, rejectFizyo, deleteUser } 
  * 3. Tüm Kullanıcılar → Sistem genelinde arama, filtreleme, silme
  */
 const AdminPanel = () => {
+  const navigate = useNavigate();
   const { user, logout } = useAuth();
 
   // Aktif sekme
@@ -191,12 +193,20 @@ const AdminPanel = () => {
             <p style={styles.headerSubtitle}>Hoş geldiniz, {user?.fullName} 👋</p>
           </div>
         </div>
-        <button
-          onClick={logout}
-          style={styles.logoutBtn}
-        >
-          Çıkış Yap
-        </button>
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <button
+            onClick={() => navigate('/')}
+            style={{...styles.logoutBtn, color: '#2E7D32', borderColor: '#2E7D32'}}
+          >
+            🏠 Ana Sayfa
+          </button>
+          <button
+            onClick={logout}
+            style={styles.logoutBtn}
+          >
+            Çıkış Yap
+          </button>
+        </div>
       </div>
 
       <div style={styles.content}>

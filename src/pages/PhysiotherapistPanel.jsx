@@ -196,7 +196,7 @@ const PhysiotherapistPanel = () => {
             <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '30px', boxShadow: '0 8px 20px rgba(0,0,0,0.05)', borderTop: '5px solid #2B6CB0' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                 <h3 style={{ margin: 0, color: '#2D3748', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <span style={{ fontSize: '26px' }}>🧠</span> N.E.F.E.S. AI Klinik Asistanı
+                  <span style={{ fontSize: '26px' }}>🧠</span> N.E.F.E.S. AL Klinik Asistanı
                 </h3>
                 <button 
                     onClick={generateClinicalReport} 

@@ -19,6 +19,9 @@ const RegisterPage = () => {
   // Aktif sekme sadece Fizyoterapist
   const [activeTab, setActiveTab] = useState('fizyo');
 
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
   // Yükleme ve durum mesajları
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -103,7 +106,7 @@ const RegisterPage = () => {
         {/* Başlık */}
         <div style={{ textAlign: 'center', marginBottom: '28px' }}>
           <div style={{ fontSize: '44px', marginBottom: '10px' }}>🌿</div>
-          <h1 style={styles.title}>N.E.F.E.S. AI</h1>
+          <h1 style={styles.title}>N.E.F.E.S. AL</h1>
           <p style={styles.subtitle}>Yeni hesap oluşturun</p>
         </div>
 
@@ -170,17 +173,27 @@ const RegisterPage = () => {
             </Field>
 
             <Field label="Şifre">
-              <input className="reg-input" type="password" placeholder="En az 8 karakter"
-                value={fizyoForm.password}
-                onChange={(e) => setFizyoForm({...fizyoForm, password: e.target.value})}
-                required minLength={8} />
+              <div style={{ position: 'relative' }}>
+                <input className="reg-input" type={showPassword ? "text" : "password"} placeholder="En az 8 karakter"
+                  value={fizyoForm.password}
+                  onChange={(e) => setFizyoForm({...fizyoForm, password: e.target.value})}
+                  required minLength={8} />
+                <button type="button" onMouseDown={() => setShowPassword(true)} onMouseUp={() => setShowPassword(false)} onMouseLeave={() => setShowPassword(false)} onTouchStart={() => setShowPassword(true)} onTouchEnd={() => setShowPassword(false)} style={styles.eyeBtn}>
+                  {showPassword ? '👁️' : '🙈'}
+                </button>
+              </div>
             </Field>
 
             <Field label="Şifre Tekrar">
-              <input className="reg-input" type="password" placeholder="Şifrenizi tekrar girin"
-                value={fizyoForm.confirmPassword}
-                onChange={(e) => setFizyoForm({...fizyoForm, confirmPassword: e.target.value})}
-                required />
+              <div style={{ position: 'relative' }}>
+                <input className="reg-input" type={showConfirmPassword ? "text" : "password"} placeholder="Şifrenizi tekrar girin"
+                  value={fizyoForm.confirmPassword}
+                  onChange={(e) => setFizyoForm({...fizyoForm, confirmPassword: e.target.value})}
+                  required />
+                <button type="button" onMouseDown={() => setShowConfirmPassword(true)} onMouseUp={() => setShowConfirmPassword(false)} onMouseLeave={() => setShowConfirmPassword(false)} onTouchStart={() => setShowConfirmPassword(true)} onTouchEnd={() => setShowConfirmPassword(false)} style={styles.eyeBtn}>
+                  {showConfirmPassword ? '👁️' : '🙈'}
+                </button>
+              </div>
             </Field>
 
             <button type="submit" className="reg-btn" disabled={loading} style={{ marginTop: '8px' }}>
@@ -251,6 +264,10 @@ const styles = {
     backgroundColor: '#eff6ff', border: '1px solid #bfdbfe', color: '#1d4ed8',
     borderRadius: '10px', padding: '12px 16px', fontSize: '13px', marginBottom: '20px', lineHeight: '1.6',
   },
+  eyeBtn: {
+    position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)',
+    background: 'none', border: 'none', cursor: 'pointer', fontSize: '16px', padding: 0
+  }
 };
 
 export default RegisterPage;

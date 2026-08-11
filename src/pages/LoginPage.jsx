@@ -23,6 +23,7 @@ const LoginPage = () => {
   // Form alanları için state
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   // Yükleme ve hata durumları
   const [loading, setLoading] = useState(false);
@@ -142,7 +143,7 @@ const LoginPage = () => {
         {/* Logo ve başlık */}
         <div style={{ textAlign: 'center', marginBottom: '36px' }}>
           <div className="logo-icon" style={styles.logoIcon}>🌿</div>
-          <h1 style={styles.title}>N.E.F.E.S. AI</h1>
+          <h1 style={styles.title}>N.E.F.E.S. AL</h1>
           <p style={styles.subtitle}>Sisteme giriş yapın</p>
         </div>
 
@@ -179,15 +180,31 @@ const LoginPage = () => {
                 Şifremi unuttum
               </Link>
             </div>
-            <input
-              type="password"
-              className="login-input"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              autoComplete="current-password"
-            />
+            <div style={{ position: 'relative' }}>
+              <input
+                type={showPassword ? "text" : "password"}
+                className="login-input"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                autoComplete="current-password"
+              />
+              <button
+                type="button"
+                onMouseDown={() => setShowPassword(true)}
+                onMouseUp={() => setShowPassword(false)}
+                onMouseLeave={() => setShowPassword(false)}
+                onTouchStart={() => setShowPassword(true)}
+                onTouchEnd={() => setShowPassword(false)}
+                style={{
+                  position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)',
+                  background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px', padding: 0
+                }}
+              >
+                {showPassword ? '👁️' : '🙈'}
+              </button>
+            </div>
           </div>
 
           {/* Giriş butonu — yükleme sırasında devre dışı */}

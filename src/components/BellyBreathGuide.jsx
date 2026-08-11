@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { cpTheme } from '../theme/colors';
 
-const BellyBreathGuide = ({ phase, blowIntensity = 0, isListening = false, customStyle = {} }) => {
+const BellyBreathGuide = ({ phase, blowIntensity = 0, isListening = false, customStyle = {}, scale = 1.4, theme = 'auto' }) => {
   const [internalPhase, setInternalPhase] = useState('inhale');
 
   // If a specific phase is provided by the game, use it.
@@ -27,10 +27,18 @@ const BellyBreathGuide = ({ phase, blowIntensity = 0, isListening = false, custo
   const balloonRadius = isExhaling ? 10 : 25; // Exhale -> shrinks, Inhale -> expands
   const balloonColor = isExhaling ? '#FFB74D' : '#FF7043'; // Orange-ish when small, Coral when big
 
-  // Dinamik Renk ve Tema Ayarı (Oyunun URL'sine göre)
-  const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
-  const darkBgGames = ['hafta-3']; // Sadece 3. oyun (Gökkuşağı) açık renkli (beyaz) olsun, diğerleri koyu renk (turkuaz/siyah)
-  const isDarkBg = darkBgGames.some(game => pathname.includes(game));
+  // Dinamik Renk ve Tema Ayarı
+  let isDarkBg = false;
+  if (theme === 'darkBg') {
+    isDarkBg = true;
+  } else if (theme === 'lightBg') {
+    isDarkBg = false;
+  } else {
+    const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
+    // Sadece arka planı gerçekten çok koyu olan oyunlar için (örn: Gökkuşağı - gece modu vs.)
+    const darkBgGames = ['hafta-3-hareket-ettir', 'hafta-8']; 
+    isDarkBg = darkBgGames.some(game => pathname.includes(game));
+  }
 
   const textColor = isDarkBg ? '#FFFFFF' : cpTheme.text.dark;
   const textShadow = isDarkBg ? '0px 2px 4px rgba(0,0,0,0.8)' : '0px 1px 2px rgba(255,255,255,0.8)';
@@ -52,7 +60,7 @@ const BellyBreathGuide = ({ phase, blowIntensity = 0, isListening = false, custo
       transition: 'all 0.3s ease',
       ...customStyle
     }}>
-      <div style={{ transform: 'scale(1.4)', transformOrigin: 'right center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      <div style={{ transform: `scale(${scale})`, transformOrigin: 'right center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <h4 style={{ 
           margin: '0 0 10px 0', 
           color: textColor, 

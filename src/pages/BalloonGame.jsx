@@ -3,9 +3,12 @@ import useBreathSensor from '../components/useBreathSensor';
 import BellyBreathGuide from '../components/BellyBreathGuide';
 import axios from 'axios';
 import { cpTheme } from '../theme/colors';
+import { useNavigate } from 'react-router-dom';
+
 const BalloonGame = () => {
   // Nefes sensöründen gelen veriler ve kontroller
   const { blowIntensity, isListening, startListening, stopListening } = useBreathSensor();
+  const navigate = useNavigate();
   
   // --- Oyun Durumları (States) ---
   const [progress, setProgress] = useState(0); // Balonun doluluk yüzdesi (0-100)
@@ -14,7 +17,7 @@ const BalloonGame = () => {
   const [gameOver, setGameOver] = useState(false); // Oyunun bitip bitmediği
   const [isPopped, setIsPopped] = useState(false); // Balon patlama efekti için
   const [dbPercentage, setDbPercentage] = useState(0); // Anlık üfleme şiddeti yüzdesi
-  const [promptMessage, setPromptMessage] = useState("Omuzlarını rahatlat ve zürafa gibi dik dur! Başlamak için butona bas."); // Ekranda görünen asistan mesajı
+  const [promptMessage, setPromptMessage] = useState("Öncelikle öğrendiğimiz gibi dik duralım!"); // Ekranda görünen asistan mesajı
 
   // --- Referanslar (Refs) ---
   // Ritim ve zamanlama takibi için state yerine ref kullanıyoruz (gereksiz render'ı önlemek için)
@@ -42,13 +45,13 @@ const BalloonGame = () => {
     if (!warningGiven.current && !gameOver && isListening) {
       let message = "";
       if (type === 'start') {
-        message = "Klinikte öğrendiğin gibi omuzlarını rahatlat ve zürafa gibi dik dur. Şimdi elini karnına koy ve derin bir nefes alıp balonu şişir!";
+        message = "Şimdi balon şişirme zamanı! Ağzından yavaşça nefes vererek ekrandaki balonu şişir.";
       } else if (type === 'encourage') {
-        message = "Harika gidiyorsun, uzun ve kontrollü üflemeye devam et!";
+        message = "Süpersin, harika gidiyorsun!";
       } else if (type === 'posture') {
-        message = "Unutma, zürafa gibi dik duruyoruz!";
+        message = "Dik durmayı unutma, karnındaki balonu şişiriyorsun gibi düşün.";
       } else if (type === 'pop') {
-        message = "Tebrikler, harika şişirdin!";
+        message = "Harika!";
       }
 
       setPromptMessage(message);
@@ -65,6 +68,13 @@ const BalloonGame = () => {
       setTimeout(() => { warningGiven.current = false; }, 8000);
     }
   };
+
+  // Sayfadan çıkıldığında veya oyun bittiğinde konuşmayı sustur
+  useEffect(() => {
+    return () => {
+      window.speechSynthesis.cancel();
+    };
+  }, []);
 
   // Oyun başladığında ilk yönlendirme
   useEffect(() => {
@@ -85,22 +95,21 @@ const BalloonGame = () => {
 
           // İdeal üfleme aralığı: Kontrollü ve ritmik (Çok sert değil, çok yavaş değil)
           if (currentDb >= 10 && currentDb <= 80) {
-            newProgress += 0.8; // Balon kontrollü büyür
+            newProgress += (currentDb * 0.008); // Balon nefes şiddetiyle orantılı kontrollü büyür
             
             // Puan artışı
             setScore(s => s + 2);
           } else if (currentDb > 80) {
             // Çok sert üfleme (Yanlış teknik)
-            newProgress += 0.2; // Büyüme yavaşlar, kontrollü olması teşvik edilir
+            newProgress += 0.1; // Büyüme yavaşlar, kontrollü olması teşvik edilir
           } else {
-            // Üfleme yoksa balon hafifçe inebilir (isteğe bağlı, şu an sabit kalıyor veya çok az iniyor)
-            if (newProgress > 0) newProgress -= 0.1;
+            // Üfleme yoksa balon sönmeye başlasın (gerçekçi sönme etkisi)
+            if (newProgress > 0) newProgress -= 0.3;
           }
 
-          // Balon %100'e ulaşırsa patlat ve kristal kazandır
+          // Balon %100'e ulaşırsa patlatmayı useEffect devralacak
           if (newProgress >= 100) {
-            handleBalloonPop();
-            return 0; // Patladıktan sonra sıfırla
+            return 100;
           }
 
           return Math.max(0, newProgress); // 0'ın altına düşmesin
@@ -125,43 +134,64 @@ const BalloonGame = () => {
     };
   }, [isListening, gameOver, isPopped]);
 
+  // Strict Mode'da state güncelleyicisi içinde yan etki(side-effect) oluşmasını önlemek için
+  useEffect(() => {
+    if (progress >= 100 && !isPopped) {
+      handleBalloonPop();
+    }
+  }, [progress, isPopped]);
+
   // --- Balon Patlatma İşlemi ---
   const handleBalloonPop = () => {
     setIsPopped(true);
     playAudioPrompt('pop');
     
     // Kristal ekle
-    setCrystals(c => c + 1);
-
-    // Animasyon süresi kadar bekle, sonra yeni balona geç
-    setTimeout(() => {
-      setIsPopped(false);
-      setProgress(0);
-    }, 1000); // 1 saniye patlama efekti beklemesi
+    setCrystals(c => {
+      const newC = c + 1;
+      
+      if (newC >= 5) {
+        setTimeout(() => {
+          finishGameWithCrystals(newC);
+        }, 1500);
+      } else {
+        // Animasyon süresi kadar bekle, sonra yeni balona geç
+        setTimeout(() => {
+          setIsPopped(false);
+          setProgress(0);
+        }, 1000);
+      }
+      return newC;
+    });
   };
 
   // --- Oyunu Bitirme ve Veri Kaydetme ---
-  const handleFinishGame = async () => {
+  const finishGameWithCrystals = async (finalCrystals) => {
     stopListening();
     setGameOver(true);
+    window.speechSynthesis.cancel();
     setPromptMessage("Oyun Bitti! Harika bir iş çıkardın.");
 
     const progressData = {
       userId: "123e4567-e89b-12d3-a456-426614174000",
-      gameId: 1, // 1. Hafta Oyunu: Dik Dur Güçlen
+      gameId: 2, // 2. Hafta Oyunu: Balon Şişirme
       score: score,
-      breathCrystals: crystals,
+      breathCrystals: finalCrystals,
       dbPerformance: dbPercentage
     };
 
     try {
       await axios.post('http://localhost:8080/api/progress/save', progressData);
-      alert(`Harika! ${crystals} Nefes Kristali Kazandın! 💎`);
+      alert(`Tebrikler! ${finalCrystals} Nefes Kristali Kazandın! 💎 Menüye dönülüyor...`);
     } catch (error) {
-      console.error("Skor kaydedilirken hata:", error);
-      alert(`Oyun Tamamlandı! Kazanılan Kristal: ${crystals} 💎\n(Sunucuya bağlanılamadı)`);
+      alert(`Tebrikler! Kazanılan Kristal: ${finalCrystals} 💎\nMenüye dönülüyor...`);
     }
+    
+    // Haritaya geri dön
+    navigate('/cocuk-paneli');
   };
+
+  const handleFinishGame = () => finishGameWithCrystals(crystals);
 
   // --- Dinamik Stil Ayarları (Tasarım Sistemi) ---
   const styles = {
@@ -169,7 +199,7 @@ const BalloonGame = () => {
       position: 'relative',
       width: '100%',
       height: 'calc(100vh - 70px)',
-      background: cpTheme.bg.warmSand, // CP-friendly arka plan
+      background: 'linear-gradient(135deg, #A1C4FD 0%, #C2E9FB 100%)', // Renkli Gökyüzü
       overflow: 'hidden',
       fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
       color: cpTheme.text.dark,
@@ -282,8 +312,32 @@ const BalloonGame = () => {
 
   return (
     <div style={styles.container}>
-      <BellyBreathGuide isListening={isListening} blowIntensity={blowIntensity} />
-      
+        <BellyBreathGuide isListening={isListening} blowIntensity={blowIntensity} scale={2.0} theme="lightBg" customStyle={{ top: '48%' }} />
+
+        {/* Gökyüzü ve Park Süslemeleri */}
+        <div style={{ position: 'absolute', top: '10%', right: '20%', fontSize: '70px', filter: 'drop-shadow(0 0 20px rgba(255, 235, 59, 0.6))' }}>☀️</div>
+        <div style={{ position: 'absolute', top: '15%', left: '15%', fontSize: '60px', opacity: 0.8 }}>☁️</div>
+        <div style={{ position: 'absolute', top: '30%', left: '70%', fontSize: '70px', opacity: 0.6 }}>☁️</div>
+        
+        {/* Arka Planda Uçan Renkli Balonlar (Sabit) */}
+        <div style={{ position: 'absolute', bottom: '20%', left: '10%', fontSize: '40px', opacity: 0.6 }}>🎈</div>
+        <div style={{ position: 'absolute', bottom: '40%', left: '30%', fontSize: '30px', opacity: 0.4 }}>🎈</div>
+        <div style={{ position: 'absolute', bottom: '15%', left: '80%', fontSize: '50px', opacity: 0.5 }}>🎈</div>
+
+        <style>
+          {`
+            @keyframes floatCloud {
+              0% { transform: translateX(0); }
+              50% { transform: translateX(50px); }
+              100% { transform: translateX(0); }
+            }
+            @keyframes floatUp {
+              0% { transform: translateY(0) rotate(-5deg); }
+              50% { transform: translateY(-300px) rotate(5deg); }
+              100% { transform: translateY(-600px) rotate(-5deg); opacity: 0; }
+            }
+          `}
+        </style>
       {/* --- 1. ÜST PANEL: İstatistikler ve Kontroller --- */}
       <div style={styles.topPanel}>
         

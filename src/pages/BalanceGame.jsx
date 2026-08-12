@@ -12,6 +12,7 @@ const BalanceGame = () => {
   const [score, setScore] = useState(0);
   const [crystals, setCrystals] = useState(0);
   const [gameOver, setGameOver] = useState(false);
+  const gameOverRef = useRef(false);
   const [dbPercentage, setDbPercentage] = useState(0);
   const [treasureOpened, setTreasureOpened] = useState(false);
   const [promptMessage, setPromptMessage] = useState("Dengeli ve ritmik nefes alarak köprüyü geç.");
@@ -42,7 +43,7 @@ const BalanceGame = () => {
 
   // --- Sesli Yönlendirme ---
   const playAudioPrompt = (type) => {
-    if (!warningGiven.current && !gameOver && isListening) {
+    if (!warningGiven.current && !gameOverRef.current && isListening) {
       let message = "";
       if (type === 'start') {
         message = "Gizemli ormana hoş geldin! Karşıdaki hazineye ulaşmak için çok sakin ve dengeli nefes almalısın.";
@@ -81,7 +82,7 @@ const BalanceGame = () => {
 
   // --- Entegrasyon Motoru (Köprü Geçişi ve Denge) ---
   useEffect(() => {
-    if (isListening && !gameOver && !treasureOpened) {
+    if (isListening && !gameOverRef.current && !treasureOpened) {
       const updateGame = () => {
         const noiseThreshold = 30; 
         let validIntensity = intensityRef.current - noiseThreshold;
@@ -148,6 +149,7 @@ const BalanceGame = () => {
   const handleFinishGame = async () => {
     stopListening();
     setGameOver(true);
+    gameOverRef.current = true;
     
     // HATA DÜZELTMESİ (Konuşmayı kesin keser)
     warningGiven.current = true;

@@ -11,7 +11,8 @@ const AwarenessGame = () => {
   const [progress, setProgress] = useState(0); // Balonun doluluk yüzdesi (0-100)
   const [score, setScore] = useState(0); // Toplam puan
   const [crystals, setCrystals] = useState(0); // Kazanılan nefes kristalleri
-  const [gameOver, setGameOver] = useState(false); // Oyunun bitip bitmediği
+  const [gameOver, setGameOver] = useState(false);
+  const gameOverRef = useRef(false); // Oyunun bitip bitmediği
   const [isPopped, setIsPopped] = useState(false); // Balon patlama efekti için
   const [dbPercentage, setDbPercentage] = useState(0); // Anlık üfleme şiddeti yüzdesi
   const [promptMessage, setPromptMessage] = useState("Omuzlarını rahatlat ve zürafa gibi dik dur! Başlamak için butona bas."); // Ekranda görünen asistan mesajı
@@ -68,7 +69,7 @@ const AwarenessGame = () => {
 
   // --- Sesli Yönlendirme (Web Speech API) ---
   const playAudioPrompt = (type) => {
-    if (!warningGiven.current && !gameOver && isListening) {
+    if (!warningGiven.current && !gameOverRef.current && isListening) {
       let message = "";
       
       if (promptsPool[type] && promptsPool[type].length > 0) {
@@ -190,6 +191,7 @@ const AwarenessGame = () => {
   const handleFinishGame = async () => {
     stopListening();
     setGameOver(true);
+    gameOverRef.current = true;
     
     // Oyun bitince arkada devam eden konuşmaları hemen sustur
     window.speechSynthesis.cancel();

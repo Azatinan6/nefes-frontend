@@ -1,0 +1,5 @@
+Oyun sonu ses hatası tüm oyunlarda giderildi ve arayüz iyileştirmeleri yapıldı
+
+- Oyun bittikten sonra arkadan gelen konuşma sesi (stale closure) hatasını önleyen gameOverRef yapısı, projede yer alan geri kalan tüm oyunlara (Balon, Yelkenli, Araba, Kurbağa, Denge vb.) uygulandı. 
+- 1. Hafta (Çiçeği Kokla) oyunundaki nefes alma rehberi (karın şişiren karakter) daha belirgin olması için büyütüldü ve ekranın sol orta kısmına düzgün bir şekilde hizalandı.
+- Rehberin arkasında kalan ve çakışmaya sebep olan arka plan çiçek dekorları ekranın daha boş köşelerine taşındı.

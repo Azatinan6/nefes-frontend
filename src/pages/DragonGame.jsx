@@ -10,6 +10,7 @@ const DragonGame = () => {
   const [score, setScore] = useState(0);
   const [crystals, setCrystals] = useState(0);
   const [gameOver, setGameOver] = useState(false);
+  const gameOverRef = useRef(false);
   const [dbPercentage, setDbPercentage] = useState(0);
   const [dragonState, setDragonState] = useState('sleeping'); // 'sleeping' veya 'awake'
 
@@ -33,7 +34,7 @@ const DragonGame = () => {
 
   // Sesli Yönlendirme (Asla olumsuz feedback yok, hep pozitif destek)
   const playAudioPrompt = (type) => {
-    if (!warningGiven.current && !gameOver && isListening) {
+    if (!warningGiven.current && !gameOverRef.current && isListening) {
       let message = "";
       if (type === 'encourage') {
         message = "Harika gidiyorsun, karnını balon gibi şişirmeye devam et!";
@@ -103,6 +104,7 @@ const DragonGame = () => {
   const handleFinishGame = async () => {
     stopListening();
     setGameOver(true);
+    gameOverRef.current = true;
 
     const progressData = {
       userId: "123e4567-e89b-12d3-a456-426614174000",

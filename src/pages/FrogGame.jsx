@@ -12,6 +12,7 @@ const FrogGame = () => {
   const [energy, setEnergy] = useState(0); // 0 ile 100 arası
   const [score, setScore] = useState(0);
   const [gameOver, setGameOver] = useState(false);
+  const gameOverRef = useRef(false);
   const [dbPercentage, setDbPercentage] = useState(0);
   const [laps, setLaps] = useState(0); // Toplam 6 tur
   const [promptMessage, setPromptMessage] = useState("");
@@ -31,7 +32,7 @@ const FrogGame = () => {
 
   // Sesli Komut (Sadece state günceller ve okur)
   const speak = (message) => {
-    if (gameOver || !isListening) return;
+    if (gameOverRef.current || !isListening) return;
     setPromptMessage(message);
     const speech = new SpeechSynthesisUtterance(message);
     speech.lang = 'tr-TR';
@@ -136,6 +137,7 @@ const FrogGame = () => {
   const handleFinishGame = async () => {
     stopListening();
     setGameOver(true);
+    gameOverRef.current = true;
     
     window.speechSynthesis.cancel();
     // Bitiş komutu

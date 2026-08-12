@@ -25,6 +25,7 @@ const BalloonGame = () => {
   const warningGiven = useRef(false);
   const animationFrameId = useRef(null);
   const intensityRef = useRef(0);
+  const gameOverRef = useRef(false);
 
   // Anlık nefes şiddetini ref'e kaydet (Game loop içinde kullanmak için)
   useEffect(() => {
@@ -42,7 +43,7 @@ const BalloonGame = () => {
 
   // --- Sesli Yönlendirme (Web Speech API) ---
   const playAudioPrompt = (type) => {
-    if (!warningGiven.current && !gameOver && isListening) {
+    if (!warningGiven.current && !gameOverRef.current && isListening) {
       let message = "";
       if (type === 'start') {
         message = "Şimdi balon şişirme zamanı! Ağzından yavaşça nefes vererek ekrandaki balonu şişir.";
@@ -165,12 +166,12 @@ const BalloonGame = () => {
     });
   };
 
-  // --- Oyunu Bitirme ve Veri Kaydetme ---
   const finishGameWithCrystals = async (finalCrystals) => {
     stopListening();
     setGameOver(true);
+    gameOverRef.current = true;
     window.speechSynthesis.cancel();
-    setPromptMessage("Oyun Bitti! Harika bir iş çıkardın.");
+    setPromptMessage("Oyun Bitti! İlerlemen kaydedildi.");
 
     const progressData = {
       userId: "123e4567-e89b-12d3-a456-426614174000",

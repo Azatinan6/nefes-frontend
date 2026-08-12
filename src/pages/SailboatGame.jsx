@@ -15,6 +15,7 @@ const SailboatGame = () => {
   const [score, setScore] = useState(0);
   const [crystals, setCrystals] = useState(0);
   const [gameOver, setGameOver] = useState(false);
+  const gameOverRef = useRef(false);
   const [dbPercentage, setDbPercentage] = useState(0);
   const [laps, setLaps] = useState(0); // Kaç kez limana ulaştı
   const [promptMessage, setPromptMessage] = useState("");
@@ -38,7 +39,7 @@ const SailboatGame = () => {
   }, [blowIntensity]);
 
   const speak = (message) => {
-    if (gameOver || !isListening) return;
+    if (gameOverRef.current || !isListening) return;
     setPromptMessage(message);
     const speech = new SpeechSynthesisUtterance(message);
     speech.lang = 'tr-TR';
@@ -142,6 +143,7 @@ const SailboatGame = () => {
   const handleFinishGame = async () => {
     stopListening();
     setGameOver(true);
+    gameOverRef.current = true;
     
     // Konuşmayı kesin keser
     warningGiven.current = true;

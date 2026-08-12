@@ -197,14 +197,14 @@ const FlowerGame = () => {
   return (
     <div style={styles.container}>
       {/* Arka Plan Dekoratif Çiçekleri (Sabit) */}
-      <div style={{ position: 'absolute', top: '15%', left: '15%', fontSize: '60px', opacity: 0.3, transform: 'rotate(-20deg)' }}>🌸</div>
+      <div style={{ position: 'absolute', top: '15%', left: '25%', fontSize: '60px', opacity: 0.3, transform: 'rotate(-20deg)' }}>🌸</div>
       <div style={{ position: 'absolute', top: '10%', right: '25%', fontSize: '50px', opacity: 0.4, transform: 'rotate(15deg)' }}>🌺</div>
-      <div style={{ position: 'absolute', bottom: '20%', left: '10%', fontSize: '70px', opacity: 0.2, transform: 'rotate(-10deg)' }}>🌼</div>
+      <div style={{ position: 'absolute', bottom: '20%', left: '30%', fontSize: '70px', opacity: 0.2, transform: 'rotate(-10deg)' }}>🌼</div>
       <div style={{ position: 'absolute', bottom: '25%', right: '15%', fontSize: '80px', opacity: 0.25, transform: 'rotate(20deg)' }}>🌸</div>
-      <div style={{ position: 'absolute', top: '45%', left: '5%', fontSize: '40px', opacity: 0.3, transform: 'rotate(5deg)' }}>🌻</div>
+      <div style={{ position: 'absolute', bottom: '10%', left: '10%', fontSize: '40px', opacity: 0.3, transform: 'rotate(5deg)' }}>🌻</div>
       <div style={{ position: 'absolute', top: '35%', right: '10%', fontSize: '50px', opacity: 0.35, transform: 'rotate(-15deg)' }}>🌼</div>
 
-      <BellyBreathGuide isListening={isListening} blowIntensity={blowIntensity} phase={gamePhase} />
+      <BellyBreathGuide isListening={isListening} blowIntensity={blowIntensity} phase={gamePhase} scale={2.2} customStyle={{ left: '14%', right: 'auto', top: '55%' }} />
       
       <div style={styles.topPanel}>
         <div style={{ ...styles.glassCard, padding: '15px 25px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>

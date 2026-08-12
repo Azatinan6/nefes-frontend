@@ -12,6 +12,7 @@ const RainbowGame = () => {
   const [score, setScore] = useState(0);
   const [crystals, setCrystals] = useState(0);
   const [gameOver, setGameOver] = useState(false);
+  const gameOverRef = useRef(false);
   const [dbPercentage, setDbPercentage] = useState(0); // Anlık nefes yüzdesi
   const [promptMessage, setPromptMessage] = useState("Kelebek gibi kollarını aç ve dudaklarını büzerek bulutları dağıt!");
   const [isSuccess, setIsSuccess] = useState(false); 
@@ -43,7 +44,7 @@ const RainbowGame = () => {
 
   // --- Sesli Yönlendirme (Web Speech API) ---
   const playAudioPrompt = (type) => {
-    if (!warningGiven.current && !gameOver && isListening) {
+    if (!warningGiven.current && !gameOverRef.current && isListening) {
       let message = "";
       if (type === 'start') {
         message = "Sırtındaki kelebek kanatlarını kocaman aç! Şimdi dudaklarını büzerek uzun ve yavaş bir nefes ver. Bulutları dağıtıp gökkuşağını çıkaralım!";
@@ -160,6 +161,7 @@ const RainbowGame = () => {
   const handleFinishGame = async () => {
     stopListening();
     setGameOver(true);
+    gameOverRef.current = true;
     window.speechSynthesis.cancel();
     setPromptMessage("Oyun Bitti! Kelebek kanatların çok güçlendi.");
 

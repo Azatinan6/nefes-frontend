@@ -14,6 +14,7 @@ const CrystalGame = () => {
   const [score, setScore] = useState(0);
   const [crystals, setCrystals] = useState(0);
   const [gameOver, setGameOver] = useState(false);
+  const gameOverRef = useRef(false);
   const [dbPercentage, setDbPercentage] = useState(0);
   const [promptMessage, setPromptMessage] = useState("Derin bir nefesle kristali doldur, sonra nefesini tut!");
 
@@ -39,7 +40,7 @@ const CrystalGame = () => {
 
   // --- Sesli Yönlendirme ---
   const playAudioPrompt = (type) => {
-    if (!warningGiven.current && !gameOver && isListening) {
+    if (!warningGiven.current && !gameOverRef.current && isListening) {
       let message = "";
       if (type === 'start') {
         message = "Derin bir nefes alarak kristali parlat, sonra sihirli kelebeğin gelmesi için nefesini tut!";
@@ -171,6 +172,7 @@ const CrystalGame = () => {
   const handleFinishGame = async () => {
     stopListening();
     setGameOver(true);
+    gameOverRef.current = true;
     window.speechSynthesis.cancel();
     setPromptMessage("Oyun Bitti! Nefesini harika kontrol ettin.");
 

@@ -9,6 +9,7 @@ const CalmBreathGame = () => {
   const [isPostureCorrect, setIsPostureCorrect] = useState(false);
   const [score, setScore] = useState(0);
   const [gameOver, setGameOver] = useState(false);
+  const gameOverRef = useRef(false);
   
   // Aşamalar: idle (bekleme), inhale (nefes al), hold (tut), exhale (nefes ver)
   const [phase, setPhase] = useState('idle');
@@ -51,7 +52,7 @@ const CalmBreathGame = () => {
 
   // Geri Sayım Sayacı
   useEffect(() => {
-    if (!isListening || gameOver || phase === 'idle') return;
+    if (!isListening || gameOverRef.current || phase === 'idle') return;
     
     const timer = setInterval(() => {
       setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
@@ -69,6 +70,7 @@ const CalmBreathGame = () => {
   const handleFinishGame = async () => {
     stopListening();
     setGameOver(true);
+    gameOverRef.current = true;
     setPhase('idle');
     
     const earnedCrystals = Math.floor(score / 1600);

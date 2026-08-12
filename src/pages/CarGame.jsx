@@ -12,6 +12,7 @@ const CarGame = () => {
   const [progress, setProgress] = useState(0); // 0 ile 100 arası
   const [score, setScore] = useState(0);
   const [gameOver, setGameOver] = useState(false);
+  const gameOverRef = useRef(false);
   const [dbPercentage, setDbPercentage] = useState(0);
   const [laps, setLaps] = useState(0); // 5 tur
   const [promptMessage, setPromptMessage] = useState("");
@@ -28,7 +29,7 @@ const CarGame = () => {
 
   // Sesli Komut (Sadece state günceller ve okur)
   const speak = (message) => {
-    if (gameOver || !isListening) return;
+    if (gameOverRef.current || !isListening) return;
     setPromptMessage(message);
     const speech = new SpeechSynthesisUtterance(message);
     speech.lang = 'tr-TR';
@@ -109,6 +110,7 @@ const CarGame = () => {
   const handleFinishGame = async () => {
     stopListening();
     setGameOver(true);
+    gameOverRef.current = true;
     
     window.speechSynthesis.cancel();
     // Bitiş komutu
@@ -269,3 +271,4 @@ const btnStyle = {
 };
 
 export default CarGame;
+

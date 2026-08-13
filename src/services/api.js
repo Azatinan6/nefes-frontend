@@ -9,8 +9,7 @@ import axios from 'axios';
  */
 
 // Backend sunucusunun temel URL'si
-const BASE_URL = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api` : 'http://185.22.185.137:8080/api';
-// =============================================
+const BASE_URL = '/api';// =============================================
 // KORUNAN API — Her istekte JWT token eklenir
 // =============================================
 const api = axios.create({

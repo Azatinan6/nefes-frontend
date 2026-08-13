@@ -254,7 +254,7 @@ function AppContent() {
           
           {/* Orta Taraf: Sponsor Logoları (Footer boyunu büyütmeden max genişlik/yükseklikte) */}
           <div style={{ flex: '1 1 300px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-            <img src="/footer-sponsors.png" alt="Footer Sponsorlar" style={{ width: '100%', maxWidth: '380px', maxHeight: '60px', objectFit: 'contain', backgroundColor: 'rgba(255,255,255,0.95)', padding: '6px 12px', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.2)' }} />
+            <img src="/footer-sponsors.png" alt="Footer Sponsorlar" style={{ width: '100%', maxWidth: '380px', maxHeight: '60px', objectFit: 'contain' }} />
           </div>
 
           {/* Sağ Taraf: Telif Hakkı */}

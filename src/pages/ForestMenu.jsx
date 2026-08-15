@@ -48,7 +48,7 @@ const ForestMenu = () => {
       {/* 1. Hafta: Çiçek Kokla (Sol Alt - Yoga Yapan Çocuk) */}
       <button
         onClick={() => goToGame('/oyun/hafta-1-cicek')}
-        title="1. Hafta: Çiçek Kokla"
+        title="Çiçek Kokla"
         style={{ ...hotspotStyle, top: '55%', left: '3%', width: '13%', height: '30%' }}
         onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}
       />
@@ -56,7 +56,7 @@ const ForestMenu = () => {
       {/* 2. Hafta: Balon Şişir (Sol Alt/Orta - Rüzgarlı Göl Macerası) */}
       <button
         onClick={() => goToGame('/oyun/hafta-2-balon')}
-        title="2. Hafta: Balon Şişir"
+        title="Balon Şişir"
         style={{ ...hotspotStyle, top: '63%', left: '22%', width: '22%', height: '32%' }}
         onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}
       />
@@ -64,7 +64,7 @@ const ForestMenu = () => {
       {/* 3. Hafta: Yelkeni Yüzdür (Sol Orta - Gökkuşağı/Göl) */}
       <button
         onClick={() => goToGame('/oyun/hafta-3-yelken')}
-        title="3. Hafta: Yelkeni Yüzdür"
+        title="Yelkeni Yüzdür"
         style={{ ...hotspotStyle, top: '26%', left: '8%', width: '20%', height: '28%' }}
         onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}
       />
@@ -72,7 +72,7 @@ const ForestMenu = () => {
       {/* 4. Hafta: Kontrol Et (Sağ Alt - Gözün Arabada!) */}
       <button
         onClick={() => goToGame('/oyun/hafta-4-kontrol-et')}
-        title="Gözün Arabada!"
+        title="Gözün Arabada !"
         style={{ ...hotspotStyle, top: '62%', left: '48%', width: '22%', height: '35%' }}
         onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}
       />
@@ -88,7 +88,7 @@ const ForestMenu = () => {
       {/* 6. Hafta: Güç Üret (Orta Merkez - Çorbanı Soğut!) */}
       <button
         onClick={() => goToGame('/oyun/hafta-6-guc-uret')}
-        title="Çorbanı Soğut!"
+        title="Çorbanı Kokla ve Soğut"
         style={{ ...hotspotStyle, top: '55%', left: '35%', width: '13%', height: '16%' }}
         onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}
       />
@@ -96,7 +96,7 @@ const ForestMenu = () => {
       {/* 7. Hafta: Birleştir (Sağ Orta - Roketi Fırlat!) */}
       <button
         onClick={() => goToGame('/oyun/hafta-7-birlestir')}
-        title="Roketi Fırlat!"
+        title="Güçlü Üfle, Roketi Fırlat!"
         style={{ ...hotspotStyle, top: '24%', left: '58%', width: '15%', height: '22%' }}
         onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}
       />

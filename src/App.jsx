@@ -83,8 +83,8 @@ function AppContent() {
           <nav style={{
             minHeight: '85px',
             padding: '10px 40px',
-            backgroundColor: '#2E7D32',
-            color: 'white',
+            backgroundColor: '#FFFFFF',
+            color: '#333',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
@@ -93,12 +93,12 @@ function AppContent() {
           }}>
             {/* Sol Taraf — Logo ve Sponsorlar */}
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-              <Link to="/" style={{ fontSize: '26px', fontWeight: '900', letterSpacing: '1px', color: '#FFEB3B', textDecoration: 'none', textShadow: '1px 1px 2px rgba(0,0,0,0.2)', lineHeight: '1', textAlign: 'center' }}>
+              <Link to="/" style={{ fontSize: '26px', fontWeight: '900', letterSpacing: '1px', color: '#2E7D32', textDecoration: 'none', textShadow: 'none', lineHeight: '1', textAlign: 'center' }}>
                 🌿 N.E.F.E.S. AL
               </Link>
-              {/* Navbar logoları (Resmi public klasörüne sponsors.png adıyla eklemelisin) */}
-              <img src="/sponsors.png" alt="Sponsorlar" style={{ width: '85%', height: 'auto', objectFit: 'contain', boxSizing: 'border-box' }} />
-            </div>
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%' }}>
+                <img src="/sponsors.png" alt="Sponsorlar" style={{ width: 'auto', height: '45px', objectFit: 'contain', maxWidth: '100%' }} />
+              </div>            </div>
 
             {/* Orta — Panel Bağlantıları */}
             <div style={{ display: 'flex', gap: '25px', alignItems: 'center' }}>
@@ -123,7 +123,7 @@ function AppContent() {
               {isAuthenticated() ? (
                 // Giriş yapılmışsa: Kullanıcı adı ve çıkış butonu
                 <>
-                  <span style={{ color: '#FFEB3B', fontWeight: '600', fontSize: '15px' }}>
+                  <span style={{ color: '#2E7D32', fontWeight: '600', fontSize: '15px' }}>
                     👤 {user?.fullName?.split(' ')[0]}
                   </span>
                   {/* Admin paneline hızlı erişim butonu — sadece admin için */}
@@ -142,7 +142,7 @@ function AppContent() {
               ) : (
                 // Giriş yapılmamışsa: Giriş Yap ve Kayıt Ol butonları
                 <>
-                  <Link to="/giris" style={{ ...btnStyle, backgroundColor: '#FFFFFF', color: '#2E7D32', textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
+                  <Link to="/giris" style={{ ...btnStyle, backgroundColor: '#2E7D32', color: '#FFFFFF', textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
                     Giriş Yap
                   </Link>
                   <Link to="/kayit" style={{ ...btnStyle, backgroundColor: '#FFCA28', color: '#333', textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
@@ -232,8 +232,8 @@ function AppContent() {
 
         {/* ===== FOOTER ===== */}
         <footer style={{
-          backgroundColor: '#1B5E20', // Navbardan bir tık daha koyu yeşil
-          color: '#E8F5E9',
+          backgroundColor: '#FFFFFF',
+          color: '#333',
           padding: '20px 40px',
           display: 'flex',
           flexWrap: 'wrap', // Mobilde logolar ve yazılar alt alta geçebilsin diye
@@ -247,14 +247,14 @@ function AppContent() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: '1 1 200px' }}>
             <span style={{ fontSize: '24px' }}>🌿</span>
             <div>
-              <h4 style={{ margin: '0 0 4px 0', fontSize: '16px', color: '#FFEB3B', letterSpacing: '0.5px' }}>N.E.F.E.S. AL</h4>
-              <p style={{ margin: 0, fontSize: '13px', opacity: 0.8 }}>Dijital Oyunlaştırılmış Nefes ve Postür Platformu</p>
+              <h4 style={{ margin: '0 0 4px 0', fontSize: '16px', color: '#2E7D32', letterSpacing: '0.5px', fontWeight: 'bold' }}>N.E.F.E.S. AL</h4>
+              <p style={{ margin: 0, fontSize: '13px', opacity: 0.8, color: '#555' }}>Dijital Oyunlaştırılmış Nefes ve Postür Platformu</p>
             </div>
           </div>
           
           {/* Orta Taraf: Sponsor Logoları (Footer boyunu büyütmeden max genişlik/yükseklikte) */}
           <div style={{ flex: '1 1 300px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-            <img src="/footer-sponsors.png" alt="Footer Sponsorlar" style={{ width: '100%', maxWidth: '380px', maxHeight: '60px', objectFit: 'contain' }} />
+            <img src="/footer-sponsors.png" alt="Footer Sponsorlar" style={{ height: '60px', width: 'auto', maxWidth: '100%', objectFit: 'contain' }} />
           </div>
 
           {/* Sağ Taraf: Telif Hakkı */}
@@ -272,7 +272,7 @@ function AppContent() {
 // Navbar link stili
 const navLinkStyle = {
   textDecoration: 'none',
-  color: '#FFFFFF',
+  color: '#333',
   fontWeight: '600',
   fontSize: '16px',
   padding: '8px 12px',

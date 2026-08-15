@@ -96,7 +96,7 @@ const LandingPage = () => {
           Nefes Ormanı'na Adım At!
         </h1>
         <p style={{ fontSize: '20px', color: '#555', maxWidth: '650px', textAlign: 'center', marginBottom: '35px', lineHeight: '1.6' }}>
-          N.E.F.E.S. uygulaması ve Serebral Palsili çocuklarımız için hazırlanan oyunların büyülü dünyasını keşfet.
+          N.E.F.E.S-SP ile nefes ve postür farkındalığını eğlenceli oyunlarla keşfet.
         </p>
         <button 
           onClick={() => navigate('/cocuk-paneli')}

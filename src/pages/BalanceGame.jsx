@@ -22,6 +22,7 @@ const BalanceGame = () => {
   const lastBreathTime = useRef(Date.now());
   const warningGiven = useRef(false);
   const animationFrameId = useRef(null);
+  const initRef = useRef(false);
 
   // Ses Şiddetini Hesapla (Gürültü filtreli)
   useEffect(() => {

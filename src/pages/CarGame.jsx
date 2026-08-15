@@ -19,6 +19,7 @@ const CarGame = () => {
 
   const blowIntensityRef = useRef(0);
   const animationFrameId = useRef(null);
+  const initRef = useRef(false);
 
   // Ses Şiddetini Yüzdeye Çevir
   useEffect(() => {
@@ -40,10 +41,14 @@ const CarGame = () => {
 
   // Oyun Başlangıç Komutları
   useEffect(() => {
-    if (isListening && !gameOver) {
+    if (isListening && !gameOver && !initRef.current) {
+      initRef.current = true;
       speak("Hazır mısın? Dik dur. Gözlerin arabada olsun. Burnundan yavaşça nefes al.");
       setTimeout(() => speak("Arabayı gözlerinle takip et."), 5000);
       setTimeout(() => speak("Ağzından yavaşça nefes ver."), 10000);
+    }
+    else if (!isListening) {
+      initRef.current = false;
     }
   }, [isListening]);
 
@@ -56,7 +61,8 @@ const CarGame = () => {
 
   // Oyun Döngüsü
   useEffect(() => {
-    if (isListening && !gameOver) {
+    if (isListening && !gameOver && !initRef.current) {
+      initRef.current = true;
       const updateGame = () => {
         const currentDb = Math.min(Math.round((blowIntensityRef.current / 220) * 100), 100);
 

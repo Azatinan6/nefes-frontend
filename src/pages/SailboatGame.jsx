@@ -16,6 +16,7 @@ const SailboatGame = () => {
   const [crystals, setCrystals] = useState(0);
   const [gameOver, setGameOver] = useState(false);
   const gameOverRef = useRef(false);
+  const initRef = useRef(false);
   const [dbPercentage, setDbPercentage] = useState(0);
   const [laps, setLaps] = useState(0); // Kaç kez limana ulaştı
   const [promptMessage, setPromptMessage] = useState("");
@@ -49,10 +50,14 @@ const SailboatGame = () => {
   };
 
   useEffect(() => {
-    if (isListening && !gameOver) {
+    if (isListening && !gameOver && !initRef.current) {
+      initRef.current = true;
       speak("Hazır mısın? Çiçek koklar gibi derin nefes al.");
       setTimeout(() => speak("Karnını şişir. Dudaklarını hafifçe büz."), 5000);
       setTimeout(() => speak("Yavaş ve uzun nefes ver."), 10000);
+    }
+    else if (!isListening) {
+      initRef.current = false;
     }
   }, [isListening]);
 

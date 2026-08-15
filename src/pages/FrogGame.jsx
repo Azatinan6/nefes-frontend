@@ -20,6 +20,7 @@ const FrogGame = () => {
 
   const blowIntensityRef = useRef(0);
   const animationFrameId = useRef(null);
+  const initRef = useRef(false);
   const phaseTimerRef = useRef(null);
   const warningGiven = useRef(false);
 
@@ -43,10 +44,14 @@ const FrogGame = () => {
 
   // Oyun Başlangıç Komutları
   useEffect(() => {
-    if (isListening && !gameOver) {
+    if (isListening && !gameOver && !initRef.current) {
+      initRef.current = true;
       speak("Hazır mısın?");
       setTimeout(() => speak("Dik dur."), 2000);
       setTimeout(() => speak("Burnundan derin ve yavaş nefes al."), 4500);
+    }
+    else if (!isListening) {
+      initRef.current = false;
     }
   }, [isListening]);
 
@@ -60,7 +65,8 @@ const FrogGame = () => {
 
   // Oyun Döngüsü
   useEffect(() => {
-    if (isListening && !gameOver) {
+    if (isListening && !gameOver && !initRef.current) {
+      initRef.current = true;
       const updateGame = () => {
         const currentDb = Math.min(Math.round((blowIntensityRef.current / 220) * 100), 100);
 

@@ -11,6 +11,7 @@ const DragonGame = () => {
   const [crystals, setCrystals] = useState(0);
   const [gameOver, setGameOver] = useState(false);
   const gameOverRef = useRef(false);
+  const initRef = useRef(false);
   const [dbPercentage, setDbPercentage] = useState(0);
   const [dragonState, setDragonState] = useState('sleeping'); // 'sleeping' veya 'awake'
 

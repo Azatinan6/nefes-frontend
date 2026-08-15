@@ -10,6 +10,7 @@ const CalmBreathGame = () => {
   const [score, setScore] = useState(0);
   const [gameOver, setGameOver] = useState(false);
   const gameOverRef = useRef(false);
+  const initRef = useRef(false);
   
   // Aşamalar: idle (bekleme), inhale (nefes al), hold (tut), exhale (nefes ver)
   const [phase, setPhase] = useState('idle');

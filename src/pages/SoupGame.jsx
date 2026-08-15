@@ -19,6 +19,7 @@ const SoupGame = () => {
 
   const blowIntensityRef = useRef(0);
   const animationFrameId = useRef(null);
+  const initRef = useRef(false);
   const phaseTimerRef = useRef(null);
   const gameOverRef = useRef(false);
   const warningGiven = useRef(false);

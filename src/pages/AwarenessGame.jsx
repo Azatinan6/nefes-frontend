@@ -22,6 +22,7 @@ const AwarenessGame = () => {
   const lastBreathTime = useRef(Date.now());
   const warningGiven = useRef(false);
   const animationFrameId = useRef(null);
+  const initRef = useRef(false);
   const intensityRef = useRef(0);
 
   // Anlık nefes şiddetini ref'e kaydet (Game loop içinde kullanmak için)

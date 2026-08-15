@@ -53,38 +53,69 @@ const FlowerGame = () => {
   }, []);
 
   useEffect(() => {
+    let timeoutId;
     if (isListening && !gameOver && cycleCount === 0 && gamePhase === 'start') {
-      const scheduleSequence = () => {
-        // Start phase
-        playAudioPrompt("Hazır mısın?");
-        
-        setTimeout(() => {
-          setGamePhase('inhale');
-          phaseRef.current = 'inhale';
-          playAudioPrompt("Çiçek koklar gibi burnundan derin nefes al.");
-        }, 3000);
-      };
-      
-      scheduleSequence();
+      timeoutId = setTimeout(() => startCycle(0), 1000);
     }
-  }, [isListening]);
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [isListening, gameOver, cycleCount, gamePhase]);
 
-  // Oyun Döngüsü
+  const startCycle = (cycle) => {
+    if (gameOverRef.current) return;
+    
+    setFlowerOpen(0);
+    setHoldTimer(0);
+    setGamePhase('inhale');
+    phaseRef.current = 'inhale';
+
+    if (cycle === 0) {
+      playAudioPrompt("Burnundan derin bir nefes al.");
+    } else {
+      playAudioPrompt("Nefes al.");
+    }
+
+    // Animasyonlu 1, 2, 3 sayacı (Nefes alma süresi)
+    setTimeout(() => setHoldTimer(1), 1000);
+    setTimeout(() => setHoldTimer(2), 2000);
+    setTimeout(() => setHoldTimer(3), 3000);
+
+    // 4 saniye sonra nefes verme (exhale) fazına geç
+    setTimeout(() => {
+      if (gameOverRef.current) return;
+      setHoldTimer(0);
+      setGamePhase('exhale');
+      phaseRef.current = 'exhale';
+      
+      if (cycle === 0) {
+        playAudioPrompt("Şimdi ağzından yavaşça nefes ver.");
+      } else {
+        playAudioPrompt("Nefes ver.");
+      }
+    }, 4000);
+  };
+
+  // Oyun Döngüsü (Mikrofon ile barı kontrol etme)
   useEffect(() => {
     if (isListening && !gameOverRef.current) {
       const updateGame = () => {
-        const noiseThreshold = 30; 
+        // Eşik değeri (daha zor dolması için artırıldı)
+        const noiseThreshold = 65; 
         let validIntensity = intensityRef.current - noiseThreshold;
         if (validIntensity < 0) validIntensity = 0;
+        
+        // 130 yerine 180'e bölüyoruz (barın %100 olması için daha güçlü üflemesi gerekir)
         const currentDb = Math.min(Math.round((validIntensity / 180) * 100), 100);
 
-        if (phaseRef.current === 'inhale') {
-          // Nefes alarak çiçeği aç (sessiz nefes alma)
-          if (currentDb >= 5 && currentDb <= 50) {
-            setFlowerOpen(prev => (prev >= 100 ? 100 : prev + 0.5));
+        // YALNIZCA EXHALE (nefes ver) fazında bar dolacak
+        if (phaseRef.current === 'exhale') {
+          if (currentDb >= 5) {
+            // Dolma hızını 0.6'dan 0.35'e düşürdük (daha uzun süre kesintisiz üflemesi gerekir)
+            setFlowerOpen(prev => (prev >= 100 ? 100 : prev + 0.35));
           } else {
-            // Nefes almayı bırakırsa biraz kapanabilir
-            setFlowerOpen(prev => (prev > 0 ? prev - 0.2 : 0));
+            // Üflemeyi bırakırsa daha hızlı kapanır
+            setFlowerOpen(prev => (prev > 0 ? prev - 0.25 : 0));
           }
         }
         
@@ -98,59 +129,35 @@ const FlowerGame = () => {
     };
   }, [isListening, gameOver]);
 
-  // Çiçek tam açıldığında hold fazına geç (Strict Mode çift çağırmasını önler)
+  // Çiçek tam açıldığında başarı fazına geç
   useEffect(() => {
-    if (flowerOpen >= 100 && phaseRef.current === 'inhale') {
-      phaseRef.current = 'hold';
-      setGamePhase('hold');
-      triggerHoldPhase();
+    if (flowerOpen >= 100 && phaseRef.current === 'exhale') {
+      phaseRef.current = 'success';
+      setGamePhase('success');
+      triggerSuccessPhase();
     }
   }, [flowerOpen]);
 
-  const triggerHoldPhase = () => {
-    playAudioPrompt("Karnının yükseldiğini hisset.");
-    setGamePhase('hold');
-    phaseRef.current = 'hold';
-    
-    // Hold 3 seconds
-    setTimeout(() => {
-      setGamePhase('exhale');
-      phaseRef.current = 'exhale';
-      playAudioPrompt("Şimdi balon şişirir gibi ağzından yavaşça nefes ver.");
-    }, 3000);
-
-    setTimeout(() => {
-      setGamePhase('success');
-      phaseRef.current = 'success';
+  const triggerSuccessPhase = () => {
+    if (cycleCount === 0) {
       playAudioPrompt("Harika! Çok güzel yaptın!");
-      setScore(s => s + 100);
+    } else {
+      playAudioPrompt("Harika!");
+    }
+    setScore(s => s + 100);
+    
+    setTimeout(() => {
+      const nextCycle = cycleCount + 1;
+      setCycleCount(nextCycle);
       
-      setCycleCount(c => {
-        const nextCycle = c + 1;
-        if (nextCycle >= 5) {
-          // Finish game
-          setTimeout(() => {
-            handleFinishGame();
-          }, 4000);
-          return nextCycle;
-        } else {
-          // Next loop
-          setTimeout(() => {
-            setFlowerOpen(0);
-            setHoldTimer(0);
-            setGamePhase('start');
-            phaseRef.current = 'start';
-            playAudioPrompt("Hazır mısın?");
-            setTimeout(() => {
-              setGamePhase('inhale');
-              phaseRef.current = 'inhale';
-              playAudioPrompt("Çiçek koklar gibi burnundan derin nefes al.");
-            }, 3000);
-          }, 4000);
-          return nextCycle;
-        }
-      });
-    }, 7000);
+      if (nextCycle >= 5) {
+        // Oyun bitti
+        handleFinishGame();
+      } else {
+        // Sonraki döngüye geç
+        startCycle(nextCycle);
+      }
+    }, 3000); // 3 saniye tebrik mesajı bekle
   };
 
   const handleFinishGame = async () => {
@@ -209,7 +216,13 @@ const FlowerGame = () => {
       <div style={styles.topPanel}>
         <div style={{ ...styles.glassCard, padding: '15px 25px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <h3 style={{ margin: '0 0 10px 0', fontSize: '16px', color: cpTheme.primary.teal }}>🎙️ Nefes Sesi</h3>
-          <div style={{ width: '200px', height: '16px', backgroundColor: cpTheme.elements.progressBg, borderRadius: '8px', overflow: 'hidden', position: 'relative' }}>
+          <div style={{ 
+            width: '200px', height: '16px', backgroundColor: cpTheme.elements.progressBg, 
+            borderRadius: '8px', overflow: 'hidden', position: 'relative',
+            opacity: gamePhase === 'inhale' ? 0.4 : 1,
+            filter: gamePhase === 'inhale' ? 'blur(1px) grayscale(50%)' : 'none',
+            transition: 'all 0.4s ease'
+          }}>
             {/* İdeal Üfleme Aralığı Rehberi (%5 - %50) */}
             <div style={{ position: 'absolute', left: '5%', width: '45%', height: '100%', backgroundColor: 'rgba(16, 185, 129, 0.2)', zIndex: 1 }} />
             <div style={{ 
@@ -282,16 +295,21 @@ const FlowerGame = () => {
             boxShadow: '0 0 25px rgba(250, 204, 21, 0.6)'
           }}></div>
 
-          {/* Yıldızlar (Hold Fazı) */}
-          {gamePhase === 'hold' && holdTimer >= 1 && <div style={{ position: 'absolute', top: '-60px', left: '-40px', fontSize: '50px', animation: 'blink 1s infinite', zIndex: 20 }}>✨</div>}
-          {gamePhase === 'hold' && holdTimer >= 2 && <div style={{ position: 'absolute', top: '20px', right: '-80px', fontSize: '60px', animation: 'blink 1.2s infinite', zIndex: 20 }}>✨</div>}
-          {gamePhase === 'hold' && holdTimer >= 3 && <div style={{ position: 'absolute', bottom: '-40px', left: '-60px', fontSize: '55px', animation: 'blink 0.8s infinite', zIndex: 20 }}>✨</div>}
+          {/* Yıldızlar (Nefes Alma Fazı) */}
+          {gamePhase === 'inhale' && holdTimer >= 1 && <div style={{ position: 'absolute', top: '-60px', left: '-40px', fontSize: '50px', animation: 'blink 1s infinite', zIndex: 20 }}>✨</div>}
+          {gamePhase === 'inhale' && holdTimer >= 2 && <div style={{ position: 'absolute', top: '20px', right: '-80px', fontSize: '60px', animation: 'blink 1.2s infinite', zIndex: 20 }}>✨</div>}
+          {gamePhase === 'inhale' && holdTimer >= 3 && <div style={{ position: 'absolute', bottom: '-40px', left: '-60px', fontSize: '55px', animation: 'blink 0.8s infinite', zIndex: 20 }}>✨</div>}
         </div>
 
         {/* Sayaç Görseli */}
-        {gamePhase === 'hold' && (
-          <div style={{ fontSize: '40px', fontWeight: 'bold', color: '#FF9800', marginTop: '20px', textShadow: '2px 2px 4px rgba(0,0,0,0.2)' }}>
-            {holdTimer}
+        {gamePhase === 'inhale' && (
+          <div style={{ 
+            fontSize: '80px', fontWeight: 'bold', color: '#FF9800', 
+            marginTop: '30px', textShadow: '2px 2px 8px rgba(0,0,0,0.5)',
+            position: 'relative', zIndex: 100,
+            animation: holdTimer > 0 ? 'blink 1s infinite' : 'none'
+          }}>
+            {holdTimer > 0 ? holdTimer : ''}
           </div>
         )}
       </div>

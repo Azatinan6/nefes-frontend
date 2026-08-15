@@ -24,6 +24,7 @@ const BalloonGame = () => {
   const lastBreathTime = useRef(Date.now());
   const warningGiven = useRef(false);
   const animationFrameId = useRef(null);
+  const initRef = useRef(false);
   const intensityRef = useRef(0);
   const gameOverRef = useRef(false);
 
@@ -148,22 +149,20 @@ const BalloonGame = () => {
     playAudioPrompt('pop');
     
     // Kristal ekle
-    setCrystals(c => {
-      const newC = c + 1;
+    const newCrystals = crystals + 1;
+    setCrystals(newCrystals);
       
-      if (newC >= 5) {
-        setTimeout(() => {
-          finishGameWithCrystals(newC);
-        }, 1500);
-      } else {
-        // Animasyon süresi kadar bekle, sonra yeni balona geç
-        setTimeout(() => {
-          setIsPopped(false);
-          setProgress(0);
-        }, 1000);
-      }
-      return newC;
-    });
+    if (newCrystals >= 5) {
+      setTimeout(() => {
+        finishGameWithCrystals(newCrystals);
+      }, 1500);
+    } else {
+      // Animasyon süresi kadar bekle, sonra yeni balona geç
+      setTimeout(() => {
+        setIsPopped(false);
+        setProgress(0);
+      }, 1000);
+    }
   };
 
   const finishGameWithCrystals = async (finalCrystals) => {

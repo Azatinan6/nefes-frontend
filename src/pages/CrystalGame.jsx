@@ -23,6 +23,7 @@ const CrystalGame = () => {
   const phaseRef = useRef('inhale');
   const warningGiven = useRef(false);
   const animationFrameId = useRef(null);
+  const initRef = useRef(false);
 
   // Ses Şiddetini Hesapla (Gürültü filtreli)
   useEffect(() => {

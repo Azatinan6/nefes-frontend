@@ -19,6 +19,7 @@ const FinalAdventureGame = () => {
 
   const blowIntensityRef = useRef(0);
   const animationFrameId = useRef(null);
+  const initRef = useRef(false);
   const gameOverRef = useRef(false);
 
   // Kristal Renkleri ve Simgeleri

@@ -12,42 +12,44 @@ const LandingPage = () => {
       color: "#E91E63",
       body: (
         <div style={modalBodyStyle}>
-          <p><strong>Serebral Palsi (SP)</strong>, gelişmekte olan beyindeki ilerleyici olmayan bir hasarın neden olduğu, kalıcı hareket ve duruş bozuklukları grubunu tanımlayan bir terimdir. Çocuklarda fiziksel engelliliğin en yaygın nedenidir. Buna ek olarak, Serebral Palsili bireylerde epilepsi ile bilişsel, iletişim, beslenme, görme veya işitme sorunlarının yanı sıra ikincil kas-iskelet sistemi problemleri de görülebilir. Görülme sıklığı her 1000 canlı doğumda yaklaşık 2'dir.</p>
+          <p><strong>Serebral Palsi (SP)</strong>, gelişmekte olan beynin etkilenmesi sonucu ortaya çıkan ve çocuğun hareketini ve duruşunu (postürünü) etkileyen bir durumdur. Beyindeki bu etkilenme ilerleyici değildir; ancak çocuğun ihtiyaçları büyüme ve gelişme sürecinde değişebilir.</p>
+          <p>SP her çocukta farklı şekilde görülebilir. Bazı çocuklarda kaslarda sertlik, hareketleri kontrol etmede veya denge ve koordinasyonda güçlük görülebilir. Bunun yanında bazı çocuklarda görme, işitme, iletişim, öğrenme, beslenme veya epilepsi gibi ek durumlar da eşlik edebilir. Her çocuğun güçlü yönleri, ihtiyaçları ve günlük yaşamdaki bağımsızlık düzeyi farklıdır.</p>
 
-          <h4 style={{ color: '#E91E63', marginTop: '20px', marginBottom: '10px' }}>SP'nin 3 Ana Tipi</h4>
+          <h4 style={{ color: '#E91E63', marginTop: '20px', marginBottom: '10px' }}>SP’nin Başlıca Tipleri</h4>
           <ul style={{ lineHeight: '1.6', paddingLeft: '20px' }}>
-            <li><strong>Spastik SP:</strong> Kas tonusunda artış (sertlik) ve patolojik reflekslerin varlığı ile karakterizedir.</li>
-            <li><strong>Diskinetik SP:</strong> İstem dışı, kontrol edilemeyen, tekrarlayan ve bazen stereotipik hareketlerle kendini gösterir.</li>
-            <li><strong>Ataksik SP:</strong> Normal kas koordinasyonunun kaybıdır. Hareketlerde güç, ritim ve isabetlilik (hedefi tutturamama gibi) sorunları yaşanır.</li>
+            <li><strong>Spastik SP:</strong> Kaslarda normalden fazla gerginlik ve sertlik görülebilir. Bu durum bazı hareketlerin yapılmasını zorlaştırabilir.</li>
+            <li><strong>Diskinetik SP:</strong> Çocuğun kontrol etmekte zorlandığı istemsiz hareketler görülebilir. Kasların gerginliği zaman zaman artıp azalabilir.</li>
+            <li><strong>Ataksik SP:</strong> Denge ve koordinasyon daha fazla etkilenir. Hareketleri kontrollü ve doğru şekilde gerçekleştirmede güçlük yaşanabilir.</li>
           </ul>
 
           <h4 style={{ color: '#E91E63', marginTop: '20px', marginBottom: '10px' }}>Hareket Seviyeleri (GMFCS)</h4>
-          <p>Hareketlilik (mobilite) ve kendi başlattığı hareket yetenekleri, Kaba Motor Fonksiyon Sınıflandırma Sistemine (GMFCS) göre 5 seviyede sınıflandırılabilir:</p>
+          <p>GMFCS (Kaba Motor Fonksiyon Sınıflandırma Sistemi), Serebral Palsili çocukların günlük yaşamda oturma, yürüme ve hareket etme becerilerini tanımlamak için kullanılan 5 seviyeli bir sınıflandırma sistemidir. Seviyeler, çocuğun hareket ederken ne kadar desteğe veya yardımcı araca ihtiyaç duyduğunu anlamaya yardımcı olur.</p>
           <ul style={{ lineHeight: '1.6', paddingLeft: '20px' }}>
-            <li><strong>Seviye 1:</strong> Sadece ileri düzey kaba motor becerilerde (koşma, zıplama) kısıtlılık vardır.</li>
-            <li><strong>Seviye 2:</strong> Desteksiz yürüyebilir; ancak dışarıda ve evin doğrudan çevresinde yürümede kısıtlılık yaşar.</li>
-            <li><strong>Seviye 3:</strong> Yardımcı yürüme cihazı ile yürür; dışarıda hareket kısıtlılığı vardır.</li>
-            <li><strong>Seviye 4:</strong> Bağımsız hareket kısıtlıdır; çocuklar manuel veya akülü tekerlekli sandalye ile taşınır/kullanır.</li>
-            <li><strong>Seviye 5:</strong> Yardımcı cihazlar kullanılsa dahi bağımsız hareket ciddi şekilde kısıtlıdır.</li>
+            <li><strong>Seviye I:</strong> Çocuk bağımsız yürüyebilir. Koşma, zıplama, hız ve denge gerektiren aktivitelerde zorlanabilir.</li>
+            <li><strong>Seviye II:</strong> Çocuk bağımsız yürüyebilir; ancak uzun mesafelerde, merdivenlerde veya dış ortamda hareket ederken daha fazla zorlanabilir.</li>
+            <li><strong>Seviye III:</strong> Çocuk yürümek için yürüteç veya koltuk değneği gibi yardımcı araçlardan yararlanabilir. Uzun mesafelerde tekerlekli sandalye kullanabilir.</li>
+            <li><strong>Seviye IV:</strong> Çocuk günlük yaşamda hareket etmek için çoğunlukla fiziksel desteğe veya tekerlekli sandalye gibi yardımcı araçlara ihtiyaç duyar. Akülü tekerlekli sandalye ile bağımsız hareket edebilir.</li>
+            <li><strong>Seviye V:</strong> Çocuk oturma ve hareket etme sırasında daha yoğun fiziksel desteğe ihtiyaç duyar ve günlük yaşamda genellikle tekerlekli sandalye ile hareket eder.</li>
           </ul>
+          <p style={{ fontStyle: 'italic', fontSize: '14px', color: '#666', marginTop: '10px' }}>*GMFCS seviyeleri çocuğun zekasını, öğrenme kapasitesini veya potansiyelini göstermez; yalnızca kaba motor hareket becerilerini ve günlük yaşamdaki hareketlilik düzeyini tanımlar.</p>
 
           <h4 style={{ color: '#E91E63', marginTop: '20px', marginBottom: '10px' }}>Neden Erken Müdahale?</h4>
-          <p>En iyi sonuçları, çocuğun ve ailenin ihtiyaçlarına göre uyarlanmış, bireyselleştirilmiş erken tedavi verir. Amaç, günlük yaşama en uygun düzeyde katılımdır.</p>
+          <p>Erken müdahale, çocuğun gelişimini ve yeni beceriler kazanmasını destekler. Çocuğun ve ailesinin ihtiyaçlarına göre planlanan uygulamalar, bağımsızlığı ve günlük yaşama katılımı artırmayı amaçlar.</p>
         </div>
       )
     },
     solunum: {
-      title: "Solunum ve Postürün Önemi",
+      title: "Solunum ve Postürün (Duruş) Önemi",
       color: "#03A9F4",
       body: (
         <div style={modalBodyStyle}>
-          <p>SP'li çocuklarda, solunum kaslarının yetersiz kullanımı ve hatalı postüral alışkanlıklar, enerji verimliliğini düşürebilir ve yorgunluk döngüsünü daha da arttırabilir.</p>
+          <p>Serebral Palsi (SP)'li çocuklarda, solunum kaslarının yetersiz kullanımı ve yanlış postüral alışkanlıklar, enerji verimliliğini düşürebilir ve yorgunluk döngüsünü daha da arttırabilir.</p>
           <p>Bu durum, çocukların fiziksel aktivite düzeyinin azalmasına ve inaktivite ile birlikte günlük yaşama katılımlarının kısıtlanarak solunum fonksiyonlarında ve postural kontrolde bozulmalara neden olabilmektedir.</p>
           <p>Bu nedenle projede solunum ve postür farkındalık eğitiminin bir arada ele alınması ile SP'li çocukların günlük yaşam aktivitelerine daha aktif ve bağımsız katılımlarını desteklemek hedeflenmektedir.</p>
           
-          <h4 style={{ color: '#03A9F4', marginTop: '20px', marginBottom: '10px' }}>Oyunlaştırılmış Eğitim Modelinin Etkisi</h4>
-          <p>Oyunlaştırılmış Solunum ve Postür Farkındalık Eğitim Modeli'nin içerdiği oyunlaştırılmış solunum egzersiz eğitiminin solunum fonksiyonlarını ve fonksiyonel kapasiteyi iyileştirmesini, postural imgeleme egzersizlerinin ise bu çocuklarda postür farkındalığını arttırarak, aktivite katılımlarını ve yaşam kaliteleri üzerindeki etkilerinin ölçülmesi hedeflenmektedir.</p>
-          <p>Ayrıca projede, geliştirilen bu modelin solunum, fonksiyonel kapasite, postür, öğrenme, yaşam kalitesi, aktivite ve sosyal katılım üzerine etkilerini ölçmek amaçlanmıştır.</p>
+          <h4 style={{ color: '#03A9F4', marginTop: '20px', marginBottom: '10px' }}>Oyunlaştırılmış Eğitim Modelinin Amacı</h4>
+          <p>Proje kapsamında geliştirilen oyunlaştırılmış modelimizin içerdiği solunum egzersiz eğitiminin solunum fonksiyonları ve fonksiyonel kapasite üzerindeki; postüral imgeleme egzersizlerinin ise çocukların postür farkındalığı üzerindeki etkilerinin değerlendirilmesi hedeflenmektedir.</p>
+          <p>Ayrıca oyunlaştırılmış eğitim modelinin çocukların solunum fonksiyonları, duruş, yaşam kalitesi, aktivite ve sosyal katılım üzerindeki etkilerinin belirlenmesi amaçlanmaktadır.</p>
         </div>
       )
     },
@@ -64,7 +66,7 @@ const LandingPage = () => {
           <h4 style={{ color: '#FF9800', marginTop: '20px', marginBottom: '10px' }}>Nasıl Uyguluyoruz?</h4>
           <ul style={{ lineHeight: '1.6', paddingLeft: '20px' }}>
             <li><strong>İnteraktif Egzersizler:</strong> Mum üfleme, gemi yüzdürme ve triflo simülasyonları gibi görsel/işitsel uyaranlarla desteklenen solunum egzersizleri ve postüral imgeleme teknikleri kullanıyoruz.</li>
-            <li><strong>Uygulamalı Atölyeler:</strong> Türkiye Spastik Çocuklar Vakfı'nda (TSÇV) eğitmen eşliğinde haftada iki gün olmak üzere toplam 8 haftalık bir program yürütüyoruz.</li>
+            <li><strong>Uygulamalı Atölyeler:</strong> Türkiye Spastik Çocuklar Vakfı'nda eğitmen eşliğinde haftada iki gün olmak üzere toplam 8 haftalık bir program yürütüyoruz.</li>
             <li><strong>Ev Programı ve Dijital Süreklilik:</strong> Çocukların evde de aktif katılımını teşvik etmek için eğitici dijital oyunlar ve öyküleme videoları hazırlıyoruz.</li>
             <li><strong>Farkındalık Seminerleri:</strong> Aileler, eğitimciler ve proje ekipleri için bilgilendirici çalıştaylar ve kapanış seminerleri düzenliyoruz.</li>
           </ul>
@@ -72,13 +74,15 @@ const LandingPage = () => {
           <h4 style={{ color: '#FF9800', marginTop: '20px', marginBottom: '10px' }}>Hedef Kitlemiz Kimler?</h4>
           <p>Projemizin merkezinde SP'li çocuklar, onların kıymetli aileleri ve bu süreçte rol alan eğitimciler yer alıyor.</p>
           <ul style={{ lineHeight: '1.6', paddingLeft: '20px' }}>
-            <li>TSÇV'de rehabilitasyon alan,</li>
+            <li>Türkiye Spastik Çocuklar Vakfı'nda rehabilitasyon alan,</li>
             <li>Okuma yazma bilen,</li>
             <li>6-18 yaş arası 40 çocuk projemize (aile onayıyla) dahil edilmektedir.</li>
           </ul>
 
           <h4 style={{ color: '#FF9800', marginTop: '20px', marginBottom: '10px' }}>Yenilikçi ve Özgün Yönümüz</h4>
-          <p>N.E.F.E.S. modelinin en büyük farkı; solunum ve postür eğitimini yorucu bir klinik rutin olmaktan çıkarıp, oyun temelli, eğitsel ve sürdürülebilir bir öğrenme deneyimi dönüşümüdür. Modelimiz, çocukların solunum fonksiyonları, beden farkındalığı, sosyal katılımı ve yaşam kalitesi üzerindeki etkileri standart ölçüm yöntemleriyle değerlendirilecek şekilde tasarlanmıştır. Ayrıca diğer özel gereksinimli gruplara da uyarlanabilir yapısıyla toplumsal katkıyı en üst düzeye çıkarmayı amaçlar.</p>
+          <p>N.E.F.E.S. modelinin özgün yönü; solunum ve postür farkındalığını bütüncül bir yaklaşımla ele alarak bilimsel bilgiyi oyunlaştırılmış, yapılandırılmış ve erişilebilir bir eğitim modeline dönüştürmesidir.</p>
+          <p>Model, çocukların yalnızca solunum ve postür farkındalığını desteklemekle kalmaz; çocuk, aile ve eğitimcileri öğrenme sürecinin aktif bir parçası haline getirerek kazanımların günlük yaşama aktarılmasını ve sürdürülebilirliğini destekler.</p>
+          <p>Programın solunum fonksiyonları, fonksiyonel kapasite, postür ve beden farkındalığı, öğrenme, yaşam kalitesi, aktivite ve sosyal katılım üzerindeki etkileri standart değerlendirme yöntemleriyle izlenmektedir.</p>
         </div>
       )
     },
@@ -104,11 +108,11 @@ const LandingPage = () => {
             <li>Prof. Dr. Esra Pehlivan (Sağlık Bilimleri Üniversitesi)</li>
             <li>Dr. Fizyoterapist Elif Develi (Yeditepe Üniversitesi)</li>
             <li>Uzman Fizyoterapist Ayça Yağcıoğlu (Yeditepe Üniversitesi)</li>
-            <li>Uzman Fizyoterapist Turgay Arık (TSÇV)</li>
+            <li>Uzman Fizyoterapist Turgay Arık (Türkiye Spastik Çocuklar Vakfı)</li>
             <li>Uzman Fizyoterapist Irmak Sıla Çetinel (Yeditepe Üniversitesi)</li>
             <li>Fizyoterapist Zeynep İnan (Yeditepe Üniversitesi)</li>
-            <li>Fizyoterapist Burak Şevket Vuran (TSÇV)</li>
-            <li>Fizyoterapist Yüksel Çolaker (TSÇV)</li>
+            <li>Fizyoterapist Burak Şevket Vuran (Türkiye Spastik Çocuklar Vakfı)</li>
+            <li>Fizyoterapist Yüksel Çolaker (Türkiye Spastik Çocuklar Vakfı)</li>
           </ul>
 
           <h4 style={{ color: '#9C27B0', marginTop: '20px', marginBottom: '10px' }}>Yazılım ve Teknik Ekip</h4>
@@ -158,7 +162,7 @@ const LandingPage = () => {
           <div className="hover-card" style={cardStyle}>
             <div style={{ fontSize: '65px', marginBottom: '15px' }}>🌲</div>
             <h3 style={{ color: '#333', fontSize: '22px', marginBottom: '15px', fontWeight: 'bold' }}>Projemiz Hakkında</h3>
-            <p style={{ color: '#666', fontSize: '15px', flex: 1, lineHeight: '1.5' }}>Öğrenme odaklı, aktif katılımı esas alan ve dijital teknoloji ile desteklenmiş oyunlaştırılmış solunum eğitim modeli.</p>
+            <p style={{ color: '#666', fontSize: '15px', flex: 1, lineHeight: '1.5' }}>Öğrenme odaklı, aktif katılımı esas alan ve dijital teknoloji ile desteklenmiş oyunlaştırılmış solunum ve postür eğitim modeli.</p>
             <button onClick={() => setActiveModal('proje')} className="card-btn" style={{...cardBtnStyle, backgroundColor: '#FF9800'}}>Projeyi İncele</button>
           </div>
 
@@ -166,7 +170,7 @@ const LandingPage = () => {
           <div className="hover-card" style={cardStyle}>
             <div style={{ fontSize: '65px', marginBottom: '15px' }}>🧠</div>
             <h3 style={{ color: '#333', fontSize: '22px', marginBottom: '15px' }}>SP Nedir?</h3>
-            <p style={{ color: '#666', fontSize: '15px', flex: 1, lineHeight: '1.5' }}>Serebral Palsi (SP), gelişmekte olan beyindeki ilerleyici olmayan bir hasarın neden olduğu hareket bozuklukları grubudur.</p>
+            <p style={{ color: '#666', fontSize: '15px', flex: 1, lineHeight: '1.5' }}>Serebral Palsi (SP), gelişmekte olan beynin etkilenmesi sonucu hareket ve postürü etkileyen, yaşam boyu devam eden ancak ilerleyici olmayan bir durumdur.</p>
             <button onClick={() => setActiveModal('sp')} className="card-btn" style={{...cardBtnStyle, backgroundColor: '#E91E63'}}>Detaylı Bilgi</button>
           </div>
 
@@ -174,7 +178,7 @@ const LandingPage = () => {
           <div className="hover-card" style={cardStyle}>
             <div style={{ fontSize: '65px', marginBottom: '15px' }}>🫁</div>
             <h3 style={{ color: '#333', fontSize: '22px', marginBottom: '15px' }}>Neden Solunum?</h3>
-            <p style={{ color: '#666', fontSize: '15px', flex: 1, lineHeight: '1.5' }}>Solunum kaslarının yetersiz kullanımı ve hatalı postüral alışkanlıklar yorgunluk döngüsünü artırabilir.</p>
+            <p style={{ color: '#666', fontSize: '15px', flex: 1, lineHeight: '1.5' }}>Solunum kaslarının yetersiz kullanımı ve yanlış postüral alışkanlıklar yorgunluk döngüsünü artırabilir.</p>
             <button onClick={() => setActiveModal('solunum')} className="card-btn" style={{...cardBtnStyle, backgroundColor: '#03A9F4'}}>Detaylı Bilgi</button>
           </div>
 
@@ -194,7 +198,7 @@ const LandingPage = () => {
         <h2 style={{ fontSize: '38px', color: '#1565C0', marginBottom: '50px', fontWeight: '800' }}>Sistem Nasıl Çalışır?</h2>
         <div style={{ display: 'flex', justifyContent: 'center', gap: '40px', flexWrap: 'wrap', maxWidth: '1000px', margin: '0 auto' }}>
           <Step icon="👤" title="1. Kayıt ve Değerlendirme" />
-          <Step icon="👩‍⚕️" title="2. Fiziksel Eğitim" />
+          <Step icon="👩‍⚕️" title="2. Uygulamalı Solunum ve Postür Eğitimi" />
           <Step icon="💻" title="3. Dijital Entegrasyon" />
           <Step icon="📈" title="4. Takip ve Gelişim" />
         </div>

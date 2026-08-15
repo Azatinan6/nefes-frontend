@@ -9,119 +9,161 @@ const SailboatGame = () => {
   const { blowIntensity, isListening, startListening, stopListening } = useBreathSensor();
   const navigate = useNavigate();
   
-  // Oyun ve Fizyolojik Durumlar
-  const [boatPosition, setBoatPosition] = useState(0); // 0 (Başlangıç) ile 100 (Liman) arası
-  const [waveIntensity, setWaveIntensity] = useState(0); // Sert üflemeye bağlı dalga/sarsıntı
+  const [gamePhase, setGamePhase] = useState('start');
+  const [boatPosition, setBoatPosition] = useState(0); 
+  const [waveIntensity, setWaveIntensity] = useState(0); 
   const [score, setScore] = useState(0);
   const [crystals, setCrystals] = useState(0);
   const [gameOver, setGameOver] = useState(false);
-  const gameOverRef = useRef(false);
-  const initRef = useRef(false);
   const [dbPercentage, setDbPercentage] = useState(0);
-  const [laps, setLaps] = useState(0); // Kaç kez limana ulaştı
+  const [laps, setLaps] = useState(0); 
   const [promptMessage, setPromptMessage] = useState("");
+  const [holdTimer, setHoldTimer] = useState(0);
 
   const blowIntensityRef = useRef(0);
-  const lastBreathTime = useRef(Date.now());
-  const warningGiven = useRef(false);
+  const gameOverRef = useRef(false);
+  const phaseRef = useRef('start');
+  const continuousMoveMs = useRef(0);
+  const motivationGiven = useRef(false);
+  const lastBackwardPromptTime = useRef(0);
 
-  // Referansları ve Desibel Yüzdesini güncel tutma
   useEffect(() => {
     blowIntensityRef.current = blowIntensity;
-    
-    // Üfleme (Ekspirasyon) olduğu için mikrofon daha yüksek ses alır. Duyarlılık azaltıldı (Bölen 150)
-    const currentDb = Math.min(Math.round((blowIntensity / 220) * 100), 100);
+    const noiseThreshold = 70;
+    let validIntensity = blowIntensity - noiseThreshold;
+    if (validIntensity < 0) validIntensity = 0;
+    const currentDb = Math.min(Math.round((validIntensity / 180) * 100), 100);
     setDbPercentage(currentDb);
-
-    if (currentDb > 5) {
-      lastBreathTime.current = Date.now();
-      warningGiven.current = false;
-    }
   }, [blowIntensity]);
 
-  const speak = (message) => {
-    if (gameOverRef.current || !isListening) return;
-    setPromptMessage(message);
-    const speech = new SpeechSynthesisUtterance(message);
-    speech.lang = 'tr-TR';
-    speech.rate = 1.0;
-    speech.pitch = 1.2;
-    window.speechSynthesis.speak(speech);
+  const playAudioPrompt = (message) => {
+    if (!gameOverRef.current && isListening) {
+      setPromptMessage(message);
+      const speech = new SpeechSynthesisUtterance(message);
+      speech.lang = 'tr-TR';
+      speech.rate = 1.0;
+      speech.pitch = 1.2;
+      window.speechSynthesis.speak(speech);
+    }
   };
 
   useEffect(() => {
-    if (isListening && !gameOver && !initRef.current) {
-      initRef.current = true;
-      speak("Hazır mısın? Çiçek koklar gibi derin nefes al.");
-      setTimeout(() => speak("Karnını şişir. Dudaklarını hafifçe büz."), 5000);
-      setTimeout(() => speak("Yavaş ve uzun nefes ver."), 10000);
-    }
-    else if (!isListening) {
-      initRef.current = false;
-    }
-  }, [isListening]);
-
-  // HATA DÜZELTMESİ (Component unmount olunca sesi kes)
-  useEffect(() => {
+    gameOverRef.current = false;
     return () => {
-      warningGiven.current = true;
+      gameOverRef.current = true;
       window.speechSynthesis.cancel();
     };
   }, []);
 
-  // Endurans Motoru (Yelkenli İlerletme)
+  useEffect(() => {
+    let timeoutId;
+    if (isListening && !gameOver && laps === 0 && gamePhase === 'start') {
+      gameOverRef.current = false;
+      timeoutId = setTimeout(() => startCycle(0), 1000);
+    }
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [isListening, gameOver, laps, gamePhase]);
+
+  const startCycle = (cycle) => {
+    if (gameOverRef.current) return;
+    
+    setBoatPosition(0);
+    setHoldTimer(0);
+    setGamePhase('inhale');
+    phaseRef.current = 'inhale';
+
+    if (cycle === 0) {
+      playAudioPrompt("Hazır mısın? Çiçek koklar gibi derin nefes al.");
+      setTimeout(() => {
+        if (!gameOverRef.current && phaseRef.current === 'inhale') {
+          playAudioPrompt("Karnını şişir. Dudaklarını hafifçe büz.");
+        }
+      }, 2000);
+    } else {
+      playAudioPrompt("Nefes al.");
+    }
+
+    setTimeout(() => setHoldTimer(1), 1000);
+    setTimeout(() => setHoldTimer(2), 2000);
+    setTimeout(() => setHoldTimer(3), 3000);
+
+    setTimeout(() => {
+      if (gameOverRef.current) return;
+      setHoldTimer(0);
+      setGamePhase('exhale');
+      phaseRef.current = 'exhale';
+      
+      if (cycle === 0) {
+        playAudioPrompt("Şimdi ağzından yavaş ve uzun nefes ver.");
+      } else {
+        playAudioPrompt("Nefes ver.");
+      }
+
+      continuousMoveMs.current = 0;
+      motivationGiven.current = false;
+      lastBackwardPromptTime.current = Date.now();
+
+    }, 4000);
+  };
+
   useEffect(() => {
     let gameLoop;
     
     if (isListening && !gameOver) {
       gameLoop = setInterval(() => {
-        const currentDb = Math.min(Math.round((blowIntensityRef.current / 220) * 100), 100);
+        if (phaseRef.current !== 'exhale') return; // Sadece nefes verme anında gemi hareket eder
+
+        const noiseThreshold = 70;
+        let validIntensity = blowIntensityRef.current - noiseThreshold;
+        if (validIntensity < 0) validIntensity = 0;
+        const currentDb = Math.min(Math.round((validIntensity / 180) * 100), 100);
+
+        if (currentDb >= 15 && currentDb <= 60) {
+          continuousMoveMs.current += 100;
+          if (continuousMoveMs.current >= 4000 && !motivationGiven.current) {
+            playAudioPrompt("Harika ilerliyorsun!");
+            motivationGiven.current = true;
+          }
+        } else {
+          continuousMoveMs.current = 0;
+        }
+
+        if (currentDb < 15) {
+          if (Date.now() - lastBackwardPromptTime.current > 7000) {
+            playAudioPrompt("Yavaş ve uzun nefes ver.");
+            lastBackwardPromptTime.current = Date.now();
+          }
+        }
 
         setBoatPosition((prev) => {
           let newPosition = prev;
           
-          // İDEAL UZUN ÜFLEME (%15 - %60 Arası Kontrollü Nefes Verme)
           if (currentDb >= 15 && currentDb <= 60) {
-            newPosition += 0.4; // Yaklaşık 25 saniyelik sürekli üflemede 100'e ulaşır (Dayanıklılık)
-            setWaveIntensity((w) => Math.max(w - 5, 0)); // Dalgalar sakinleşir
-          } 
-          // ÇOK SERT/HIZLI ÜFLEYİŞ (Gemi sallanır, ilerleme yavaşlar)
-          else if (currentDb > 60) {
-            newPosition += 0.1; // İlerleme cezası (Durmaz ama çok yavaşlar)
-            setWaveIntensity(10); // Gemi şiddetle sallanır
-          }
-          // NEFES YOK (Rüzgar durur, gemi çok yavaş geriler veya durur)
-          else {
-            newPosition = Math.max(prev - 0.1, 0);
-            setWaveIntensity((w) => Math.max(w - 2, 0));
-          }
-
-          // LİMANA ULAŞMA (Tamamlama)
-          if (newPosition >= 100) {
-            setLaps((l) => l + 1);
-            return 0; // Gemiyi başa al, yeni tur başlasın
-          }
-
-          // Puanlama: İdeal aralıkta kaldıkça puan artar
-          if (currentDb >= 15 && currentDb <= 60) {
+            newPosition += 0.4; 
+            setWaveIntensity((w) => Math.max(w - 5, 0)); 
             setScore((s) => {
               const newScore = s + 1;
               setCrystals(Math.floor(newScore / 200));
               return newScore;
             });
+          } 
+          else if (currentDb > 60) {
+            newPosition += 0.1; 
+            setWaveIntensity(10); 
+          }
+          else {
+            newPosition = Math.max(prev - 0.1, 0);
+            setWaveIntensity((w) => Math.max(w - 2, 0));
+          }
+
+          if (newPosition >= 100) {
+            return 100;
           }
 
           return newPosition;
         });
-
-        // Düzenli ilerleyişte motivasyon (yan etki updater dışında yapılır)
-        if (currentDb > 15 && currentDb < 60 && !warningGiven.current) {
-           if (Math.random() < 0.01) { // %1 ihtimalle her 100ms'de
-             speak("Yelkenimiz hareket ediyor!");
-             warningGiven.current = true;
-             setTimeout(() => { warningGiven.current = false; }, 8000);
-           }
-        }
 
       }, 100); 
     }
@@ -129,67 +171,88 @@ const SailboatGame = () => {
     return () => clearInterval(gameLoop);
   }, [isListening, gameOver]);
 
-  // Tur tamamlandığında çalışacak yan etkiler
   useEffect(() => {
-    if (laps > 0) {
-      if (laps >= 5) {
-        handleFinishGame();
-      } else {
-        speak("Harika! Yelkeni karşı kıyıya ulaştırdık!");
-        setScore((s) => {
-          const newScore = s + 100;
-          setCrystals(Math.floor(newScore / 200));
-          return newScore;
-        });
-      }
+    if (boatPosition >= 100 && phaseRef.current === 'exhale') {
+      handleBoatReached();
     }
-  }, [laps]);
+  }, [boatPosition]);
 
-  const handleFinishGame = async () => {
+  const handleBoatReached = () => {
+    phaseRef.current = 'success';
+    setGamePhase('success');
+
+    if (laps === 0) {
+      playAudioPrompt("Harika! Yelkeni karşı kıyıya ulaştırdık!");
+    } else {
+      playAudioPrompt("Harika!");
+    }
+    
+    setScore((s) => {
+      const newScore = s + 100;
+      setCrystals(Math.floor(newScore / 200));
+      return newScore;
+    });
+    
+    const newLaps = laps + 1;
+    setLaps(newLaps);
+      
+    setTimeout(() => {
+      if (newLaps >= 5) {
+        handleFinishGame(true);
+      } else {
+        startCycle(newLaps);
+      }
+    }, 3000);
+  };
+
+  const handleFinishGame = async (isCompleted = false) => {
     stopListening();
     setGameOver(true);
     gameOverRef.current = true;
-    
-    // Konuşmayı kesin keser
-    warningGiven.current = true;
     window.speechSynthesis.cancel();
 
-    const progressData = {
-      userId: "123e4567-e89b-12d3-a456-426614174000",
-      gameId: 3, // 3. Hafta Oyunu
-      score: score,
-      breathCrystals: crystals,
-      dbPerformance: dbPercentage
-    };
+    if (isCompleted) {
+      const progressData = {
+        userId: "123e4567-e89b-12d3-a456-426614174000",
+        gameId: 3, 
+        score: score,
+        breathCrystals: crystals,
+        dbPerformance: dbPercentage
+      };
 
-    try {
-      await axios.post('http://localhost:8080/api/progress/save', progressData);
-      alert(`Harika! Oyun Tamamlandı! Kazanılan Kristal: ${crystals} 💎 \nMenüye dönülüyor...`);
-    } catch (error) {
-      console.error("Skor kaydedilirken hata:", error);
-      alert(`Oyun Tamamlandı! Kazanılan Kristal: ${crystals} 💎 \nMenüye dönülüyor...`);
+      try {
+        await axios.post('http://localhost:8080/api/progress/save', progressData);
+        alert(`Harika! Oyun Tamamlandı! Kazanılan Kristal: ${crystals} 💎 \nMenüye dönülüyor...`);
+      } catch (error) {
+        alert(`Oyun Tamamlandı! Kazanılan Kristal: ${crystals} 💎 \nMenüye dönülüyor...`);
+      }
     }
     
     navigate('/cocuk-paneli');
   };
 
-  // Yüksek Kontrast Teması (Açık Deniz)
   const themeColors = { 
-    bg: cpTheme.bg.softBlue, // Derin Deniz Mavisi
-    text: cpTheme.text.dark, // Beyaz
+    bg: cpTheme.bg.softBlue, 
+    text: cpTheme.text.dark, 
     card: cpTheme.card.white, 
-    border: cpTheme.elements.border, // Güneş Sarısı
-    accent: cpTheme.primary.teal // Su Mavisi
+    border: cpTheme.elements.border, 
+    accent: cpTheme.primary.teal 
+  };
+
+  const btnStyle = { 
+    padding: '12px 24px', fontSize: '18px', border: 'none', 
+    borderRadius: '12px', cursor: 'pointer', fontWeight: '900', width: '100%',
+    textTransform: 'uppercase', boxShadow: '0 5px 10px rgba(0,0,0,0.5)'
   };
 
   return (
     <div style={{
       position: 'relative', width: '100%', height: 'calc(100vh - 70px)',
-      background: 'linear-gradient(to bottom, #87CEEB, #E0F6FF)', // Gökyüzü Gradient
+      background: 'linear-gradient(to bottom, #87CEEB, #E0F6FF)', 
       overflow: 'hidden', fontFamily: 'sans-serif',
       color: themeColors.text
     }}>
-      <BellyBreathGuide isListening={isListening} blowIntensity={blowIntensity} scale={2.0} theme="lightBg" customStyle={{ top: '48%' }} />
+      <BellyBreathGuide isListening={isListening} blowIntensity={blowIntensity} phase={gamePhase} scale={2.0} theme="lightBg" customStyle={{ top: '48%' }} />
 
       {/* Gökyüzü Süslemeleri (Sabit) */}
       <div style={{ position: 'absolute', top: '10%', right: '15%', fontSize: '80px', filter: 'drop-shadow(0 0 20px rgba(255, 235, 59, 0.5))' }}>☀️</div>
@@ -199,7 +262,6 @@ const SailboatGame = () => {
       <div style={{ position: 'absolute', top: '25%', left: '30%', fontSize: '30px', opacity: 0.8 }}>🦅</div>
       <div style={{ position: 'absolute', top: '18%', left: '35%', fontSize: '20px', opacity: 0.6 }}>🦅</div>
 
-      {/* Dalga Efekti (Arka Plan CSS) */}
       <style>
         {`
           @keyframes bobbing {
@@ -219,6 +281,10 @@ const SailboatGame = () => {
             50% { transform: translateX(50px); }
             100% { transform: translateX(0); }
           }
+          @keyframes blink {
+            0%, 100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            50% { opacity: 0.5; transform: translate(-50%, -50%) scale(0.8); }
+          }
         `}
       </style>
 
@@ -228,18 +294,21 @@ const SailboatGame = () => {
         display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', zIndex: 100
       }}>
         
-        {/* Desibel Performans Göstergesi (Uzun Üfleme Hassasiyeti) */}
+        {/* Desibel Performans Göstergesi */}
         <div style={{
           backgroundColor: themeColors.card, padding: '15px 25px', borderRadius: '16px',
           border: `3px solid ${themeColors.border}`, boxShadow: '0 8px 20px rgba(0,0,0,0.1)',
           display: 'flex', flexDirection: 'column', alignItems: 'center'
         }}>
           <h3 style={{ margin: '0 0 10px 0', fontSize: '18px', color: cpTheme.text.dark }}>🎙️ Rüzgar Gücü</h3>
-          <div style={{ width: '200px', height: '20px', backgroundColor: cpTheme.elements.progressBg, borderRadius: '10px', overflow: 'hidden', position: 'relative' }}>
-            
-            {/* İdeal Uzun Üfleme Aralığı (%15 - %60) */}
+          <div style={{ 
+            width: '200px', height: '20px', backgroundColor: cpTheme.elements.progressBg, 
+            borderRadius: '10px', overflow: 'hidden', position: 'relative',
+            opacity: gamePhase === 'inhale' ? 0.4 : 1,
+            filter: gamePhase === 'inhale' ? 'blur(1px) grayscale(50%)' : 'none',
+            transition: 'all 0.4s ease'
+          }}>
             <div style={{ position: 'absolute', left: '15%', width: '45%', height: '100%', backgroundColor: 'rgba(16, 185, 129, 0.2)', zIndex: 1 }} />
-            
             <div style={{ 
               width: `${dbPercentage}%`, height: '100%', 
               backgroundColor: dbPercentage > 60 ? cpTheme.primary.coral : themeColors.accent, 
@@ -257,13 +326,13 @@ const SailboatGame = () => {
         }}>
           <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '900', color: cpTheme.text.dark }}>⛵ Rüzgarlı Göl Macerası</h2>
           <div style={{ fontSize: '18px', fontWeight: 'bold', marginTop: '5px', color: cpTheme.text.muted }}>
-            Liman Seferi: {laps} | Skor: {score} | 💎 Kristal: {crystals}
+            Liman Seferi: {laps}/5 | Skor: {score} | 💎 Kristal: {crystals}
           </div>
           
           {!isListening ? (
             <button onClick={startListening} style={{...btnStyle, backgroundColor: cpTheme.primary.teal, color: cpTheme.text.light, marginTop: '15px'}}>▶️ BAŞLA</button>
           ) : (
-            <button onClick={handleFinishGame} style={{...btnStyle, backgroundColor: cpTheme.primary.coral, color: cpTheme.text.light, marginTop: '15px'}}>⏹️ BİTİR</button>
+            <button onClick={() => handleFinishGame(false)} style={{...btnStyle, backgroundColor: cpTheme.primary.coral, color: cpTheme.text.light, marginTop: '15px'}}>⏹️ BİTİR</button>
           )}
         </div>
       </div>
@@ -271,7 +340,7 @@ const SailboatGame = () => {
       {/* 2. OYUN ALANI: Deniz, Yelkenli ve Liman */}
       <div style={{
         position: 'absolute', bottom: 0, width: '100%', height: '40%',
-        background: 'linear-gradient(to bottom, #0288D1, #01579B)', // Deniz Gradient
+        background: 'linear-gradient(to bottom, #0288D1, #01579B)', 
         borderTop: '5px solid #4FC3F7',
         zIndex: 0
       }}></div>
@@ -294,11 +363,10 @@ const SailboatGame = () => {
         {/* Yelkenli Gemi */}
         <div style={{
           position: 'absolute',
-          left: `${boatPosition * 0.8}%`, // Ekranda %80'lik alanda hareket eder, limana yanaşır
+          left: `${boatPosition * 0.8}%`, 
           bottom: '0px',
           fontSize: '120px',
           zIndex: 10,
-          // Dalga yoğunluğuna göre animasyon değişir
           animation: waveIntensity > 0 ? 'shaking 0.5s infinite' : 'bobbing 3s ease-in-out infinite',
           transition: 'left 0.1s linear',
           filter: 'drop-shadow(0px 10px 10px rgba(0,0,0,0.5))'
@@ -315,20 +383,30 @@ const SailboatGame = () => {
             🌊🌊
           </div>
         )}
-
       </div>
 
-      {/* Rüzgar Efektleri (Çocuk üfledikçe çıkan rüzgar ikonları) */}
-      {isListening && dbPercentage >= 15 && (
+      {isListening && dbPercentage >= 15 && phaseRef.current === 'exhale' && (
         <div style={{
           position: 'absolute', left: `${(boatPosition * 0.8) - 10}%`, bottom: '25%',
-          fontSize: '50px', opacity: 0.6, transform: 'scaleX(-1)' // Rüzgar gemiye doğru eser
+          fontSize: '50px', opacity: 0.6, transform: 'scaleX(-1)' 
         }}>
           💨
         </div>
       )}
 
-      {/* 3. AI EĞİTMEN KARAKTERİ (Yanda Bekleyen Çocuk Avatarı) */}
+      {/* 1, 2, 3 Animasyonu */}
+      {gamePhase === 'inhale' && holdTimer > 0 && (
+        <div style={{
+          position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+          fontSize: '120px', fontWeight: 'bold', color: '#FF9800', 
+          textShadow: '2px 2px 12px rgba(0,0,0,0.5)', zIndex: 100,
+          animation: 'blink 1s infinite'
+        }}>
+          {holdTimer}
+        </div>
+      )}
+
+      {/* 3. AI EĞİTMEN KARAKTERİ */}
       <div style={{
         position: 'absolute', bottom: '30px', left: '40px',
         display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 100
@@ -341,7 +419,6 @@ const SailboatGame = () => {
           👦🏻
         </div>
         
-        {/* Karakterin Konuşma Balonu */}
         {isListening && (
           <div style={{
             marginTop: '15px', backgroundColor: '#FFF', color: '#000', padding: '10px 20px',
@@ -355,12 +432,6 @@ const SailboatGame = () => {
 
     </div>
   );
-};
-
-const btnStyle = { 
-  padding: '12px 24px', fontSize: '18px', border: 'none', 
-  borderRadius: '12px', cursor: 'pointer', fontWeight: '900', width: '100%',
-  textTransform: 'uppercase', boxShadow: '0 5px 10px rgba(0,0,0,0.5)'
 };
 
 export default SailboatGame;

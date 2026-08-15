@@ -12,22 +12,32 @@ const FrogGame = () => {
   const [energy, setEnergy] = useState(0); // 0 ile 100 arası
   const [score, setScore] = useState(0);
   const [gameOver, setGameOver] = useState(false);
-  const gameOverRef = useRef(false);
   const [dbPercentage, setDbPercentage] = useState(0);
   const [laps, setLaps] = useState(0); // Toplam 6 tur
   const [promptMessage, setPromptMessage] = useState("");
   const [isJumping, setIsJumping] = useState(false);
+  const [timer, setTimer] = useState(3);
+  const [showTimer, setShowTimer] = useState(false);
+  const [isExhalePhase, setIsExhalePhase] = useState(false);
 
+  const gameOverRef = useRef(false);
   const blowIntensityRef = useRef(0);
   const animationFrameId = useRef(null);
   const initRef = useRef(false);
-  const phaseTimerRef = useRef(null);
   const warningGiven = useRef(false);
+  const phaseRef = useRef('start');
+  const cycleTimeoutRef = useRef(null);
+  const intervalRef = useRef(null);
+  const firstCycleRef = useRef(true);
+  const lapCompletedInCurrentCycle = useRef(false);
 
   // Ses Şiddetini Yüzdeye Çevir
   useEffect(() => {
     blowIntensityRef.current = blowIntensity;
-    const currentDb = Math.min(Math.round((blowIntensity / 220) * 100), 100);
+    const noiseThreshold = 40; // Daha düşük eşik (kolay üfleme için)
+    let validIntensity = blowIntensity - noiseThreshold;
+    if (validIntensity < 0) validIntensity = 0;
+    const currentDb = Math.min(Math.round((validIntensity / 100) * 100), 100);
     setDbPercentage(currentDb);
   }, [blowIntensity]);
 
@@ -35,6 +45,7 @@ const FrogGame = () => {
   const speak = (message) => {
     if (gameOverRef.current || !isListening) return;
     setPromptMessage(message);
+    window.speechSynthesis.cancel();
     const speech = new SpeechSynthesisUtterance(message);
     speech.lang = 'tr-TR';
     speech.rate = 1.0;
@@ -42,59 +53,110 @@ const FrogGame = () => {
     window.speechSynthesis.speak(speech);
   };
 
+  const startCycle = () => {
+    if (gameOverRef.current || !isListening) return;
+    phaseRef.current = 'inhale';
+    setIsExhalePhase(false);
+    lapCompletedInCurrentCycle.current = false;
+    warningGiven.current = false;
+    setEnergy(0);
+    setIsJumping(false);
+
+    if (firstCycleRef.current) {
+      speak("Hazır mısın? Dik dur. Burnundan yavaşça nefes al.");
+    } else {
+      speak("Nefes al.");
+    }
+    
+    setShowTimer(true);
+    setTimer(3);
+    
+    let count = 3;
+    intervalRef.current = setInterval(() => {
+      count -= 1;
+      if (count > 0) {
+        setTimer(count);
+      } else {
+        clearInterval(intervalRef.current);
+        setShowTimer(false);
+        phaseRef.current = 'exhale';
+        setIsExhalePhase(true);
+        if (firstCycleRef.current) {
+          speak("Şimdi ağzından yavaş ve uzun nefes ver.");
+          firstCycleRef.current = false;
+        } else {
+          speak("Nefes ver.");
+        }
+        
+        cycleTimeoutRef.current = setTimeout(() => {
+          if (!gameOverRef.current && isListening) {
+            startCycle();
+          }
+        }, 12000); // 12 saniyelik nefes veriş süresi
+      }
+    }, 1500); // Nefes alma süresi 1500ms
+  };
+
   // Oyun Başlangıç Komutları
   useEffect(() => {
     if (isListening && !gameOver && !initRef.current) {
       initRef.current = true;
-      speak("Hazır mısın?");
-      setTimeout(() => speak("Dik dur."), 2000);
-      setTimeout(() => speak("Burnundan derin ve yavaş nefes al."), 4500);
+      firstCycleRef.current = true;
+      startCycle();
     }
     else if (!isListening) {
       initRef.current = false;
+      if (cycleTimeoutRef.current) clearTimeout(cycleTimeoutRef.current);
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      window.speechSynthesis.cancel();
     }
-  }, [isListening]);
+  }, [isListening, gameOver]);
 
   // Component unmount olduğunda sesi sustur
   useEffect(() => {
     return () => {
       window.speechSynthesis.cancel();
-      if (phaseTimerRef.current) clearTimeout(phaseTimerRef.current);
+      if (cycleTimeoutRef.current) clearTimeout(cycleTimeoutRef.current);
+      if (intervalRef.current) clearInterval(intervalRef.current);
     };
   }, []);
 
   // Oyun Döngüsü
   useEffect(() => {
-    if (isListening && !gameOver && !initRef.current) {
-      initRef.current = true;
+    if (isListening && !gameOver) {
       const updateGame = () => {
-        const currentDb = Math.min(Math.round((blowIntensityRef.current / 220) * 100), 100);
+        const noiseThreshold = 40;
+        let validIntensity = blowIntensityRef.current - noiseThreshold;
+        if (validIntensity < 0) validIntensity = 0;
+        const currentDb = Math.min(Math.round((validIntensity / 100) * 100), 100);
 
         if (!isJumping) {
           setEnergy((prev) => {
             let newEnergy = prev;
             
-            // İdeal Üfleme Aralığı (Zorlaştırılmış hız: +0.2)
-            if (currentDb >= 10 && currentDb <= 70) {
-              newEnergy += 0.2; 
-              setScore(s => s + 1);
-
-              if (newEnergy > 25 && !warningGiven.current) {
-                speak("Kurbağamız enerji topluyor.");
-                warningGiven.current = true;
+            if (phaseRef.current === 'exhale' && !lapCompletedInCurrentCycle.current) {
+              // İdeal Üfleme Aralığı
+              if (currentDb >= 10 && currentDb <= 85) {
+                newEnergy += 0.25; 
+                setScore(s => s + 1);
+              } 
+              // Çok Sert Üfleme
+              else if (currentDb > 85) {
+                newEnergy += 0.05; 
               }
-            } 
-            // Çok Sert Üfleme
-            else if (currentDb > 70) {
-              newEnergy += 0.05; 
-            }
-            // Üfleme Yok veya Çok Zayıf
-            else {
-              newEnergy = Math.max(prev - 0.1, 0); 
+              // Üfleme Yok veya Çok Zayıf
+              else {
+                newEnergy = Math.max(prev - 0.1, 0); 
+              }
+            } else if (lapCompletedInCurrentCycle.current) {
+              newEnergy = 100;
+            } else {
+              newEnergy = Math.max(prev - 0.1, 0);
             }
 
-            if (newEnergy >= 100) {
+            if (newEnergy >= 100 && !lapCompletedInCurrentCycle.current) {
               triggerJump();
+              lapCompletedInCurrentCycle.current = true;
               return 100;
             }
 
@@ -116,19 +178,7 @@ const FrogGame = () => {
   const triggerJump = () => {
     setIsJumping(true);
     speak("Harika! Kurbağa zıpladı!");
-    
-    // Zıplama bittikten sonraki komut
-    phaseTimerRef.current = setTimeout(() => {
-      speak("Şimdi yavaşça nefes ver.");
-    }, 2500);
-
-    // Yeni tura geçiş
-    setTimeout(() => {
-      setIsJumping(false);
-      setEnergy(0);
-      warningGiven.current = false; // Sonraki tur için sıfırla
-      setLaps(l => l + 1);
-    }, 6000);
+    setLaps(l => l + 1);
   };
 
   // Tur Tamamlanma Yan Etkileri
@@ -136,6 +186,8 @@ const FrogGame = () => {
     if (laps > 0) {
       if (laps >= 6) {
         handleFinishGame();
+      } else {
+        setScore(s => s + 100);
       }
     }
   }, [laps]);
@@ -145,9 +197,15 @@ const FrogGame = () => {
     setGameOver(true);
     gameOverRef.current = true;
     
+    if (cycleTimeoutRef.current) clearTimeout(cycleTimeoutRef.current);
+    if (intervalRef.current) clearInterval(intervalRef.current);
     window.speechSynthesis.cancel();
+    
     // Bitiş komutu
-    speak("Harika! Zıplama görevini başarıyla tamamladın!");
+    const finalSpeech = new SpeechSynthesisUtterance("Harika! Zıplama görevini başarıyla tamamladın!");
+    finalSpeech.lang = 'tr-TR';
+    window.speechSynthesis.speak(finalSpeech);
+    setPromptMessage("Harika! Zıplama görevini başarıyla tamamladın!");
 
     const progressData = {
       userId: "123e4567-e89b-12d3-a456-426614174000",
@@ -199,6 +257,18 @@ const FrogGame = () => {
     }}>
       <BellyBreathGuide isListening={isListening} blowIntensity={blowIntensity} scale={2.0} theme="lightBg" customStyle={{ top: '48%', right: '30px' }} />
 
+      {/* Büyük Ekranda 1, 2, 3 Sayacı */}
+      {showTimer && isListening && (
+        <div style={{
+          position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+          fontSize: '150px', fontWeight: 'bold', color: '#FFF', zIndex: 150,
+          textShadow: '0 10px 30px rgba(0,0,0,0.5)',
+          animation: 'pulse 1s infinite'
+        }}>
+          {timer}
+        </div>
+      )}
+
       {/* 1. ÜST PANEL: Yüksek Kontrastlı Bilgi Kartı */}
       <div style={{
         position: 'absolute', top: '20px', right: '30px', left: '30px',
@@ -209,17 +279,19 @@ const FrogGame = () => {
         <div style={{
           backgroundColor: themeColors.card, padding: '15px 25px', borderRadius: '16px',
           border: `3px solid ${themeColors.border}`, boxShadow: '0 8px 20px rgba(0,0,0,0.1)',
-          display: 'flex', flexDirection: 'column', alignItems: 'center'
+          display: 'flex', flexDirection: 'column', alignItems: 'center',
+          filter: !isExhalePhase && isListening ? 'blur(3px)' : 'none',
+          transition: 'filter 0.3s ease'
         }}>
           <h3 style={{ margin: '0 0 10px 0', fontSize: '18px', color: cpTheme.text.dark }}>💨 Üfleme Gücü</h3>
           <div style={{ width: '200px', height: '20px', backgroundColor: cpTheme.elements.progressBg, borderRadius: '10px', overflow: 'hidden', position: 'relative' }}>
             
-            {/* İdeal Üfleme Aralığı (%10 - %70) */}
-            <div style={{ position: 'absolute', left: '10%', width: '60%', height: '100%', backgroundColor: 'rgba(16, 185, 129, 0.4)', zIndex: 1 }} />
+            {/* İdeal Üfleme Aralığı (%10 - %85) */}
+            <div style={{ position: 'absolute', left: '10%', width: '75%', height: '100%', backgroundColor: 'rgba(16, 185, 129, 0.4)', zIndex: 1 }} />
             
             <div style={{ 
               width: `${dbPercentage}%`, height: '100%', 
-              backgroundColor: dbPercentage > 70 ? cpTheme.primary.coral : themeColors.accent, 
+              backgroundColor: dbPercentage > 85 ? cpTheme.primary.coral : themeColors.accent, 
               transition: 'width 0.1s linear', zIndex: 2, position: 'relative'
             }} />
           </div>

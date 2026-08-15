@@ -15,26 +15,36 @@ const SoupGame = () => {
   const [dbPercentage, setDbPercentage] = useState(0);
   const [laps, setLaps] = useState(0); // 5 tur
   const [promptMessage, setPromptMessage] = useState("");
-  const [phase, setPhase] = useState('start'); // start, inhale, exhale, success
+  const [timer, setTimer] = useState(3);
+  const [showTimer, setShowTimer] = useState(false);
+  const [isExhalePhase, setIsExhalePhase] = useState(false);
 
+  const gameOverRef = useRef(false);
   const blowIntensityRef = useRef(0);
   const animationFrameId = useRef(null);
   const initRef = useRef(false);
-  const phaseTimerRef = useRef(null);
-  const gameOverRef = useRef(false);
   const warningGiven = useRef(false);
+  const phaseRef = useRef('start');
+  const cycleTimeoutRef = useRef(null);
+  const intervalRef = useRef(null);
+  const firstCycleRef = useRef(true);
+  const lapCompletedInCurrentCycle = useRef(false);
 
   // Ses Şiddetini Yüzdeye Çevir
   useEffect(() => {
     blowIntensityRef.current = blowIntensity;
-    const currentDb = Math.min(Math.round((blowIntensity / 220) * 100), 100);
+    const noiseThreshold = 40; // Daha düşük eşik (kolay üfleme için)
+    let validIntensity = blowIntensity - noiseThreshold;
+    if (validIntensity < 0) validIntensity = 0;
+    const currentDb = Math.min(Math.round((validIntensity / 100) * 100), 100);
     setDbPercentage(currentDb);
   }, [blowIntensity]);
 
-  // Sesli Komut Fonksiyonu
+  // Sesli Komut (Sadece state günceller ve okur)
   const speak = (message) => {
     if (gameOverRef.current || !isListening) return;
     setPromptMessage(message);
+    window.speechSynthesis.cancel();
     const speech = new SpeechSynthesisUtterance(message);
     speech.lang = 'tr-TR';
     speech.rate = 1.0;
@@ -42,94 +52,113 @@ const SoupGame = () => {
     window.speechSynthesis.speak(speech);
   };
 
-  const startLapSequence = () => {
-    if (!isListening || gameOver) return;
-    setPhase('start');
-    setSteamLevel(100);
+  const startCycle = () => {
+    if (gameOverRef.current || !isListening) return;
+    phaseRef.current = 'inhale';
+    setIsExhalePhase(false);
+    lapCompletedInCurrentCycle.current = false;
     warningGiven.current = false;
+    setSteamLevel(100);
 
-    speak("Dik dur.");
+    if (firstCycleRef.current) {
+      speak("Hazır mısın? Dik dur. Burnundan yavaşça nefes al.");
+    } else {
+      speak("Nefes al.");
+    }
     
-    setTimeout(() => {
-      speak("Çorbamızı koklayalım.");
-    }, 2000);
-
-    setTimeout(() => {
-      speak("Burnundan derin ve yavaş nefes al.");
-      setPhase('inhale');
-    }, 4500);
-
-    // 5 saniye koklama süresi sonrasında üfleme aşaması başlar
-    setTimeout(() => {
-      speak("Şimdi çorbamızı soğutalım.");
-    }, 9500);
-
-    setTimeout(() => {
-      speak("Ağzından yavaşça ve uzun nefes ver.");
-      setPhase('exhale');
-    }, 12500);
+    setShowTimer(true);
+    setTimer(3);
+    
+    let count = 3;
+    intervalRef.current = setInterval(() => {
+      count -= 1;
+      if (count > 0) {
+        setTimer(count);
+      } else {
+        clearInterval(intervalRef.current);
+        setShowTimer(false);
+        phaseRef.current = 'exhale';
+        setIsExhalePhase(true);
+        if (firstCycleRef.current) {
+          speak("Şimdi çorbayı üfleyerek soğut.");
+          firstCycleRef.current = false;
+        } else {
+          speak("Nefes ver.");
+        }
+        
+        cycleTimeoutRef.current = setTimeout(() => {
+          if (!gameOverRef.current && isListening) {
+            startCycle();
+          }
+        }, 12000); // 12 saniyelik nefes veriş süresi
+      }
+    }, 1500); // Nefes alma süresi 1500ms
   };
 
-  // İlk başlangıç
+  // Oyun Başlangıç Komutları
   useEffect(() => {
-    if (isListening && !gameOver && laps === 0) {
-      startLapSequence();
+    if (isListening && !gameOver && !initRef.current) {
+      initRef.current = true;
+      firstCycleRef.current = true;
+      startCycle();
     }
-  }, [isListening]);
-
-  // Döngü Kontrolü (Her tur bittiğinde yeniden başlat)
-  useEffect(() => {
-    if (laps > 0 && laps < 5 && !gameOver && isListening) {
-      startLapSequence();
-    } else if (laps >= 5) {
-      handleFinishGame();
+    else if (!isListening) {
+      initRef.current = false;
+      if (cycleTimeoutRef.current) clearTimeout(cycleTimeoutRef.current);
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      window.speechSynthesis.cancel();
     }
-  }, [laps]);
+  }, [isListening, gameOver]);
 
-  // Component unmount temizliği
+  // Component unmount olduğunda sesi sustur
   useEffect(() => {
     return () => {
       window.speechSynthesis.cancel();
+      if (cycleTimeoutRef.current) clearTimeout(cycleTimeoutRef.current);
+      if (intervalRef.current) clearInterval(intervalRef.current);
     };
   }, []);
 
-  // Oyun Döngüsü (Üfleme ile buhar azaltma)
+  // Oyun Döngüsü
   useEffect(() => {
     if (isListening && !gameOver) {
       const updateGame = () => {
-        const currentDb = Math.min(Math.round((blowIntensityRef.current / 220) * 100), 100);
+        const noiseThreshold = 40;
+        let validIntensity = blowIntensityRef.current - noiseThreshold;
+        if (validIntensity < 0) validIntensity = 0;
+        const currentDb = Math.min(Math.round((validIntensity / 100) * 100), 100);
 
-        if (phase === 'exhale') {
-          setSteamLevel((prev) => {
-            let newSteam = prev;
-            
-            // İdeal Üfleme Aralığı (Buharı yavaşça azaltır)
-            if (currentDb >= 15 && currentDb <= 65) {
+        setSteamLevel((prev) => {
+          let newSteam = prev;
+          
+          if (phaseRef.current === 'exhale' && !lapCompletedInCurrentCycle.current) {
+            // İdeal Üfleme Aralığı
+            if (currentDb >= 10 && currentDb <= 85) {
               newSteam -= 0.25; 
               setScore(s => s + 1);
-
-              if (newSteam < 50 && !warningGiven.current) {
-                speak("Çorbamız soğuyor!");
-                warningGiven.current = true;
-              }
             } 
             // Çok Sert Üfleme
-            else if (currentDb > 65) {
-              newSteam -= 0.1; // Çorba sıçrar, daha yavaş soğur
+            else if (currentDb > 85) {
+              newSteam -= 0.1; // Sıçrama etkisi
             }
             // Üfleme Yok veya Çok Zayıf
             else {
-              newSteam = Math.min(prev + 0.05, 100); // Üflemezse tekrar ısınır (zorluk)
+              newSteam = Math.min(prev + 0.05, 100); // Üflemezse tekrar ısınır
             }
+          } else if (lapCompletedInCurrentCycle.current) {
+            newSteam = 0; // Hedef tamamlandı
+          } else {
+            // Nefes alırken değer sabit kalsın (veya çok hafif artsın)
+          }
 
-            if (newSteam <= 0) {
-              triggerSuccess();
-              return 0;
-            }
+          if (newSteam <= 0 && !lapCompletedInCurrentCycle.current) {
+            triggerSuccess();
+            lapCompletedInCurrentCycle.current = true;
+            return 0;
+          }
 
-            return newSteam;
-          });
-        }
+          return newSteam;
+        });
 
         animationFrameId.current = requestAnimationFrame(updateGame);
       };
@@ -140,28 +169,46 @@ const SoupGame = () => {
     return () => {
       if (animationFrameId.current) cancelAnimationFrame(animationFrameId.current);
     };
-  }, [isListening, gameOver, phase]);
+  }, [isListening, gameOver]);
 
   const triggerSuccess = () => {
-    setPhase('success');
-    speak("Harika üfledin!");
-    
-    setTimeout(() => {
-      speak("Bravo!");
-    }, 2500);
-
-    setTimeout(() => {
-      setLaps(l => l + 1);
-    }, 5500);
+    phaseRef.current = 'success';
+    setLaps(l => l + 1);
   };
+
+  // Tur Tamamlanma Yan Etkileri
+  useEffect(() => {
+    if (laps > 0) {
+      if (laps >= 5) {
+        handleFinishGame();
+      } else {
+        setScore(s => s + 100);
+        const motivations = [
+          "Harika! Çorba soğudu.",
+          "Çok iyi gidiyorsun, mükemmel!",
+          "Süpersin, çorba kasesi bitti!",
+          "Muhteşem bir nefes! Aynen böyle devam et."
+        ];
+        const randomMsg = motivations[Math.floor(Math.random() * motivations.length)];
+        speak(randomMsg);
+      }
+    }
+  }, [laps]);
 
   const handleFinishGame = async () => {
     stopListening();
     setGameOver(true);
     gameOverRef.current = true;
     
+    if (cycleTimeoutRef.current) clearTimeout(cycleTimeoutRef.current);
+    if (intervalRef.current) clearInterval(intervalRef.current);
     window.speechSynthesis.cancel();
-    speak("Tüm çorbaları başarıyla soğuttun! Harikasın!");
+    
+    // Bitiş komutu
+    const finalSpeech = new SpeechSynthesisUtterance("Tüm çorbaları başarıyla soğuttun! Harikasın!");
+    finalSpeech.lang = 'tr-TR';
+    window.speechSynthesis.speak(finalSpeech);
+    setPromptMessage("Tüm çorbaları başarıyla soğuttun! Harikasın!");
 
     const progressData = {
       userId: "123e4567-e89b-12d3-a456-426614174000",
@@ -201,6 +248,18 @@ const SoupGame = () => {
     }}>
       <BellyBreathGuide isListening={isListening} blowIntensity={blowIntensity} scale={2.0} theme="lightBg" customStyle={{ top: '48%', right: '30px' }} />
 
+      {/* Büyük Ekranda 1, 2, 3 Sayacı */}
+      {showTimer && isListening && (
+        <div style={{
+          position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+          fontSize: '150px', fontWeight: 'bold', color: '#FF5722', zIndex: 150,
+          textShadow: '0 10px 30px rgba(0,0,0,0.5)',
+          animation: 'pulse 1s infinite'
+        }}>
+          {timer}
+        </div>
+      )}
+
       {/* 1. ÜST PANEL: Yüksek Kontrastlı Bilgi Kartı */}
       <div style={{
         position: 'absolute', top: '20px', right: '30px', left: '30px',
@@ -212,18 +271,18 @@ const SoupGame = () => {
           backgroundColor: themeColors.card, padding: '15px 25px', borderRadius: '16px',
           border: `3px solid ${themeColors.border}`, boxShadow: '0 8px 20px rgba(0,0,0,0.1)',
           display: 'flex', flexDirection: 'column', alignItems: 'center',
-          opacity: phase === 'exhale' ? 1 : 0.4,
-          transition: 'opacity 0.5s ease'
+          filter: !isExhalePhase && isListening ? 'blur(3px)' : 'none',
+          transition: 'filter 0.3s ease'
         }}>
           <h3 style={{ margin: '0 0 10px 0', fontSize: '18px', color: cpTheme.text.dark }}>💨 Üfleme Gücü</h3>
           <div style={{ width: '200px', height: '20px', backgroundColor: cpTheme.elements.progressBg, borderRadius: '10px', overflow: 'hidden', position: 'relative' }}>
             
-            {/* İdeal Üfleme Aralığı (%15 - %65) */}
-            <div style={{ position: 'absolute', left: '15%', width: '50%', height: '100%', backgroundColor: 'rgba(16, 185, 129, 0.4)', zIndex: 1 }} />
+            {/* İdeal Üfleme Aralığı (%10 - %85) */}
+            <div style={{ position: 'absolute', left: '10%', width: '75%', height: '100%', backgroundColor: 'rgba(16, 185, 129, 0.4)', zIndex: 1 }} />
             
             <div style={{ 
               width: `${dbPercentage}%`, height: '100%', 
-              backgroundColor: dbPercentage > 65 ? cpTheme.primary.coral : themeColors.accent, 
+              backgroundColor: dbPercentage > 85 ? cpTheme.primary.coral : themeColors.accent, 
               transition: 'width 0.1s linear', zIndex: 2, position: 'relative'
             }} />
           </div>
@@ -275,7 +334,7 @@ const SoupGame = () => {
         }}>
           {[1, 2, 3].map(i => (
             <svg key={i} width="40" height="150" viewBox="0 0 40 150" style={{
-              animation: phase !== 'success' ? `bobbing ${1 + i*0.2}s infinite alternate ease-in-out` : 'none'
+              animation: phaseRef.current !== 'success' ? `bobbing ${1 + i*0.2}s infinite alternate ease-in-out` : 'none'
             }}>
               <path d="M20,150 Q40,112.5 20,75 T20,0" fill="none" stroke="rgba(255,255,255,0.7)" strokeWidth="8" strokeLinecap="round" />
             </svg>

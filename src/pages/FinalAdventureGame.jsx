@@ -16,19 +16,27 @@ const FinalAdventureGame = () => {
   const [laps, setLaps] = useState(0); // Toplanan kristal sayısı (Maks 5)
   const [promptMessage, setPromptMessage] = useState("");
   const [isCharging, setIsCharging] = useState(true);
+  const [timer, setTimer] = useState(3);
+  const [showTimer, setShowTimer] = useState(false);
+  const [isExhalePhase, setIsExhalePhase] = useState(false);
 
+  const gameOverRef = useRef(false);
   const blowIntensityRef = useRef(0);
   const animationFrameId = useRef(null);
   const initRef = useRef(false);
-  const gameOverRef = useRef(false);
+  const phaseRef = useRef('start');
+  const cycleTimeoutRef = useRef(null);
+  const intervalRef = useRef(null);
+  const firstCycleRef = useRef(true);
+  const lapCompletedInCurrentCycle = useRef(false);
 
   // Kristal Renkleri ve Simgeleri
   const crystals = [
-    { id: 1, color: '#EF4444', emoji: '🔴' }, // Kırmızı
-    { id: 2, color: '#3B82F6', emoji: '🔵' }, // Mavi
-    { id: 3, color: '#10B981', emoji: '🟢' }, // Yeşil
-    { id: 4, color: '#F59E0B', emoji: '🟡' }, // Sarı
-    { id: 5, color: '#8B5CF6', emoji: '🟣' }  // Mor
+    { id: 1, color: '#EF4444', emoji: '🔴' },
+    { id: 2, color: '#3B82F6', emoji: '🔵' },
+    { id: 3, color: '#10B981', emoji: '🟢' },
+    { id: 4, color: '#F59E0B', emoji: '🟡' },
+    { id: 5, color: '#8B5CF6', emoji: '🟣' }
   ];
 
   // Sözel Komutlar (Motivasyon)
@@ -43,7 +51,10 @@ const FinalAdventureGame = () => {
   // Ses Şiddetini Yüzdeye Çevir
   useEffect(() => {
     blowIntensityRef.current = blowIntensity;
-    const currentDb = Math.min(Math.round((blowIntensity / 220) * 100), 100);
+    const noiseThreshold = 40; // Kolaylaştırılmış eşik
+    let validIntensity = blowIntensity - noiseThreshold;
+    if (validIntensity < 0) validIntensity = 0;
+    const currentDb = Math.min(Math.round((validIntensity / 100) * 100), 100);
     setDbPercentage(currentDb);
   }, [blowIntensity]);
 
@@ -51,6 +62,7 @@ const FinalAdventureGame = () => {
   const speak = (message) => {
     if (gameOverRef.current || !isListening) return;
     setPromptMessage(message);
+    window.speechSynthesis.cancel();
     const speech = new SpeechSynthesisUtterance(message);
     speech.lang = 'tr-TR';
     speech.rate = 1.0;
@@ -58,17 +70,70 @@ const FinalAdventureGame = () => {
     window.speechSynthesis.speak(speech);
   };
 
-  // İlk başlangıç
-  useEffect(() => {
-    if (isListening && !gameOver && laps === 0) {
-      speak("Nefes Kristalleri Macerasına Hoş Geldin! Kristali parlatmak için mikrofona üfle!");
-    }
-  }, [isListening]);
+  const startCycle = () => {
+    if (gameOverRef.current || !isListening) return;
+    phaseRef.current = 'inhale';
+    setIsExhalePhase(false);
+    lapCompletedInCurrentCycle.current = false;
+    setEnergy(0);
+    setIsCharging(true);
 
-  // Component unmount temizliği
+    if (firstCycleRef.current) {
+      speak("Hazır mısın? Dik dur. Burnundan nefes al.");
+    } else {
+      speak("Nefes al.");
+    }
+    
+    setShowTimer(true);
+    setTimer(3);
+    
+    let count = 3;
+    intervalRef.current = setInterval(() => {
+      count -= 1;
+      if (count > 0) {
+        setTimer(count);
+      } else {
+        clearInterval(intervalRef.current);
+        setShowTimer(false);
+        phaseRef.current = 'exhale';
+        setIsExhalePhase(true);
+        if (firstCycleRef.current) {
+          speak("Şimdi nefes ver ve kristali parlat!");
+          firstCycleRef.current = false;
+        } else {
+          speak("Nefes ver.");
+        }
+        
+        cycleTimeoutRef.current = setTimeout(() => {
+          if (!gameOverRef.current && isListening) {
+            startCycle();
+          }
+        }, 12000); // 12 saniyelik nefes veriş süresi
+      }
+    }, 1500); // Nefes alma süresi 1500ms
+  };
+
+  // Oyun Başlangıç Komutları
+  useEffect(() => {
+    if (isListening && !gameOver && !initRef.current) {
+      initRef.current = true;
+      firstCycleRef.current = true;
+      startCycle();
+    }
+    else if (!isListening) {
+      initRef.current = false;
+      if (cycleTimeoutRef.current) clearTimeout(cycleTimeoutRef.current);
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      window.speechSynthesis.cancel();
+    }
+  }, [isListening, gameOver]);
+
+  // Component unmount olduğunda sesi sustur
   useEffect(() => {
     return () => {
       window.speechSynthesis.cancel();
+      if (cycleTimeoutRef.current) clearTimeout(cycleTimeoutRef.current);
+      if (intervalRef.current) clearInterval(intervalRef.current);
     };
   }, []);
 
@@ -76,28 +141,38 @@ const FinalAdventureGame = () => {
   useEffect(() => {
     if (isListening && !gameOver) {
       const updateGame = () => {
-        const currentDb = Math.min(Math.round((blowIntensityRef.current / 220) * 100), 100);
+        const noiseThreshold = 40;
+        let validIntensity = blowIntensityRef.current - noiseThreshold;
+        if (validIntensity < 0) validIntensity = 0;
+        const currentDb = Math.min(Math.round((validIntensity / 100) * 100), 100);
 
         if (isCharging && laps < 5) {
           setEnergy((prev) => {
             let newEnergy = prev;
             
-            // Üfleme Hedefi (%20 - %80)
-            if (currentDb >= 20 && currentDb <= 80) {
-              newEnergy += 0.3; // Kristal şarj olur
-              setScore(s => s + 1);
-            } 
-            // Çok Sert Üfleme
-            else if (currentDb > 80) {
-              newEnergy += 0.05; 
-            }
-            // Zayıf veya Yok
-            else {
-              newEnergy = Math.max(prev - 0.2, 0); 
+            if (phaseRef.current === 'exhale' && !lapCompletedInCurrentCycle.current) {
+              // Üfleme Hedefi (%10 - %85)
+              if (currentDb >= 10 && currentDb <= 85) {
+                newEnergy += 0.3; // Kristal şarj olur
+                setScore(s => s + 1);
+              } 
+              // Çok Sert Üfleme
+              else if (currentDb > 85) {
+                newEnergy += 0.05; 
+              }
+              // Zayıf veya Yok
+              else {
+                newEnergy = Math.max(prev - 0.2, 0); 
+              }
+            } else if (lapCompletedInCurrentCycle.current) {
+              newEnergy = 100;
+            } else {
+              newEnergy = Math.max(prev - 0.2, 0);
             }
 
-            if (newEnergy >= 100) {
+            if (newEnergy >= 100 && !lapCompletedInCurrentCycle.current) {
               triggerCrystalCollect();
+              lapCompletedInCurrentCycle.current = true;
               return 100;
             }
 
@@ -118,35 +193,36 @@ const FinalAdventureGame = () => {
 
   const triggerCrystalCollect = () => {
     setIsCharging(false);
-    
-    // Rastgele motivasyon cümlesi seç
-    const randomFeedback = positiveFeedbacks[Math.floor(Math.random() * positiveFeedbacks.length)];
-    speak(randomFeedback);
-    
-    const newLaps = laps + 1;
-    
-    setTimeout(() => {
-      setLaps(newLaps);
-      
-      if (newLaps < 5) {
-        // Yeni kristale geçiş
-        speak("Bir kez daha deneyelim! Sıradaki kristali parlat.");
-        setEnergy(0);
-        setIsCharging(true);
-      } else {
-        // Oyun Bitti!
-        handleFinishGame();
-      }
-    }, 3000);
+    setLaps(l => l + 1);
   };
+
+  // Tur Tamamlanma Yan Etkileri
+  useEffect(() => {
+    if (laps > 0) {
+      if (laps >= 5) {
+        handleFinishGame();
+      } else {
+        setScore(s => s + 100);
+        const randomFeedback = positiveFeedbacks[Math.floor(Math.random() * positiveFeedbacks.length)];
+        speak(randomFeedback);
+      }
+    }
+  }, [laps]);
 
   const handleFinishGame = async () => {
     stopListening();
     setGameOver(true);
     gameOverRef.current = true;
     
+    if (cycleTimeoutRef.current) clearTimeout(cycleTimeoutRef.current);
+    if (intervalRef.current) clearInterval(intervalRef.current);
     window.speechSynthesis.cancel();
-    speak("Tebrikler! Nefes Macerasını Tamamladın!");
+    
+    // Bitiş komutu
+    const finalSpeech = new SpeechSynthesisUtterance("Tebrikler! Nefes Macerasını Tamamladın!");
+    finalSpeech.lang = 'tr-TR';
+    window.speechSynthesis.speak(finalSpeech);
+    setPromptMessage("Tebrikler! Nefes Macerasını Tamamladın!");
 
     const progressData = {
       userId: "123e4567-e89b-12d3-a456-426614174000",
@@ -158,12 +234,14 @@ const FinalAdventureGame = () => {
     try {
       await axios.post('http://localhost:8080/api/progress/save', progressData);
       setTimeout(() => {
+        alert(`Harika! Oyun Tamamlandı! Skor: ${Math.floor(score)}\nMenüye dönülüyor...`);
         navigate('/cocuk-paneli');
-      }, 7000);
+      }, 3000);
     } catch (error) {
       setTimeout(() => {
+        alert(`Oyun Tamamlandı! Skor: ${Math.floor(score)}\nMenüye dönülüyor...`);
         navigate('/cocuk-paneli');
-      }, 7000);
+      }, 3000);
     }
   };
 
@@ -188,6 +266,18 @@ const FinalAdventureGame = () => {
 
       <BellyBreathGuide isListening={isListening} blowIntensity={blowIntensity} scale={2.0} theme="darkBg" customStyle={{ top: '48%', right: '30px' }} />
 
+      {/* Büyük Ekranda 1, 2, 3 Sayacı */}
+      {showTimer && isListening && (
+        <div style={{
+          position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+          fontSize: '150px', fontWeight: 'bold', color: '#FFF', zIndex: 150,
+          textShadow: '0 10px 30px rgba(0,0,0,0.5)',
+          animation: 'pulse 1s infinite'
+        }}>
+          {timer}
+        </div>
+      )}
+
       {/* 1. ÜST PANEL: Yüksek Kontrastlı Bilgi Kartı */}
       <div style={{
         position: 'absolute', top: '20px', right: '30px', left: '30px',
@@ -201,18 +291,18 @@ const FinalAdventureGame = () => {
             border: `3px solid ${themeColors.border}`, boxShadow: '0 8px 20px rgba(0,0,0,0.3)',
             display: 'flex', flexDirection: 'column', alignItems: 'center',
             backdropFilter: 'blur(10px)',
-            opacity: isCharging ? 1 : 0.4,
-            transition: 'opacity 0.5s ease'
+            filter: !isExhalePhase && isListening ? 'blur(3px)' : 'none',
+            transition: 'filter 0.3s ease'
           }}>
             <h3 style={{ margin: '0 0 10px 0', fontSize: '18px', color: '#FFF' }}>💨 Üfleme Gücü</h3>
             <div style={{ width: '200px', height: '20px', backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: '10px', overflow: 'hidden', position: 'relative' }}>
               
-              {/* İdeal Üfleme Aralığı (%20 - %80) */}
-              <div style={{ position: 'absolute', left: '20%', width: '60%', height: '100%', backgroundColor: 'rgba(16, 185, 129, 0.6)', zIndex: 1 }} />
+              {/* İdeal Üfleme Aralığı (%10 - %85) */}
+              <div style={{ position: 'absolute', left: '10%', width: '75%', height: '100%', backgroundColor: 'rgba(16, 185, 129, 0.6)', zIndex: 1 }} />
               
               <div style={{ 
                 width: `${dbPercentage}%`, height: '100%', 
-                backgroundColor: dbPercentage > 80 ? '#F59E0B' : themeColors.accent, 
+                backgroundColor: dbPercentage > 85 ? '#F59E0B' : themeColors.accent, 
                 transition: 'width 0.1s linear', zIndex: 2, position: 'relative'
               }} />
             </div>
@@ -268,7 +358,7 @@ const FinalAdventureGame = () => {
                 {crystal.emoji}
                 
                 {/* Şarj olan kristalin etrafındaki enerji halkası */}
-                {isCurrent && isCharging && energy > 0 && (
+                {isCurrent && isCharging && energy > 0 && phaseRef.current === 'exhale' && (
                   <div style={{
                     position: 'absolute',
                     top: '50%', left: '50%',

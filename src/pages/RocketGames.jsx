@@ -16,17 +16,27 @@ const RocketGame = () => {
   const [laps, setLaps] = useState(0); // Toplam 5 tur
   const [promptMessage, setPromptMessage] = useState("");
   const [isLaunching, setIsLaunching] = useState(false);
-  const [phase, setPhase] = useState('start'); // start, charge, launch, rest
+  const [timer, setTimer] = useState(3);
+  const [showTimer, setShowTimer] = useState(false);
+  const [isExhalePhase, setIsExhalePhase] = useState(false);
 
+  const gameOverRef = useRef(false);
   const blowIntensityRef = useRef(0);
   const animationFrameId = useRef(null);
-  const phaseTimerRef = useRef(null);
-  const gameOverRef = useRef(false);
+  const initRef = useRef(false);
+  const phaseRef = useRef('start');
+  const cycleTimeoutRef = useRef(null);
+  const intervalRef = useRef(null);
+  const firstCycleRef = useRef(true);
+  const lapCompletedInCurrentCycle = useRef(false);
 
   // Ses Şiddetini Yüzdeye Çevir
   useEffect(() => {
     blowIntensityRef.current = blowIntensity;
-    const currentDb = Math.min(Math.round((blowIntensity / 220) * 100), 100);
+    const noiseThreshold = 40; // Kolaylaştırılmış eşik
+    let validIntensity = blowIntensity - noiseThreshold;
+    if (validIntensity < 0) validIntensity = 0;
+    const currentDb = Math.min(Math.round((validIntensity / 100) * 100), 100);
     setDbPercentage(currentDb);
   }, [blowIntensity]);
 
@@ -34,6 +44,7 @@ const RocketGame = () => {
   const speak = (message) => {
     if (gameOverRef.current || !isListening) return;
     setPromptMessage(message);
+    window.speechSynthesis.cancel();
     const speech = new SpeechSynthesisUtterance(message);
     speech.lang = 'tr-TR';
     speech.rate = 1.0;
@@ -41,47 +52,70 @@ const RocketGame = () => {
     window.speechSynthesis.speak(speech);
   };
 
-  const startLapSequence = () => {
-    if (!isListening || gameOver) return;
-    setPhase('start');
+  const startCycle = () => {
+    if (gameOverRef.current || !isListening) return;
+    phaseRef.current = 'inhale';
+    setIsExhalePhase(false);
+    lapCompletedInCurrentCycle.current = false;
     setEnergy(0);
     setIsLaunching(false);
 
-    speak("Dik dur.");
-    setTimeout(() => speak("Kollarını yukarı uzat."), 2000);
-    setTimeout(() => speak("Hazır mısın?"), 4500);
-    setTimeout(() => speak("Burnundan derin bir nefes al."), 7000);
+    if (firstCycleRef.current) {
+      speak("Hazır mısın? Dik dur. Burnundan nefes al.");
+    } else {
+      speak("Nefes al.");
+    }
     
-    // Nefes alma sonrası
-    setTimeout(() => speak("Roket hazır!"), 11000);
+    setShowTimer(true);
+    setTimer(3);
     
-    setTimeout(() => {
-      speak("Şimdi tek ve kontrollü bir üfleme yap.");
-      setPhase('charge');
-    }, 13000);
+    let count = 3;
+    intervalRef.current = setInterval(() => {
+      count -= 1;
+      if (count > 0) {
+        setTimer(count);
+      } else {
+        clearInterval(intervalRef.current);
+        setShowTimer(false);
+        phaseRef.current = 'exhale';
+        setIsExhalePhase(true);
+        if (firstCycleRef.current) {
+          speak("Şimdi güçlüce nefes ver ve roketi fırlat!");
+          firstCycleRef.current = false;
+        } else {
+          speak("Nefes ver.");
+        }
+        
+        cycleTimeoutRef.current = setTimeout(() => {
+          if (!gameOverRef.current && isListening) {
+            startCycle();
+          }
+        }, 12000); // 12 saniyelik nefes veriş süresi
+      }
+    }, 1500); // Nefes alma süresi 1500ms
   };
 
-  // İlk başlangıç
+  // Oyun Başlangıç Komutları
   useEffect(() => {
-    if (isListening && !gameOver && laps === 0) {
-      startLapSequence();
+    if (isListening && !gameOver && !initRef.current) {
+      initRef.current = true;
+      firstCycleRef.current = true;
+      startCycle();
     }
-  }, [isListening]);
-
-  // Yeni Tur (Döngü Kontrolü)
-  useEffect(() => {
-    if (laps > 0 && laps < 5 && !gameOver && isListening) {
-      startLapSequence();
-    } else if (laps >= 5) {
-      handleFinishGame();
+    else if (!isListening) {
+      initRef.current = false;
+      if (cycleTimeoutRef.current) clearTimeout(cycleTimeoutRef.current);
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      window.speechSynthesis.cancel();
     }
-  }, [laps]);
+  }, [isListening, gameOver]);
 
-  // Component unmount temizliği
+  // Component unmount olduğunda sesi sustur
   useEffect(() => {
     return () => {
       window.speechSynthesis.cancel();
-      if (phaseTimerRef.current) clearTimeout(phaseTimerRef.current);
+      if (cycleTimeoutRef.current) clearTimeout(cycleTimeoutRef.current);
+      if (intervalRef.current) clearInterval(intervalRef.current);
     };
   }, []);
 
@@ -89,24 +123,34 @@ const RocketGame = () => {
   useEffect(() => {
     if (isListening && !gameOver) {
       const updateGame = () => {
-        const currentDb = Math.min(Math.round((blowIntensityRef.current / 220) * 100), 100);
+        const noiseThreshold = 40;
+        let validIntensity = blowIntensityRef.current - noiseThreshold;
+        if (validIntensity < 0) validIntensity = 0;
+        const currentDb = Math.min(Math.round((validIntensity / 100) * 100), 100);
 
-        if (phase === 'charge' && !isLaunching) {
+        if (!isLaunching) {
           setEnergy((prev) => {
             let newEnergy = prev;
             
-            // Güçlü Üfleme Hedefi (%30 - %100)
-            if (currentDb >= 30) {
-              newEnergy += 0.5; // Daha hızlı dolar, tek ve güçlü üfleme için
-              setScore(s => s + 1);
-            } 
-            // Çok Zayıf Üfleme veya Yok
-            else {
-              newEnergy = Math.max(prev - 0.2, 0); 
+            if (phaseRef.current === 'exhale' && !lapCompletedInCurrentCycle.current) {
+              // Güçlü Üfleme Hedefi (%30 - %100)
+              if (currentDb >= 30) {
+                newEnergy += 0.5; // Daha hızlı dolar
+                setScore(s => s + 1);
+              } 
+              // Çok Zayıf Üfleme veya Yok
+              else {
+                newEnergy = Math.max(prev - 0.2, 0); 
+              }
+            } else if (lapCompletedInCurrentCycle.current) {
+              newEnergy = 100;
+            } else {
+              newEnergy = Math.max(prev - 0.2, 0);
             }
 
-            if (newEnergy >= 100) {
+            if (newEnergy >= 100 && !lapCompletedInCurrentCycle.current) {
               triggerLaunch();
+              lapCompletedInCurrentCycle.current = true;
               return 100;
             }
 
@@ -123,35 +167,46 @@ const RocketGame = () => {
     return () => {
       if (animationFrameId.current) cancelAnimationFrame(animationFrameId.current);
     };
-  }, [isListening, gameOver, phase, isLaunching]);
+  }, [isListening, gameOver, isLaunching]);
 
   const triggerLaunch = () => {
     setIsLaunching(true);
-    setPhase('launch');
-    speak("Roket fırladı!");
-    
-    setTimeout(() => {
-      speak("Harika! Roketi uzaya gönderdin.");
-    }, 3000);
-
-    setTimeout(() => {
-      speak("Şimdi dinlen.");
-      setPhase('rest');
-    }, 6500);
-
-    // Yeni tura geçiş
-    setTimeout(() => {
-      setLaps(l => l + 1);
-    }, 10000); // Dinlenmesi için fazladan zaman veriyoruz
+    setLaps(l => l + 1);
   };
+
+  // Tur Tamamlanma Yan Etkileri
+  useEffect(() => {
+    if (laps > 0) {
+      if (laps >= 5) {
+        handleFinishGame();
+      } else {
+        setScore(s => s + 100);
+        const motivations = [
+          "Harika! Roketi uzaya gönderdin.",
+          "Çok iyi gidiyorsun, mükemmel!",
+          laps > 1 ? "Süpersin, bir roket daha fırladı!" : "Süpersin, roketi başarıyla fırlattın!",
+          "Muhteşem bir nefes! Aynen böyle devam et."
+        ];
+        const randomMsg = motivations[Math.floor(Math.random() * motivations.length)];
+        speak(randomMsg);
+      }
+    }
+  }, [laps]);
 
   const handleFinishGame = async () => {
     stopListening();
     setGameOver(true);
     gameOverRef.current = true;
     
+    if (cycleTimeoutRef.current) clearTimeout(cycleTimeoutRef.current);
+    if (intervalRef.current) clearInterval(intervalRef.current);
     window.speechSynthesis.cancel();
-    speak("Tüm roketleri başarıyla fırlattın! Harikasın!");
+    
+    // Bitiş komutu
+    const finalSpeech = new SpeechSynthesisUtterance("Tüm roketleri başarıyla fırlattın! Harikasın!");
+    finalSpeech.lang = 'tr-TR';
+    window.speechSynthesis.speak(finalSpeech);
+    setPromptMessage("Tüm roketleri başarıyla fırlattın! Harikasın!");
 
     const progressData = {
       userId: "123e4567-e89b-12d3-a456-426614174000",
@@ -198,6 +253,18 @@ const RocketGame = () => {
 
       <BellyBreathGuide isListening={isListening} blowIntensity={blowIntensity} scale={2.0} theme="darkBg" customStyle={{ top: '48%', right: '30px' }} />
 
+      {/* Büyük Ekranda 1, 2, 3 Sayacı */}
+      {showTimer && isListening && (
+        <div style={{
+          position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+          fontSize: '150px', fontWeight: 'bold', color: '#FFF', zIndex: 150,
+          textShadow: '0 10px 30px rgba(0,0,0,0.5)',
+          animation: 'pulse 1s infinite'
+        }}>
+          {timer}
+        </div>
+      )}
+
       {/* 1. ÜST PANEL: Yüksek Kontrastlı Bilgi Kartı */}
       <div style={{
         position: 'absolute', top: '20px', right: '30px', left: '30px',
@@ -210,8 +277,8 @@ const RocketGame = () => {
           border: `3px solid ${themeColors.border}`, boxShadow: '0 8px 20px rgba(0,0,0,0.3)',
           display: 'flex', flexDirection: 'column', alignItems: 'center',
           backdropFilter: 'blur(10px)',
-          opacity: phase === 'charge' ? 1 : 0.4,
-          transition: 'opacity 0.5s ease'
+          filter: !isExhalePhase && isListening ? 'blur(3px)' : 'none',
+          transition: 'filter 0.3s ease'
         }}>
           <h3 style={{ margin: '0 0 10px 0', fontSize: '18px', color: '#FFF' }}>💨 Üfleme Gücü</h3>
           <div style={{ width: '200px', height: '20px', backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: '10px', overflow: 'hidden', position: 'relative' }}>
@@ -292,7 +359,7 @@ const RocketGame = () => {
       </div>
 
       {/* Roket Ateşi (Sadece fırlarken veya enerji birikirken göster) */}
-      {!isLaunching && energy > 0 && phase === 'charge' && (
+      {!isLaunching && energy > 0 && phaseRef.current === 'exhale' && (
         <div style={{
           position: 'absolute',
           left: '50%',

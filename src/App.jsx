@@ -253,8 +253,9 @@ function AppContent() {
           </div>
           
           {/* Orta Taraf: Sponsor Logoları (Footer boyunu büyütmeden max genişlik/yükseklikte) */}
-          <div style={{ flex: '1 1 300px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          <div style={{ flex: '1 1 300px', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '30px', flexWrap: 'wrap' }}>
             <img src="/footer-sponsors.png" alt="Footer Sponsorlar" style={{ height: '60px', width: 'auto', maxWidth: '100%', objectFit: 'contain' }} />
+            <img src="/sbulogo.png" alt="SBU Logo" style={{ height: '60px', width: 'auto', maxWidth: '100%', objectFit: 'contain' }} />
           </div>
 
           {/* Sağ Taraf: Telif Hakkı */}

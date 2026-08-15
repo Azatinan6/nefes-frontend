@@ -81,6 +81,43 @@ const LandingPage = () => {
           <p>N.E.F.E.S. modelinin en büyük farkı; solunum ve postür eğitimini yorucu bir klinik rutin olmaktan çıkarıp, oyun temelli, eğitsel ve sürdürülebilir bir öğrenme deneyimi dönüşümüdür. Modelimiz, çocukların solunum fonksiyonları, beden farkındalığı, sosyal katılımı ve yaşam kalitesi üzerindeki etkileri standart ölçüm yöntemleriyle değerlendirilecek şekilde tasarlanmıştır. Ayrıca diğer özel gereksinimli gruplara da uyarlanabilir yapısıyla toplumsal katkıyı en üst düzeye çıkarmayı amaçlar.</p>
         </div>
       )
+    },
+    bizkimiz: {
+      title: "Biz Kimiz? Proje Ekibi",
+      color: "#9C27B0",
+      body: (
+        <div style={modalBodyStyle}>
+          <h4 style={{ color: '#9C27B0', marginTop: '0', marginBottom: '10px' }}>Proje Yürütücüsü</h4>
+          <p>Prof. Dr. Fizyoterapist Rasmi Muammer (Yeditepe Üniversitesi)</p>
+
+          <h4 style={{ color: '#9C27B0', marginTop: '20px', marginBottom: '10px' }}>Proje Araştırmacıları</h4>
+          <ul style={{ lineHeight: '1.6', paddingLeft: '20px' }}>
+            <li>Doç. Dr. Fizyoterapist Başar Öztürk (Fenerbahçe Üniversitesi)</li>
+            <li>Dr. Fizyoterapist Kıymet Muammer (İstanbul Üniversitesi-Cerrahpaşa)</li>
+            <li>Dr. Fizyoterapist Aslı Yeral (Yeditepe Üniversitesi)</li>
+            <li>Dr. Fizyoterapist Baha Naci (Fenerbahçe Üniversitesi)</li>
+            <li>Uzman Fizyoterapist Deniz Aslan (Yeditepe Üniversitesi)</li>
+          </ul>
+
+          <h4 style={{ color: '#9C27B0', marginTop: '20px', marginBottom: '10px' }}>Eğitmenler</h4>
+          <ul style={{ lineHeight: '1.6', paddingLeft: '20px' }}>
+            <li>Prof. Dr. Esra Pehlivan (Sağlık Bilimleri Üniversitesi)</li>
+            <li>Dr. Fizyoterapist Elif Develi (Yeditepe Üniversitesi)</li>
+            <li>Uzman Fizyoterapist Ayça Yağcıoğlu (Yeditepe Üniversitesi)</li>
+            <li>Uzman Fizyoterapist Turgay Arık (TSÇV)</li>
+            <li>Uzman Fizyoterapist Irmak Sıla Çetinel (Yeditepe Üniversitesi)</li>
+            <li>Fizyoterapist Zeynep İnan (Yeditepe Üniversitesi)</li>
+            <li>Fizyoterapist Burak Şevket Vuran (TSÇV)</li>
+            <li>Fizyoterapist Yüksel Çolaker (TSÇV)</li>
+          </ul>
+
+          <h4 style={{ color: '#9C27B0', marginTop: '20px', marginBottom: '10px' }}>Yazılım ve Teknik Ekip</h4>
+          <ul style={{ lineHeight: '1.6', paddingLeft: '20px' }}>
+            <li>Mühendis Azat İnan (Haliç Üniversitesi)</li>
+            <li>Mühendis Mehmet Eren Çakmak (Haliç Üniversitesi)</li>
+          </ul>
+        </div>
+      )
     }
   };
 
@@ -112,7 +149,7 @@ const LandingPage = () => {
       </div>
 
       {/* 2. BİLGİLENDİRME KARTLARI */}
-      <div style={{ padding: '70px 20px', maxWidth: '1200px', margin: '0 auto', textAlign: 'center' }}>
+      <div style={{ padding: '70px 20px', maxWidth: '1500px', margin: '0 auto', textAlign: 'center' }}>
         <h2 style={{ fontSize: '38px', color: '#1565C0', marginBottom: '50px', fontWeight: '800' }}>Neden N.E.F.E.S Projesi?</h2>
         
         <div style={{ display: 'flex', justifyContent: 'center', gap: '35px', flexWrap: 'wrap' }}>
@@ -141,6 +178,14 @@ const LandingPage = () => {
             <button onClick={() => setActiveModal('solunum')} className="card-btn" style={{...cardBtnStyle, backgroundColor: '#03A9F4'}}>Detaylı Bilgi</button>
           </div>
 
+          {/* KART 4: Biz Kimiz? */}
+          <div className="hover-card" style={cardStyle}>
+            <div style={{ fontSize: '65px', marginBottom: '15px' }}>👥</div>
+            <h3 style={{ color: '#333', fontSize: '22px', marginBottom: '15px', fontWeight: 'bold' }}>Biz Kimiz?</h3>
+            <p style={{ color: '#666', fontSize: '15px', flex: 1, lineHeight: '1.5' }}>Projemize değer katan yürütücülerimiz, araştırmacılarımız, eğitmenlerimiz ve teknik ekibimiz.</p>
+            <button onClick={() => setActiveModal('bizkimiz')} className="card-btn" style={{...cardBtnStyle, backgroundColor: '#9C27B0'}}>Detaylı Bilgi</button>
+          </div>
+
         </div>
       </div>
 
@@ -149,8 +194,8 @@ const LandingPage = () => {
         <h2 style={{ fontSize: '38px', color: '#1565C0', marginBottom: '50px', fontWeight: '800' }}>Sistem Nasıl Çalışır?</h2>
         <div style={{ display: 'flex', justifyContent: 'center', gap: '40px', flexWrap: 'wrap', maxWidth: '1000px', margin: '0 auto' }}>
           <Step icon="👤" title="1. Kayıt ve Değerlendirme" />
-          <Step icon="👩‍⚕️" title="2. Fiziksel Eğitim (15 Dk)" />
-          <Step icon="💻" title="3. Dijital Entegrasyon (15 Dk)" />
+          <Step icon="👩‍⚕️" title="2. Fiziksel Eğitim" />
+          <Step icon="💻" title="3. Dijital Entegrasyon" />
           <Step icon="📈" title="4. Takip ve Gelişim" />
         </div>
       </div>

@@ -27,10 +27,10 @@ const FlowerGame = () => {
 
   useEffect(() => {
     intensityRef.current = blowIntensity;
-    const noiseThreshold = 30; 
+    const noiseThreshold = 55; 
     let validIntensity = blowIntensity - noiseThreshold;
     if (validIntensity < 0) validIntensity = 0;
-    const currentDb = Math.min(Math.round((validIntensity / 180) * 100), 100);
+    const currentDb = Math.min(Math.round((validIntensity / 150) * 100), 100);
     setDbPercentage(currentDb);
   }, [blowIntensity]);
 
@@ -47,7 +47,9 @@ const FlowerGame = () => {
 
   // Sayfadan çıkıldığında veya oyun bittiğinde konuşmayı sustur
   useEffect(() => {
+    gameOverRef.current = false;
     return () => {
+      gameOverRef.current = true;
       window.speechSynthesis.cancel();
     };
   }, []);
@@ -93,6 +95,13 @@ const FlowerGame = () => {
       } else {
         playAudioPrompt("Nefes ver.");
       }
+
+      // Üfleme sırasında motive edici söz (Nefes ver dedikten 3 saniye sonra)
+      setTimeout(() => {
+        if (!gameOverRef.current && phaseRef.current === 'exhale') {
+          playAudioPrompt("İyi gidiyor, devam et...");
+        }
+      }, 3000);
     }, 4000);
   };
 
@@ -100,22 +109,22 @@ const FlowerGame = () => {
   useEffect(() => {
     if (isListening && !gameOverRef.current) {
       const updateGame = () => {
-        // Eşik değeri (daha zor dolması için artırıldı)
-        const noiseThreshold = 65; 
+        // Eşik değeri (daha hassas olması için düşürüldü)
+        const noiseThreshold = 55; 
         let validIntensity = intensityRef.current - noiseThreshold;
         if (validIntensity < 0) validIntensity = 0;
         
-        // 130 yerine 180'e bölüyoruz (barın %100 olması için daha güçlü üflemesi gerekir)
-        const currentDb = Math.min(Math.round((validIntensity / 180) * 100), 100);
+        // Daha az üfleme gücüyle barın dolabilmesi için 150'ye bölüyoruz
+        const currentDb = Math.min(Math.round((validIntensity / 150) * 100), 100);
 
         // YALNIZCA EXHALE (nefes ver) fazında bar dolacak
         if (phaseRef.current === 'exhale') {
           if (currentDb >= 5) {
-            // Dolma hızını 0.6'dan 0.35'e düşürdük (daha uzun süre kesintisiz üflemesi gerekir)
+            // Dolma hızını artırdık, daha kolay dolsun
             setFlowerOpen(prev => (prev >= 100 ? 100 : prev + 0.35));
           } else {
-            // Üflemeyi bırakırsa daha hızlı kapanır
-            setFlowerOpen(prev => (prev > 0 ? prev - 0.25 : 0));
+            // Üflemeyi bırakırsa daha yavaş kapansın
+            setFlowerOpen(prev => (prev > 0 ? prev - 0.15 : 0));
           }
         }
         
@@ -152,7 +161,7 @@ const FlowerGame = () => {
       
       if (nextCycle >= 5) {
         // Oyun bitti
-        handleFinishGame();
+        handleFinishGame(true);
       } else {
         // Sonraki döngüye geç
         startCycle(nextCycle);
@@ -160,25 +169,27 @@ const FlowerGame = () => {
     }, 3000); // 3 saniye tebrik mesajı bekle
   };
 
-  const handleFinishGame = async () => {
+  const handleFinishGame = async (isCompleted = false) => {
     stopListening();
     setGameOver(true);
     gameOverRef.current = true;
     window.speechSynthesis.cancel();
-    setPromptMessage("Oyun Bitti! Süpersin.");
+    
+    if (isCompleted) {
+      setPromptMessage("Oyun Bitti! Süpersin.");
+      const progressData = {
+        userId: "123e4567-e89b-12d3-a456-426614174000",
+        gameId: 6,
+        score: score,
+        dbPerformance: dbPercentage
+      };
 
-    const progressData = {
-      userId: "123e4567-e89b-12d3-a456-426614174000",
-      gameId: 6,
-      score: score,
-      dbPerformance: dbPercentage
-    };
-
-    try {
-      await axios.post('http://localhost:8080/api/progress/save', progressData);
-      alert(`Harika! Oyun Tamamlandı! Skor: ${score} \nMenüye dönülüyor...`);
-    } catch (error) {
-      alert(`Oyun Tamamlandı! Skor: ${score} \nMenüye dönülüyor...`);
+      try {
+        await axios.post('http://localhost:8080/api/progress/save', progressData);
+        alert(`Harika! Oyun Tamamlandı! Skor: ${score} \nMenüye dönülüyor...`);
+      } catch (error) {
+        alert(`Oyun Tamamlandı! Skor: ${score} \nMenüye dönülüyor...`);
+      }
     }
 
     navigate('/cocuk-paneli');
@@ -215,23 +226,22 @@ const FlowerGame = () => {
       
       <div style={styles.topPanel}>
         <div style={{ ...styles.glassCard, padding: '15px 25px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <h3 style={{ margin: '0 0 10px 0', fontSize: '16px', color: cpTheme.primary.teal }}>🎙️ Nefes Sesi</h3>
+          <h3 style={{ margin: '0 0 10px 0', fontSize: '18px', color: cpTheme.text.dark }}>💨 Üfleme Gücü</h3>
           <div style={{ 
-            width: '200px', height: '16px', backgroundColor: cpTheme.elements.progressBg, 
-            borderRadius: '8px', overflow: 'hidden', position: 'relative',
+            width: '200px', height: '20px', backgroundColor: cpTheme.elements.progressBg, 
+            borderRadius: '10px', overflow: 'hidden', position: 'relative',
             opacity: gamePhase === 'inhale' ? 0.4 : 1,
-            filter: gamePhase === 'inhale' ? 'blur(1px) grayscale(50%)' : 'none',
             transition: 'all 0.4s ease'
           }}>
-            {/* İdeal Üfleme Aralığı Rehberi (%5 - %50) */}
-            <div style={{ position: 'absolute', left: '5%', width: '45%', height: '100%', backgroundColor: 'rgba(16, 185, 129, 0.2)', zIndex: 1 }} />
+            <div style={{ position: 'absolute', left: '15%', width: '50%', height: '100%', backgroundColor: 'rgba(16, 185, 129, 0.4)', zIndex: 1 }} />
+            
             <div style={{ 
               width: `${dbPercentage}%`, height: '100%', 
-              backgroundColor: dbPercentage > 50 ? cpTheme.primary.coral : cpTheme.primary.emerald, 
-              transition: 'width 0.1s linear', borderRadius: '8px', zIndex: 2, position: 'relative'
+              backgroundColor: dbPercentage > 65 ? cpTheme.primary.coral : '#FF5722', 
+              transition: 'width 0.1s linear', zIndex: 2, position: 'relative'
             }} />
           </div>
-          <span style={{ marginTop: '8px', fontWeight: 'bold' }}>%{dbPercentage}</span>
+          <span style={{ marginTop: '5px', fontWeight: 'bold', color: cpTheme.text.dark }}>%{dbPercentage}</span>
         </div>
 
         <div style={{ ...styles.glassCard, padding: '15px 25px', display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
@@ -242,7 +252,7 @@ const FlowerGame = () => {
           {!isListening ? (
             <button onClick={startListening} style={{ padding: '10px 20px', background: cpTheme.primary.teal, color: '#fff', border: 'none', borderRadius: '12px', marginTop: '10px', cursor: 'pointer' }}>▶️ BAŞLA</button>
           ) : (
-            <button onClick={handleFinishGame} style={{ padding: '10px 20px', background: cpTheme.primary.coral, color: '#fff', border: 'none', borderRadius: '12px', marginTop: '10px', cursor: 'pointer' }}>⏹️ BİTİR</button>
+            <button onClick={() => handleFinishGame(false)} style={{ padding: '10px 20px', background: cpTheme.primary.coral, color: '#fff', border: 'none', borderRadius: '12px', marginTop: '10px', cursor: 'pointer' }}>⏹️ BİTİR</button>
           )}
         </div>
       </div>

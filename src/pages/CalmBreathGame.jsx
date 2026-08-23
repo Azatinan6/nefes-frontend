@@ -3,6 +3,7 @@ import useBreathSensor from '../components/useBreathSensor';
 import BellyBreathGuide from '../components/BellyBreathGuide';
 import axios from 'axios';
 import { cpTheme } from '../theme/colors';
+import api from '../services/api';
 const CalmBreathGame = () => {
   const { isListening, startListening, stopListening } = useBreathSensor();
   
@@ -83,7 +84,7 @@ const CalmBreathGame = () => {
     };
 
     try {
-      const response = await axios.post('http://localhost:8080/api/progress/save', progressData);
+      const response = await api.post('/progress/save', progressData);
       alert(response.data);
     } catch (error) {
       console.error("Hata:", error);

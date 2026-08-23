@@ -4,6 +4,7 @@ import BellyBreathGuide from '../components/BellyBreathGuide';
 import axios from 'axios';
 import { cpTheme } from '../theme/colors';
 import { useNavigate } from 'react-router-dom';
+import api from '../services/api';
 
 const BalloonGame = () => {
   const { blowIntensity, isListening, startListening, stopListening } = useBreathSensor();
@@ -190,7 +191,7 @@ const BalloonGame = () => {
       };
 
       try {
-        await axios.post('http://localhost:8080/api/progress/save', progressData);
+        await api.post('/progress/save', progressData);
         alert(`Tebrikler! ${crystals} Nefes Kristali Kazandın! 💎 Menüye dönülüyor...`);
       } catch (error) {
         alert(`Tebrikler! Kazanılan Kristal: ${crystals} 💎\nMenüye dönülüyor...`);

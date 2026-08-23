@@ -4,6 +4,7 @@ import BellyBreathGuide from '../components/BellyBreathGuide';
 import axios from 'axios';
 import { cpTheme } from '../theme/colors';
 import { useNavigate } from 'react-router-dom';
+import api from '../services/api';
 
 const CarGame = () => {
   const { blowIntensity, isListening, startListening, stopListening } = useBreathSensor();
@@ -212,7 +213,7 @@ const CarGame = () => {
     };
 
     try {
-      await axios.post('http://localhost:8080/api/progress/save', progressData);
+      await api.post('/progress/save', progressData);
       setTimeout(() => {
         alert(`Harika! Oyun Tamamlandı! Skor: ${Math.floor(score)}\nMenüye dönülüyor...`);
         navigate('/cocuk-paneli');

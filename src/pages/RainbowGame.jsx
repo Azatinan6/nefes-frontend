@@ -3,6 +3,7 @@ import useBreathSensor from '../components/useBreathSensor';
 import BellyBreathGuide from '../components/BellyBreathGuide';
 import axios from 'axios';
 import { cpTheme } from '../theme/colors';
+import api from '../services/api';
 const RainbowGame = () => {
   // Nefes sensöründen gelen veriler
   const { blowIntensity, isListening, startListening, stopListening } = useBreathSensor();
@@ -175,7 +176,7 @@ const RainbowGame = () => {
     };
 
     try {
-      await axios.post('http://localhost:8080/api/progress/save', progressData);
+      await api.post('/progress/save', progressData);
       alert(`Harika! ${crystals} Nefes Kristali Kazandın! 💎`);
     } catch (error) {
       console.error("Skor kaydedilirken hata:", error);

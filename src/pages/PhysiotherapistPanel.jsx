@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
+import api from '../services/api';
 
 const PhysiotherapistPanel = () => {
   const [patients, setPatients] = useState([]);
@@ -28,7 +29,7 @@ const PhysiotherapistPanel = () => {
     setPatientsLoading(true);
     try {
       const token = localStorage.getItem('nefes_token');
-      const response = await axios.get('http://localhost:8080/api/fizyo/my-patients', {
+      const response = await api.get('/fizyo/my-patients', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setPatients(response.data);
@@ -68,7 +69,7 @@ const PhysiotherapistPanel = () => {
     };
 
     try {
-        const response = await axios.post('http://localhost:8080/api/ai/generate-clinical-report', requestData);
+        const response = await api.post('/ai/generate-clinical-report', requestData);
         setAiReport(response.data);
     } catch (err) {
         console.error("Klinik AI API Hatası:", err);
@@ -92,7 +93,7 @@ const PhysiotherapistPanel = () => {
     setAddLoading(true);
     try {
       const token = localStorage.getItem('nefes_token');
-      const response = await axios.post('http://localhost:8080/api/fizyo/add-patient', addForm, {
+      const response = await api.post('/fizyo/add-patient', addForm, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setAddSuccess(`Hasta eklendi! Şifre (Aileye mail atıldı): ${response.data.generatedPassword}`);

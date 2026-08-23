@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import useBreathSensor from '../components/useBreathSensor';
 import axios from 'axios';
 import { cpTheme } from '../theme/colors';
+import api from '../services/api';
 const DragonGame = () => {
   const { blowIntensity, isListening, startListening, stopListening } = useBreathSensor();
   
@@ -116,7 +117,7 @@ const DragonGame = () => {
     };
 
     try {
-      await axios.post('http://localhost:8080/api/progress/save', progressData);
+      await api.post('/progress/save', progressData);
       alert(`Harika! ${crystals} Nefes Kristali Kazandın! 💎`);
     } catch (error) {
       console.error("Skor kaydedilirken hata:", error);

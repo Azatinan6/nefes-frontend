@@ -4,6 +4,7 @@ import BellyBreathGuide from '../components/BellyBreathGuide';
 import axios from 'axios';
 import { cpTheme } from '../theme/colors';
 import { useNavigate } from 'react-router-dom';
+import api from '../services/api';
 
 const SailboatGame = () => {
   const { blowIntensity, isListening, startListening, stopListening } = useBreathSensor();
@@ -221,7 +222,7 @@ const SailboatGame = () => {
       };
 
       try {
-        await axios.post('http://localhost:8080/api/progress/save', progressData);
+        await api.post('/progress/save', progressData);
         alert(`Harika! Oyun Tamamlandı! Kazanılan Kristal: ${crystals} 💎 \nMenüye dönülüyor...`);
       } catch (error) {
         alert(`Oyun Tamamlandı! Kazanılan Kristal: ${crystals} 💎 \nMenüye dönülüyor...`);

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import api from '../services/api';
 
 const FamilyAIReport = () => {
     // Yapay zekadan gelen raporu tutacak state
@@ -33,7 +34,7 @@ const FamilyAIReport = () => {
 
         try {
             // Backend Controller Endpoint'imize POST isteği atıyoruz
-            const response = await axios.post('http://localhost:8080/api/ai/generate-report', requestData);
+            const response = await api.post('/ai/generate-report', requestData);
             
             // Yapay zekadan gelen cevabı (düz metin) state'e kaydediyoruz
             setReportText(response.data);

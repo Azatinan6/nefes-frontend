@@ -26,6 +26,7 @@ const RegisterPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [isKvkkModalOpen, setIsKvkkModalOpen] = useState(false);
 
   // Fizyoterapist form verileri
   const [fizyoForm, setFizyoForm] = useState({
@@ -35,6 +36,7 @@ const RegisterPage = () => {
     confirmPassword: '',
     licenseNumber: '',
     specialization: '',
+    isKvkkApproved: false,
   });
 
 
@@ -53,6 +55,11 @@ const RegisterPage = () => {
       return;
     }
 
+    if (!fizyoForm.isKvkkApproved) {
+      setError('Lütfen KVKK Aydınlatma Metni ve Açık Rıza Beyanı\'nı onaylayın.');
+      return;
+    }
+
     setLoading(true);
     try {
       await registerFizyo({
@@ -61,6 +68,7 @@ const RegisterPage = () => {
         password: fizyoForm.password,
         licenseNumber: fizyoForm.licenseNumber,
         specialization: fizyoForm.specialization,
+        isKvkkApproved: fizyoForm.isKvkkApproved,
       });
 
       setSuccess('Başvurunuz alındı! Yönetici onayının ardından e-posta ile bilgilendirileceksiniz.');
@@ -196,6 +204,19 @@ const RegisterPage = () => {
               </div>
             </Field>
 
+            <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+              <input 
+                type="checkbox" 
+                id="kvkkCheck"
+                checked={fizyoForm.isKvkkApproved}
+                onChange={(e) => setFizyoForm({...fizyoForm, isKvkkApproved: e.target.checked})}
+                style={{ marginTop: '4px', cursor: 'pointer' }}
+              />
+              <label htmlFor="kvkkCheck" style={{ fontSize: '13px', color: '#475569', lineHeight: '1.5', cursor: 'pointer' }}>
+                <span onClick={(e) => { e.preventDefault(); setIsKvkkModalOpen(true); }} style={{ color: '#2E7D32', textDecoration: 'underline' }}>KVKK Aydınlatma Metni</span>'ni ve kişisel verilerimin işlenmesine ilişkin Açık Rıza Beyanı'nı okudum, anladım ve kabul ediyorum.
+              </label>
+            </div>
+
             <button type="submit" className="reg-btn" disabled={loading} style={{ marginTop: '8px' }}>
               {loading ? '⏳ Başvuru gönderiliyor...' : '📋 Başvuru Gönder'}
             </button>
@@ -217,6 +238,29 @@ const RegisterPage = () => {
           </Link>
         </div>
       </div>
+
+      {/* KVKK Modal */}
+      {isKvkkModalOpen && (
+        <div style={styles.modalOverlay}>
+          <div style={styles.modalContent}>
+            <h2 style={{marginTop: 0, color: '#1e293b'}}>KVKK Aydınlatma Metni</h2>
+            <div style={{maxHeight: '60vh', overflowY: 'auto', fontSize: '14px', color: '#475569', lineHeight: '1.6', marginBottom: '20px'}}>
+              <p><strong>1. Veri Sorumlusunun Kimliği</strong></p>
+              <p>Kişisel verileriniz veri sorumlusu sıfatıyla tarafımızca KVKK'ya uygun olarak işlenmektedir.</p>
+              <p><strong>2. Kişisel Verilerin İşlenme Amacı</strong></p>
+              <p>Toplanan kişisel verileriniz, hesabınızın oluşturulması, platform hizmetlerinin sunulması ve tıbbi geçmiş/ilerleme analizlerinin yapılabilmesi amacıyla işlenecektir.</p>
+              <p><strong>3. Açık Rıza</strong></p>
+              <p>Özel nitelikli kişisel veri sayılan sağlık verilerinizin işlenmesine ve kaydedilmesine özgür iradenizle açık rıza vermektesiniz.</p>
+            </div>
+            <button 
+              onClick={() => setIsKvkkModalOpen(false)} 
+              className="reg-btn"
+            >
+              Okudum, Kapat
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -232,6 +276,15 @@ const Field = ({ label, children }) => (
 );
 
 const styles = {
+  modalOverlay: {
+    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
+    padding: '20px'
+  },
+  modalContent: {
+    backgroundColor: '#fff', borderRadius: '16px', padding: '30px', maxWidth: '500px', width: '100%',
+    boxShadow: '0 25px 50px rgba(0,0,0,0.15)', maxHeight: '90vh'
+  },
   container: {
     minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
     background: 'linear-gradient(135deg, #e8f5e9 0%, #e3f2fd 50%, #f3e5f5 100%)',

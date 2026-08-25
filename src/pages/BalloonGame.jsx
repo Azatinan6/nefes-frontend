@@ -330,7 +330,7 @@ const BalloonGame = () => {
 
       <div style={styles.topPanel}>
         <div style={{ ...styles.glassCard, ...styles.statBox }}>
-          <h3 style={{ margin: '0 0 10px 0', fontSize: '18px', color: cpTheme.text.dark }}>💨 Üfleme Gücü</h3>
+          <h3 style={{ margin: '0 0 10px 0', fontSize: '18px', color: cpTheme.text.dark }}>💨 Nefes Gücü</h3>
           <div style={{ 
             width: '200px', height: '20px', backgroundColor: cpTheme.elements.progressBg, 
             borderRadius: '10px', overflow: 'hidden', position: 'relative',

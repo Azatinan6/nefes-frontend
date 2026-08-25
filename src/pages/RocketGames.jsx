@@ -281,7 +281,7 @@ const RocketGame = () => {
           filter: !isExhalePhase && isListening ? 'blur(3px)' : 'none',
           transition: 'filter 0.3s ease'
         }}>
-          <h3 style={{ margin: '0 0 10px 0', fontSize: '18px', color: '#FFF' }}>💨 Üfleme Gücü</h3>
+          <h3 style={{ margin: '0 0 10px 0', fontSize: '18px', color: '#FFF' }}>💨 Nefes Gücü</h3>
           <div style={{ width: '200px', height: '20px', backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: '10px', overflow: 'hidden', position: 'relative' }}>
             
             {/* İdeal Üfleme Aralığı (%30 - %100) (Güçlü Üfleme) */}

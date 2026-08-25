@@ -25,6 +25,22 @@ const FlowerGame = () => {
   const phaseRef = useRef('start');
   const gameOverRef = useRef(false);
   const animationFrameId = useRef(null);
+  const pausedRef = useRef(false);
+  const timeoutsRef = useRef([]);
+
+  const clearAllTimeouts = () => {
+    timeoutsRef.current.forEach(clearTimeout);
+    timeoutsRef.current = [];
+  };
+
+  const scheduleTimeout = (cb, delay) => {
+    const id = setTimeout(() => {
+      cb();
+      timeoutsRef.current = timeoutsRef.current.filter(t => t !== id);
+    }, delay);
+    timeoutsRef.current.push(id);
+    return id;
+  };
 
   useEffect(() => {
     intensityRef.current = blowIntensity;
@@ -51,14 +67,15 @@ const FlowerGame = () => {
     gameOverRef.current = false;
     return () => {
       gameOverRef.current = true;
+      clearAllTimeouts();
       window.speechSynthesis.cancel();
     };
   }, []);
 
   useEffect(() => {
     let timeoutId;
-    if (isListening && !gameOver && cycleCount === 0 && gamePhase === 'start') {
-      timeoutId = setTimeout(() => startCycle(0), 1000);
+    if (isListening && !gameOver && gamePhase === 'start' && !pausedRef.current) {
+      timeoutId = setTimeout(() => startCycle(cycleCount), 1000);
     }
     return () => {
       if (timeoutId) clearTimeout(timeoutId);
@@ -66,44 +83,52 @@ const FlowerGame = () => {
   }, [isListening, gameOver, cycleCount, gamePhase]);
 
   const startCycle = (cycle) => {
-    if (gameOverRef.current) return;
+    if (gameOverRef.current || pausedRef.current) return;
     
     setFlowerOpen(0);
     setHoldTimer(0);
     setGamePhase('inhale');
     phaseRef.current = 'inhale';
 
-    if (cycle === 0) {
-      playAudioPrompt("Burnundan derin bir nefes al.");
-    } else {
-      playAudioPrompt("Nefes al.");
-    }
+    playAudioPrompt("Öncelikle öğrendiğimiz gibi dik duralım.");
+    
+    scheduleTimeout(() => {
+      if (gameOverRef.current || pausedRef.current) return;
+      playAudioPrompt("Hazır mısın?");
+    }, 2500);
+
+    scheduleTimeout(() => {
+      if (gameOverRef.current || pausedRef.current) return;
+      playAudioPrompt("Çiçek koklar gibi burnundan derin nefes al.");
+    }, 4000);
+
+    scheduleTimeout(() => {
+      if (gameOverRef.current || pausedRef.current) return;
+      playAudioPrompt("Karnının yükseldiğini hisset.");
+    }, 7000);
 
     // Animasyonlu 1, 2, 3 sayacı (Nefes alma süresi)
-    setTimeout(() => setHoldTimer(1), 1000);
-    setTimeout(() => setHoldTimer(2), 2000);
-    setTimeout(() => setHoldTimer(3), 3000);
+    scheduleTimeout(() => { if (!gameOverRef.current && !pausedRef.current) setHoldTimer(1) }, 9000);
+    scheduleTimeout(() => { if (!gameOverRef.current && !pausedRef.current) setHoldTimer(2) }, 10000);
+    scheduleTimeout(() => { if (!gameOverRef.current && !pausedRef.current) setHoldTimer(3) }, 11000);
 
-    // 4 saniye sonra nefes verme (exhale) fazına geç
-    setTimeout(() => {
-      if (gameOverRef.current) return;
+    // pre-exhale fazına geç
+    scheduleTimeout(() => {
+      if (gameOverRef.current || pausedRef.current) return;
       setHoldTimer(0);
-      setGamePhase('exhale');
-      phaseRef.current = 'exhale';
+      setGamePhase('pre-exhale');
+      phaseRef.current = 'pre-exhale';
       
-      if (cycle === 0) {
-        playAudioPrompt("Şimdi ağzından yavaşça nefes ver.");
-      } else {
-        playAudioPrompt("Nefes ver.");
-      }
+      playAudioPrompt("Şimdi balon şişirir gibi ağzından yavaşça nefes ver.");
 
-      // Üfleme sırasında motive edici söz (Nefes ver dedikten 3 saniye sonra)
-      setTimeout(() => {
-        if (!gameOverRef.current && phaseRef.current === 'exhale') {
-          playAudioPrompt("İyi gidiyor, devam et...");
+      // Komut bittikten sonra (yaklaşık 3.5s) exhale fazına geç (Bar aktifleşir, blur kalkar)
+      scheduleTimeout(() => {
+        if (!gameOverRef.current && !pausedRef.current && phaseRef.current === 'pre-exhale') {
+          setGamePhase('exhale');
+          phaseRef.current = 'exhale';
         }
-      }, 3000);
-    }, 4000);
+      }, 3500);
+    }, 12000);
   };
 
   // Oyun Döngüsü (Mikrofon ile barı kontrol etme)
@@ -149,20 +174,23 @@ const FlowerGame = () => {
   }, [flowerOpen]);
 
   const triggerSuccessPhase = () => {
-    if (cycleCount === 0) {
-      playAudioPrompt("Harika! Çok güzel yaptın!");
-    } else {
-      playAudioPrompt("Harika!");
-    }
-    setScore(s => s + 100);
+    playAudioPrompt("Harika!");
+    const newScore = score + 10;
+    setScore(newScore);
     
-    setTimeout(() => {
+    scheduleTimeout(() => {
       const nextCycle = cycleCount + 1;
       setCycleCount(nextCycle);
       
-      if (nextCycle >= 5) {
+      if (gameOverRef.current || pausedRef.current) {
+        setGamePhase('start');
+        phaseRef.current = 'start';
+        return;
+      }
+
+      if (nextCycle >= 10) {
         // Oyun bitti
-        handleFinishGame(true);
+        handleFinishGame(true, newScore);
       } else {
         // Sonraki döngüye geç
         startCycle(nextCycle);
@@ -170,26 +198,60 @@ const FlowerGame = () => {
     }, 3000); // 3 saniye tebrik mesajı bekle
   };
 
-  const handleFinishGame = async (isCompleted = false) => {
+  const handlePauseGame = () => {
+    stopListening();
+    pausedRef.current = true;
+    clearAllTimeouts();
+    setGamePhase('start');
+    phaseRef.current = 'start';
+    setFlowerOpen(0);
+    setHoldTimer(0);
+    window.speechSynthesis.cancel();
+    setPromptMessage("Oyun duraklatıldı. Devam etmek için başla tuşuna basın.");
+  };
+
+  const handleStartGame = () => {
+    pausedRef.current = false;
+    startListening();
+  };
+
+  const handleFinishGame = async (isCompleted = false, finalScore = score) => {
     stopListening();
     setGameOver(true);
     gameOverRef.current = true;
+    clearAllTimeouts();
     window.speechSynthesis.cancel();
     
     if (isCompleted) {
-      setPromptMessage("Oyun Bitti! Süpersin.");
+      setPromptMessage("Harika! Çok güzel yaptın!");
+      
+      const speech = new SpeechSynthesisUtterance("Harika! Çok güzel yaptın!");
+      speech.lang = 'tr-TR';
+      speech.rate = 1.0;
+      speech.pitch = 1.1;
+      window.speechSynthesis.speak(speech);
+
       const progressData = {
         userId: "123e4567-e89b-12d3-a456-426614174000",
         gameId: 6,
-        score: score,
+        score: finalScore,
         dbPerformance: dbPercentage
       };
 
       try {
         await api.post('/progress/save', progressData);
-        alert(`Harika! Oyun Tamamlandı! Skor: ${score} \nMenüye dönülüyor...`);
+        // Sesin çalabilmesi için alerti biraz geciktiriyoruz
+        setTimeout(() => {
+          alert(`Harika! Oyun Tamamlandı! Skor: ${finalScore} \nMenüye dönülüyor...`);
+          navigate('/cocuk-paneli');
+        }, 500);
+        return;
       } catch (error) {
-        alert(`Oyun Tamamlandı! Skor: ${score} \nMenüye dönülüyor...`);
+        setTimeout(() => {
+          alert(`Oyun Tamamlandı! Skor: ${finalScore} \nMenüye dönülüyor...`);
+          navigate('/cocuk-paneli');
+        }, 500);
+        return;
       }
     }
 
@@ -226,8 +288,11 @@ const FlowerGame = () => {
       <BellyBreathGuide isListening={isListening} blowIntensity={blowIntensity} phase={gamePhase} scale={2.2} customStyle={{ left: '14%', right: 'auto', top: '55%' }} />
       
       <div style={styles.topPanel}>
-        <div style={{ ...styles.glassCard, padding: '15px 25px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <h3 style={{ margin: '0 0 10px 0', fontSize: '18px', color: cpTheme.text.dark }}>💨 Üfleme Gücü</h3>
+        <div style={{ ...styles.glassCard, padding: '15px 25px', display: 'flex', flexDirection: 'column', alignItems: 'center',
+          filter: (gamePhase !== 'exhale' && gamePhase !== 'success') ? 'blur(4px)' : 'none',
+          transition: 'filter 0.3s ease'
+        }}>
+          <h3 style={{ margin: '0 0 10px 0', fontSize: '18px', color: cpTheme.text.dark }}>💨 Nefes Gücü</h3>
           <div style={{ 
             width: '200px', height: '20px', backgroundColor: cpTheme.elements.progressBg, 
             borderRadius: '10px', overflow: 'hidden', position: 'relative',
@@ -246,15 +311,18 @@ const FlowerGame = () => {
         </div>
 
         <div style={{ ...styles.glassCard, padding: '15px 25px', display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-          <h2 style={{ margin: 0, fontSize: '22px', fontWeight: '800' }}>Çiçeği Kokla!</h2>
+          <h2 style={{ margin: 0, fontSize: '22px', fontWeight: '800' }}>Çiçek Kokla</h2>
           <div style={{ fontSize: '18px', fontWeight: '600', marginTop: '5px' }}>
-            Skor: {Math.floor(score)} | İlerleme: {cycleCount}/5
+            Kristal: {Math.floor(score)} | Tekrar Sayısı: {cycleCount}/10
           </div>
-          {!isListening ? (
-            <button onClick={startListening} style={{ padding: '10px 20px', background: cpTheme.primary.teal, color: '#fff', border: 'none', borderRadius: '12px', marginTop: '10px', cursor: 'pointer' }}>▶️ BAŞLA</button>
-          ) : (
-            <button onClick={() => handleFinishGame(false)} style={{ padding: '10px 20px', background: cpTheme.primary.coral, color: '#fff', border: 'none', borderRadius: '12px', marginTop: '10px', cursor: 'pointer' }}>⏹️ BİTİR</button>
-          )}
+          <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+            {!isListening ? (
+              <button onClick={handleStartGame} style={{ padding: '10px 20px', background: cpTheme.primary.teal, color: '#fff', border: 'none', borderRadius: '12px', cursor: 'pointer' }}>▶️ BAŞLA</button>
+            ) : (
+              <button onClick={handlePauseGame} style={{ padding: '10px 20px', background: cpTheme.primary.coral, color: '#fff', border: 'none', borderRadius: '12px', cursor: 'pointer' }}>⏸️ DURDUR</button>
+            )}
+            <button onClick={() => handleFinishGame(false)} style={{ padding: '10px 20px', background: '#9E9E9E', color: '#fff', border: 'none', borderRadius: '12px', cursor: 'pointer' }}>🚪 ÇIKIŞ</button>
+          </div>
         </div>
       </div>
 

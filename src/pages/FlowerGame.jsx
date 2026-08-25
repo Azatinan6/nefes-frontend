@@ -27,6 +27,7 @@ const FlowerGame = () => {
   const animationFrameId = useRef(null);
   const pausedRef = useRef(false);
   const timeoutsRef = useRef([]);
+  const isGrowingRef = useRef(false);
 
   const clearAllTimeouts = () => {
     timeoutsRef.current.forEach(clearTimeout);
@@ -85,10 +86,10 @@ const FlowerGame = () => {
   const startCycle = (cycle) => {
     if (gameOverRef.current || pausedRef.current) return;
     
-    setFlowerOpen(0);
     setHoldTimer(0);
     setGamePhase('inhale');
     phaseRef.current = 'inhale';
+    isGrowingRef.current = false;
 
     playAudioPrompt("Öncelikle öğrendiğimiz gibi dik duralım.");
     
@@ -99,18 +100,17 @@ const FlowerGame = () => {
 
     scheduleTimeout(() => {
       if (gameOverRef.current || pausedRef.current) return;
-      playAudioPrompt("Çiçek koklar gibi burnundan derin nefes al.");
-    }, 4000);
+      playAudioPrompt("Çiçek koklar gibi burnundan derin nefes al. Karnının yükseldiğini hisset.");
+    }, 4500);
 
-    scheduleTimeout(() => {
+    // Animasyonlu 1, 2, 3 sayacı (Nefes alma süresi) ve çiçeğin büyümesi
+    scheduleTimeout(() => { 
       if (gameOverRef.current || pausedRef.current) return;
-      playAudioPrompt("Karnının yükseldiğini hisset.");
-    }, 7000);
-
-    // Animasyonlu 1, 2, 3 sayacı (Nefes alma süresi)
-    scheduleTimeout(() => { if (!gameOverRef.current && !pausedRef.current) setHoldTimer(1) }, 9000);
-    scheduleTimeout(() => { if (!gameOverRef.current && !pausedRef.current) setHoldTimer(2) }, 10000);
-    scheduleTimeout(() => { if (!gameOverRef.current && !pausedRef.current) setHoldTimer(3) }, 11000);
+      setHoldTimer(1);
+      isGrowingRef.current = true;
+    }, 8500);
+    scheduleTimeout(() => { if (!gameOverRef.current && !pausedRef.current) setHoldTimer(2) }, 9500);
+    scheduleTimeout(() => { if (!gameOverRef.current && !pausedRef.current) setHoldTimer(3) }, 10500);
 
     // pre-exhale fazına geç
     scheduleTimeout(() => {
@@ -121,20 +121,26 @@ const FlowerGame = () => {
       
       playAudioPrompt("Şimdi balon şişirir gibi ağzından yavaşça nefes ver.");
 
-      // Komut bittikten sonra (yaklaşık 3.5s) exhale fazına geç (Bar aktifleşir, blur kalkar)
+      // Komut bittikten sonra exhale fazına geç (Bar aktifleşir, blur kalkar)
       scheduleTimeout(() => {
         if (!gameOverRef.current && !pausedRef.current && phaseRef.current === 'pre-exhale') {
           setGamePhase('exhale');
           phaseRef.current = 'exhale';
+          isGrowingRef.current = false;
         }
       }, 3500);
-    }, 12000);
+    }, 11500);
   };
 
   // Oyun Döngüsü (Mikrofon ile barı kontrol etme)
   useEffect(() => {
     if (isListening && !gameOverRef.current) {
-      const updateGame = () => {
+      let lastTime = performance.now();
+
+      const updateGame = (currentTime) => {
+        const dt = currentTime - lastTime;
+        lastTime = currentTime;
+
         // Eşik değeri (daha hassas olması için düşürüldü)
         const noiseThreshold = 55; 
         let validIntensity = intensityRef.current - noiseThreshold;
@@ -143,14 +149,19 @@ const FlowerGame = () => {
         // Daha az üfleme gücüyle barın dolabilmesi için 150'ye bölüyoruz
         const currentDb = Math.min(Math.round((validIntensity / 150) * 100), 100);
 
-        // YALNIZCA EXHALE (nefes ver) fazında bar dolacak
+        // EXHALE (nefes ver) fazında üfledikçe küçülecek (kapanacak)
         if (phaseRef.current === 'exhale') {
           if (currentDb >= 5) {
-            // Dolma hızını artırdık, daha kolay dolsun
-            setFlowerOpen(prev => (prev >= 100 ? 100 : prev + 0.35));
+            // Üfledikçe küçülme (kapanma) hızı (6 saniyede kapanması için 100/6 = ~16.66)
+            setFlowerOpen(prev => (prev <= 0 ? 0 : prev - (16.66 * (dt / 1000))));
           } else {
-            // Üflemeyi bırakırsa daha yavaş kapansın
-            setFlowerOpen(prev => (prev > 0 ? prev - 0.15 : 0));
+            // Üflemeyi bırakırsa biraz geri büyüsün (açılsın) (saniyede ~10 birim)
+            setFlowerOpen(prev => (prev < 100 ? prev + (10 * (dt / 1000)) : 100));
+          }
+        } else if (phaseRef.current === 'inhale' || phaseRef.current === 'pre-exhale') {
+          if (isGrowingRef.current) {
+            // Sadece sayaç başladığında yavaş yavaş büyüsün (3 saniyede tam açılsın -> 100 / 3 = 33.33 birim/sn)
+            setFlowerOpen(prev => (prev < 100 ? prev + (33.33 * (dt / 1000)) : 100));
           }
         }
         
@@ -164,9 +175,9 @@ const FlowerGame = () => {
     };
   }, [isListening, gameOver]);
 
-  // Çiçek tam açıldığında başarı fazına geç
+  // Çiçek tam kapandığında (0) başarı fazına geç
   useEffect(() => {
-    if (flowerOpen >= 100 && phaseRef.current === 'exhale') {
+    if (flowerOpen <= 0 && phaseRef.current === 'exhale') {
       phaseRef.current = 'success';
       setGamePhase('success');
       triggerSuccessPhase();
@@ -201,6 +212,7 @@ const FlowerGame = () => {
   const handlePauseGame = () => {
     stopListening();
     pausedRef.current = true;
+    isGrowingRef.current = false;
     clearAllTimeouts();
     setGamePhase('start');
     phaseRef.current = 'start';
@@ -219,6 +231,7 @@ const FlowerGame = () => {
     stopListening();
     setGameOver(true);
     gameOverRef.current = true;
+    isGrowingRef.current = false;
     clearAllTimeouts();
     window.speechSynthesis.cancel();
     

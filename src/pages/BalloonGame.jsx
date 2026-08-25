@@ -344,33 +344,11 @@ const BalloonGame = () => {
       fontSize: '16px',
       lineHeight: '1.5',
     },
-    btnStart: {
-      padding: '12px 30px',
-      fontSize: '16px',
-      fontWeight: 'bold',
-      color: cpTheme.text.light,
-      background: cpTheme.primary.teal,
-      border: 'none',
-      borderRadius: '12px',
-      cursor: 'pointer',
-      boxShadow: '0 4px 15px rgba(0, 131, 143, 0.4)',
-      marginTop: '10px',
-      transition: 'transform 0.2s',
-    },
-    btnStop: {
-      padding: '12px 30px',
-      fontSize: '16px',
-      fontWeight: 'bold',
-      color: cpTheme.text.light,
-      background: cpTheme.primary.coral,
-      border: 'none',
-      borderRadius: '12px',
-      cursor: 'pointer',
-      boxShadow: '0 4px 15px rgba(239, 68, 68, 0.4)',
-      marginTop: '10px',
-      transition: 'transform 0.2s',
-    }
   };
+
+  const btnStyleStart = { padding: '10px 20px', fontSize: '16px', fontWeight: 'bold', color: '#fff', background: cpTheme.primary.teal, border: 'none', borderRadius: '12px', cursor: 'pointer', boxShadow: '0 4px 15px rgba(0, 131, 143, 0.4)' };
+  const btnStyleStop = { padding: '10px 20px', fontSize: '16px', fontWeight: 'bold', color: '#fff', background: cpTheme.primary.coral, border: 'none', borderRadius: '12px', cursor: 'pointer', boxShadow: '0 4px 15px rgba(239, 68, 68, 0.4)' };
+  const btnStyleExit = { padding: '10px 20px', fontSize: '16px', fontWeight: 'bold', color: '#fff', background: '#9E9E9E', border: 'none', borderRadius: '12px', cursor: 'pointer', boxShadow: '0 4px 15px rgba(158, 158, 158, 0.4)' };
 
   return (
     <div style={styles.container}>
@@ -414,11 +392,11 @@ const BalloonGame = () => {
           
           <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
             {!isListening ? (
-              <button onClick={handleStartGame} style={{ ...styles.btnStart, padding: '10px 20px' }}>▶️ BAŞLA</button>
+              <button onClick={handleStartGame} style={btnStyleStart}>▶️ BAŞLA</button>
             ) : (
-              <button onClick={handlePauseGame} style={{ ...styles.btnStop, padding: '10px 20px' }}>⏸️ DURDUR</button>
+              <button onClick={handlePauseGame} style={btnStyleStop}>⏸️ DURDUR</button>
             )}
-            <button onClick={() => handleFinishGame(false)} style={{ ...styles.btnStop, background: '#9E9E9E', padding: '10px 20px' }}>🚪 ÇIKIŞ</button>
+            <button onClick={() => handleFinishGame(false)} style={btnStyleExit}>🚪 ÇIKIŞ</button>
           </div>
         </div>
       </div>

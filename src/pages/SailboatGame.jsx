@@ -20,6 +20,7 @@ const SailboatGame = () => {
   const [laps, setLaps] = useState(0); 
   const [promptMessage, setPromptMessage] = useState("");
   const [holdTimer, setHoldTimer] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
 
   const blowIntensityRef = useRef(0);
   const gameOverRef = useRef(false);
@@ -27,6 +28,26 @@ const SailboatGame = () => {
   const continuousMoveMs = useRef(0);
   const motivationGiven = useRef(false);
   const lastBackwardPromptTime = useRef(0);
+  const isPausedRef = useRef(false);
+  const timeoutsRef = useRef([]);
+
+  const clearAllTimeouts = () => {
+    timeoutsRef.current.forEach(clearTimeout);
+    timeoutsRef.current = [];
+  };
+
+  const scheduleTimeout = (cb, delay) => {
+    const id = setTimeout(() => {
+      cb();
+      timeoutsRef.current = timeoutsRef.current.filter(t => t !== id);
+    }, delay);
+    timeoutsRef.current.push(id);
+    return id;
+  };
+
+  useEffect(() => {
+    isPausedRef.current = isPaused;
+  }, [isPaused]);
 
   useEffect(() => {
     blowIntensityRef.current = blowIntensity;
@@ -52,23 +73,20 @@ const SailboatGame = () => {
     gameOverRef.current = false;
     return () => {
       gameOverRef.current = true;
+      clearAllTimeouts();
       window.speechSynthesis.cancel();
     };
   }, []);
 
   useEffect(() => {
-    let timeoutId;
-    if (isListening && !gameOver && laps === 0 && gamePhase === 'start') {
+    if (isListening && !gameOver && laps === 0 && gamePhase === 'start' && !isPausedRef.current) {
       gameOverRef.current = false;
-      timeoutId = setTimeout(() => startCycle(0), 1000);
+      scheduleTimeout(() => startCycle(laps), 1000);
     }
-    return () => {
-      if (timeoutId) clearTimeout(timeoutId);
-    };
   }, [isListening, gameOver, laps, gamePhase]);
 
   const startCycle = (cycle) => {
-    if (gameOverRef.current) return;
+    if (gameOverRef.current || isPausedRef.current) return;
     
     setBoatPosition(0);
     setHoldTimer(0);
@@ -77,36 +95,33 @@ const SailboatGame = () => {
 
     if (cycle === 0) {
       playAudioPrompt("Hazır mısın? Çiçek koklar gibi derin nefes al.");
-      setTimeout(() => {
-        if (!gameOverRef.current && phaseRef.current === 'inhale') {
-          playAudioPrompt("Karnını şişir. Dudaklarını hafifçe büz.");
-        }
-      }, 2000);
     } else {
-      playAudioPrompt("Nefes al.");
+      playAudioPrompt("Çiçek koklar gibi derin nefes al.");
     }
 
-    setTimeout(() => setHoldTimer(1), 1000);
-    setTimeout(() => setHoldTimer(2), 2000);
-    setTimeout(() => setHoldTimer(3), 3000);
+    scheduleTimeout(() => { if (!gameOverRef.current && !isPausedRef.current) setHoldTimer(3) }, 3000);
+    scheduleTimeout(() => { if (!gameOverRef.current && !isPausedRef.current) setHoldTimer(2) }, 4000);
+    scheduleTimeout(() => { if (!gameOverRef.current && !isPausedRef.current) setHoldTimer(1) }, 5000);
 
-    setTimeout(() => {
-      if (gameOverRef.current) return;
+    scheduleTimeout(() => {
+      if (gameOverRef.current || isPausedRef.current) return;
       setHoldTimer(0);
-      setGamePhase('exhale');
-      phaseRef.current = 'exhale';
+      setGamePhase('prepare_exhale');
+      phaseRef.current = 'prepare_exhale';
       
-      if (cycle === 0) {
-        playAudioPrompt("Şimdi ağzından yavaş ve uzun nefes ver.");
-      } else {
-        playAudioPrompt("Nefes ver.");
-      }
+      playAudioPrompt("Karnını şişir. Dudaklarını hafifçe büz. Yavaş ve uzun nefes ver.");
 
-      continuousMoveMs.current = 0;
-      motivationGiven.current = false;
-      lastBackwardPromptTime.current = Date.now();
+      scheduleTimeout(() => {
+        if (gameOverRef.current || isPausedRef.current) return;
+        setGamePhase('exhale');
+        phaseRef.current = 'exhale';
+        
+        continuousMoveMs.current = 0;
+        motivationGiven.current = false;
+        lastBackwardPromptTime.current = Date.now();
+      }, 5000);
 
-    }, 4000);
+    }, 6000);
   };
 
   useEffect(() => {
@@ -114,7 +129,7 @@ const SailboatGame = () => {
     
     if (isListening && !gameOver) {
       gameLoop = setInterval(() => {
-        if (phaseRef.current !== 'exhale') return; // Sadece nefes verme anında gemi hareket eder
+        if (phaseRef.current !== 'exhale' || isPausedRef.current) return; // Sadece nefes verme anında ve duraklatılmamışsa gemi hareket eder
 
         const noiseThreshold = 70;
         let validIntensity = blowIntensityRef.current - noiseThreshold;
@@ -123,8 +138,8 @@ const SailboatGame = () => {
 
         if (currentDb >= 15 && currentDb <= 60) {
           continuousMoveMs.current += 100;
-          if (continuousMoveMs.current >= 4000 && !motivationGiven.current) {
-            playAudioPrompt("Harika ilerliyorsun!");
+          if (continuousMoveMs.current >= 1000 && !motivationGiven.current) {
+            playAudioPrompt("Yelkenimiz hareket ediyor!");
             motivationGiven.current = true;
           }
         } else {
@@ -144,11 +159,6 @@ const SailboatGame = () => {
           if (currentDb >= 15 && currentDb <= 60) {
             newPosition += 0.4; 
             setWaveIntensity((w) => Math.max(w - 5, 0)); 
-            setScore((s) => {
-              const newScore = s + 1;
-              setCrystals(Math.floor(newScore / 200));
-              return newScore;
-            });
           } 
           else if (currentDb > 60) {
             newPosition += 0.1; 
@@ -182,42 +192,59 @@ const SailboatGame = () => {
     phaseRef.current = 'success';
     setGamePhase('success');
 
-    if (laps === 0) {
-      playAudioPrompt("Harika! Yelkeni karşı kıyıya ulaştırdık!");
-    } else {
-      playAudioPrompt("Harika!");
-    }
+    playAudioPrompt("Harika! Yelkeni karşı kıyıya ulaştırdık!");
     
-    setScore((s) => {
-      const newScore = s + 100;
-      setCrystals(Math.floor(newScore / 200));
-      return newScore;
-    });
-    
-    const newLaps = laps + 1;
-    setLaps(newLaps);
+    setScore((s) => s + 10);
+    setCrystals((c) => c + 10);
       
-    setTimeout(() => {
-      if (newLaps >= 5) {
+    scheduleTimeout(() => {
+      if (gameOverRef.current || isPausedRef.current) {
+        setGamePhase('start');
+        phaseRef.current = 'start';
+        return;
+      }
+      const newLaps = laps + 1;
+      if (newLaps >= 10) {
         handleFinishGame(true);
       } else {
+        setLaps(newLaps);
         startCycle(newLaps);
       }
-    }, 3000);
+    }, 4000);
+  };
+
+  const handlePauseGame = () => {
+    stopListening();
+    setIsPaused(true);
+    isPausedRef.current = true;
+    clearAllTimeouts();
+    setGamePhase('start');
+    phaseRef.current = 'start';
+    setBoatPosition(0);
+    setHoldTimer(0);
+    window.speechSynthesis.cancel();
+    setPromptMessage("Oyun duraklatıldı. Devam etmek için başla tuşuna basın.");
+  };
+
+  const handleStartGame = () => {
+    setIsPaused(false);
+    isPausedRef.current = false;
+    startListening();
   };
 
   const handleFinishGame = async (isCompleted = false) => {
     stopListening();
     setGameOver(true);
     gameOverRef.current = true;
+    clearAllTimeouts();
     window.speechSynthesis.cancel();
 
     if (isCompleted) {
       const progressData = {
         userId: "123e4567-e89b-12d3-a456-426614174000",
         gameId: 3, 
-        score: score,
-        breathCrystals: crystals,
+        score: isCompleted ? 100 : score,
+        breathCrystals: isCompleted ? 100 : crystals,
         dbPerformance: dbPercentage
       };
 
@@ -240,11 +267,11 @@ const SailboatGame = () => {
     accent: cpTheme.primary.teal 
   };
 
-  const btnStyle = { 
-    padding: '12px 24px', fontSize: '18px', border: 'none', 
-    borderRadius: '12px', cursor: 'pointer', fontWeight: '900', width: '100%',
-    textTransform: 'uppercase', boxShadow: '0 5px 10px rgba(0,0,0,0.5)'
-  };
+  const btnStyleStart = { padding: '10px 20px', fontSize: '16px', fontWeight: 'bold', color: '#fff', background: cpTheme.primary.teal, border: 'none', borderRadius: '12px', cursor: 'pointer', boxShadow: '0 4px 15px rgba(0, 131, 143, 0.4)' };
+  const btnStyleStop = { padding: '10px 20px', fontSize: '16px', fontWeight: 'bold', color: '#fff', background: cpTheme.primary.coral, border: 'none', borderRadius: '12px', cursor: 'pointer', boxShadow: '0 4px 15px rgba(239, 68, 68, 0.4)' };
+  const btnStyleExit = { padding: '10px 20px', fontSize: '16px', fontWeight: 'bold', color: '#fff', background: '#9E9E9E', border: 'none', borderRadius: '12px', cursor: 'pointer', boxShadow: '0 4px 15px rgba(158, 158, 158, 0.4)' };
+
+  const isBlurred = gamePhase === 'inhale' || gamePhase === 'prepare_exhale';
 
   return (
     <div style={{
@@ -301,12 +328,12 @@ const SailboatGame = () => {
           border: `3px solid ${themeColors.border}`, boxShadow: '0 8px 20px rgba(0,0,0,0.1)',
           display: 'flex', flexDirection: 'column', alignItems: 'center'
         }}>
-          <h3 style={{ margin: '0 0 10px 0', fontSize: '18px', color: cpTheme.text.dark }}>🎙️ Rüzgar Gücü</h3>
+          <h3 style={{ margin: '0 0 10px 0', fontSize: '18px', color: cpTheme.text.dark }}>Nefes Gücü</h3>
           <div style={{ 
             width: '200px', height: '20px', backgroundColor: cpTheme.elements.progressBg, 
             borderRadius: '10px', overflow: 'hidden', position: 'relative',
-            opacity: gamePhase === 'inhale' ? 0.4 : 1,
-            filter: gamePhase === 'inhale' ? 'blur(1px) grayscale(50%)' : 'none',
+            opacity: phaseRef.current === 'exhale' ? 1 : 0.4,
+            filter: phaseRef.current === 'exhale' ? 'none' : 'blur(1px) grayscale(50%)',
             transition: 'all 0.4s ease'
           }}>
             <div style={{ position: 'absolute', left: '15%', width: '45%', height: '100%', backgroundColor: 'rgba(16, 185, 129, 0.2)', zIndex: 1 }} />
@@ -323,18 +350,21 @@ const SailboatGame = () => {
         <div style={{
           backgroundColor: themeColors.card, padding: '15px 30px', borderRadius: '16px',
           border: `3px solid ${themeColors.border}`, boxShadow: '0 8px 20px rgba(0,0,0,0.1)',
-          display: 'flex', flexDirection: 'column', alignItems: 'flex-end'
+          display: 'flex', flexDirection: 'column', alignItems: 'flex-end', minWidth: '300px'
         }}>
-          <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '900', color: cpTheme.text.dark }}>⛵ Rüzgarlı Göl Macerası</h2>
+          <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '900', color: cpTheme.text.dark }}>⛵ Yelkeni Yüzdür</h2>
           <div style={{ fontSize: '18px', fontWeight: 'bold', marginTop: '5px', color: cpTheme.text.muted }}>
-            Liman Seferi: {laps}/5 | Skor: {score} | 💎 Kristal: {crystals}
+            💎 Kristal: {crystals} | 🔄 Tekrar: {laps}/10
           </div>
           
-          {!isListening ? (
-            <button onClick={startListening} style={{...btnStyle, backgroundColor: cpTheme.primary.teal, color: cpTheme.text.light, marginTop: '15px'}}>▶️ BAŞLA</button>
-          ) : (
-            <button onClick={() => handleFinishGame(false)} style={{...btnStyle, backgroundColor: cpTheme.primary.coral, color: cpTheme.text.light, marginTop: '15px'}}>⏹️ BİTİR</button>
-          )}
+          <div style={{ display: 'flex', gap: '10px', marginTop: '15px', width: '100%', justifyContent: 'flex-end' }}>
+            {!isListening ? (
+              <button onClick={handleStartGame} style={btnStyleStart}>▶️ BAŞLA</button>
+            ) : (
+              <button onClick={handlePauseGame} style={btnStyleStop}>⏸️ DURDUR</button>
+            )}
+            <button onClick={() => handleFinishGame(false)} style={btnStyleExit}>🚪 ÇIKIŞ</button>
+          </div>
         </div>
       </div>
 
@@ -343,12 +373,16 @@ const SailboatGame = () => {
         position: 'absolute', bottom: 0, width: '100%', height: '40%',
         background: 'linear-gradient(to bottom, #0288D1, #01579B)', 
         borderTop: '5px solid #4FC3F7',
-        zIndex: 0
+        zIndex: 0,
+        filter: isBlurred ? 'blur(8px)' : 'none',
+        transition: 'filter 0.5s ease'
       }}></div>
 
       <div style={{
         position: 'absolute', bottom: '15%', width: '100%', height: '40%',
-        display: 'flex', alignItems: 'flex-end', zIndex: 5
+        display: 'flex', alignItems: 'flex-end', zIndex: 5,
+        filter: isBlurred ? 'blur(8px)' : 'none',
+        transition: 'filter 0.5s ease'
       }}>
         
         {/* Hedef Liman (Sağ Kenar) */}

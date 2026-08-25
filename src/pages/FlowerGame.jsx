@@ -275,6 +275,10 @@ const FlowerGame = () => {
     }
   };
 
+  const btnStyleStart = { padding: '10px 20px', fontSize: '16px', fontWeight: 'bold', color: '#fff', background: cpTheme.primary.teal, border: 'none', borderRadius: '12px', cursor: 'pointer', boxShadow: '0 4px 15px rgba(0, 131, 143, 0.4)' };
+  const btnStyleStop = { padding: '10px 20px', fontSize: '16px', fontWeight: 'bold', color: '#fff', background: cpTheme.primary.coral, border: 'none', borderRadius: '12px', cursor: 'pointer', boxShadow: '0 4px 15px rgba(239, 68, 68, 0.4)' };
+  const btnStyleExit = { padding: '10px 20px', fontSize: '16px', fontWeight: 'bold', color: '#fff', background: '#9E9E9E', border: 'none', borderRadius: '12px', cursor: 'pointer', boxShadow: '0 4px 15px rgba(158, 158, 158, 0.4)' };
+
   return (
     <div style={styles.container}>
       {/* Arka Plan Dekoratif Çiçekleri (Sabit) */}
@@ -317,11 +321,11 @@ const FlowerGame = () => {
           </div>
           <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
             {!isListening ? (
-              <button onClick={handleStartGame} style={{ padding: '10px 20px', background: cpTheme.primary.teal, color: '#fff', border: 'none', borderRadius: '12px', cursor: 'pointer' }}>▶️ BAŞLA</button>
+              <button onClick={handleStartGame} style={btnStyleStart}>▶️ BAŞLA</button>
             ) : (
-              <button onClick={handlePauseGame} style={{ padding: '10px 20px', background: cpTheme.primary.coral, color: '#fff', border: 'none', borderRadius: '12px', cursor: 'pointer' }}>⏸️ DURDUR</button>
+              <button onClick={handlePauseGame} style={btnStyleStop}>⏸️ DURDUR</button>
             )}
-            <button onClick={() => handleFinishGame(false)} style={{ padding: '10px 20px', background: '#9E9E9E', color: '#fff', border: 'none', borderRadius: '12px', cursor: 'pointer' }}>🚪 ÇIKIŞ</button>
+            <button onClick={() => handleFinishGame(false)} style={btnStyleExit}>🚪 ÇIKIŞ</button>
           </div>
         </div>
       </div>

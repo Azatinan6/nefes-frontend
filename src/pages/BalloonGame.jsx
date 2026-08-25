@@ -24,6 +24,23 @@ const BalloonGame = () => {
   const intensityRef = useRef(0);
   const gameOverRef = useRef(false);
   const phaseRef = useRef('start');
+  const pausedRef = useRef(false);
+  const timeoutsRef = useRef([]);
+  const hasMotivatedRef = useRef(false);
+
+  const clearAllTimeouts = () => {
+    timeoutsRef.current.forEach(clearTimeout);
+    timeoutsRef.current = [];
+  };
+
+  const scheduleTimeout = (cb, delay) => {
+    const id = setTimeout(() => {
+      cb();
+      timeoutsRef.current = timeoutsRef.current.filter(t => t !== id);
+    }, delay);
+    timeoutsRef.current.push(id);
+    return id;
+  };
 
   useEffect(() => {
     intensityRef.current = blowIntensity;
@@ -52,58 +69,59 @@ const BalloonGame = () => {
     gameOverRef.current = false;
     return () => {
       gameOverRef.current = true;
+      clearAllTimeouts();
       window.speechSynthesis.cancel();
     };
   }, []);
 
   useEffect(() => {
-    let timeoutId;
-    if (isListening && !gameOver && crystals === 0 && gamePhase === 'start') {
+    if (isListening && !gameOver && gamePhase === 'start' && !pausedRef.current) {
       gameOverRef.current = false;
-      timeoutId = setTimeout(() => startCycle(0), 1000);
+      scheduleTimeout(() => startCycle(crystals), 1000);
     }
-    return () => {
-      if (timeoutId) clearTimeout(timeoutId);
-    };
   }, [isListening, gameOver, crystals, gamePhase]);
 
   const startCycle = (cycle) => {
-    if (gameOverRef.current) return;
+    if (gameOverRef.current || pausedRef.current) return;
     
     setProgress(0);
     setIsPopped(false);
     setHoldTimer(0);
     setGamePhase('inhale');
     phaseRef.current = 'inhale';
+    hasMotivatedRef.current = false;
 
-    if (cycle === 0) {
-      playAudioPrompt("Burnundan derin bir nefes al.");
-    } else {
-      playAudioPrompt("Nefes al.");
-    }
+    playAudioPrompt("Öncelikle öğrendiğimiz gibi dik duralım.");
 
-    setTimeout(() => setHoldTimer(1), 1000);
-    setTimeout(() => setHoldTimer(2), 2000);
-    setTimeout(() => setHoldTimer(3), 3000);
+    scheduleTimeout(() => {
+      if (gameOverRef.current || pausedRef.current) return;
+      playAudioPrompt("Ekrandaki balona bak.");
+    }, 2500);
 
-    setTimeout(() => {
-      if (gameOverRef.current) return;
+    scheduleTimeout(() => {
+      if (gameOverRef.current || pausedRef.current) return;
+      playAudioPrompt("Burundan nefes al, sanki çicek koklar gibi karnını kocaman şişir.");
+    }, 4500);
+
+    scheduleTimeout(() => { if (!gameOverRef.current && !pausedRef.current) setHoldTimer(1) }, 8500);
+    scheduleTimeout(() => { if (!gameOverRef.current && !pausedRef.current) setHoldTimer(2) }, 9500);
+    scheduleTimeout(() => { if (!gameOverRef.current && !pausedRef.current) setHoldTimer(3) }, 10500);
+
+    scheduleTimeout(() => {
+      if (gameOverRef.current || pausedRef.current) return;
       setHoldTimer(0);
-      setGamePhase('exhale');
-      phaseRef.current = 'exhale';
+      setGamePhase('pre-exhale');
+      phaseRef.current = 'pre-exhale';
       
-      if (cycle === 0) {
-        playAudioPrompt("Şimdi ağzından yavaşça nefes ver.");
-      } else {
-        playAudioPrompt("Nefes ver.");
-      }
+      playAudioPrompt("Şimdi balon şişirir gibi ağzından yavaşça nefes ver.");
 
-      setTimeout(() => {
-        if (!gameOverRef.current && phaseRef.current === 'exhale') {
-          playAudioPrompt("İyi gidiyor, devam et...");
+      scheduleTimeout(() => {
+        if (!gameOverRef.current && !pausedRef.current && phaseRef.current === 'pre-exhale') {
+          setGamePhase('exhale');
+          phaseRef.current = 'exhale';
         }
-      }, 3000);
-    }, 4000);
+      }, 3500);
+    }, 11500);
   };
 
   useEffect(() => {
@@ -121,7 +139,11 @@ const BalloonGame = () => {
             let newProgress = prevProgress;
             if (currentDb >= 5) {
               newProgress += 0.4; // Balon şişme hızı
-              setScore(s => s + 1); // Puan artışı
+              
+              if (newProgress >= 30 && !hasMotivatedRef.current) {
+                hasMotivatedRef.current = true;
+                playAudioPrompt("Süpersin, harika gidiyorsun!");
+              }
             } else {
               if (newProgress > 0) newProgress -= 0.15; // Sönme hızı
             }
@@ -155,46 +177,80 @@ const BalloonGame = () => {
     phaseRef.current = 'success';
     setGamePhase('success');
 
-    if (crystals === 0) {
-      playAudioPrompt("Harika! Balonu patlattın!");
-    } else {
-      playAudioPrompt("Harika!");
-    }
+    playAudioPrompt("Harika!");
     
-    setScore(s => s + 100);
+    const newScore = score + 10;
+    setScore(newScore);
     const newCrystals = crystals + 1;
     setCrystals(newCrystals);
       
-    setTimeout(() => {
-      if (newCrystals >= 5) {
-        handleFinishGame(true);
+    scheduleTimeout(() => {
+      if (gameOverRef.current || pausedRef.current) {
+        setGamePhase('start');
+        phaseRef.current = 'start';
+        return;
+      }
+      if (newCrystals >= 10) {
+        handleFinishGame(true, newScore);
       } else {
         startCycle(newCrystals);
       }
     }, 3000);
   };
 
-  const handleFinishGame = async (isCompleted = false) => {
+  const handlePauseGame = () => {
+    stopListening();
+    pausedRef.current = true;
+    clearAllTimeouts();
+    setGamePhase('start');
+    phaseRef.current = 'start';
+    setProgress(0);
+    setHoldTimer(0);
+    window.speechSynthesis.cancel();
+    setPromptMessage("Oyun duraklatıldı. Devam etmek için başla tuşuna basın.");
+  };
+
+  const handleStartGame = () => {
+    pausedRef.current = false;
+    startListening();
+  };
+
+  const handleFinishGame = async (isCompleted = false, finalScore = score) => {
     stopListening();
     setGameOver(true);
     gameOverRef.current = true;
+    clearAllTimeouts();
     window.speechSynthesis.cancel();
     
     if (isCompleted) {
-      setPromptMessage("Oyun Bitti! İlerlemen kaydedildi.");
+      setPromptMessage("Harika! Çok güzel yaptın!");
+      const speech = new SpeechSynthesisUtterance("Harika! Çok güzel yaptın!");
+      speech.lang = 'tr-TR';
+      speech.rate = 1.0;
+      speech.pitch = 1.1;
+      window.speechSynthesis.speak(speech);
+
       const progressData = {
         userId: "123e4567-e89b-12d3-a456-426614174000",
         gameId: 2, 
-        score: score,
+        score: finalScore,
         breathCrystals: crystals,
         dbPerformance: dbPercentage
       };
 
       try {
         await api.post('/progress/save', progressData);
-        alert(`Tebrikler! ${crystals} Nefes Kristali Kazandın! 💎 Menüye dönülüyor...`);
+        setTimeout(() => {
+          alert(`Tebrikler! ${finalScore} Kristal Kazandın! 💎 Menüye dönülüyor...`);
+          navigate('/cocuk-paneli');
+        }, 500);
+        return;
       } catch (error) {
-        alert(`Tebrikler! Kazanılan Kristal: ${crystals} 💎\nMenüye dönülüyor...`);
+        setTimeout(() => {
+          alert(`Tebrikler! Kazanılan Kristal: ${finalScore} 💎\nMenüye dönülüyor...`);
+          navigate('/cocuk-paneli');
+        }, 500);
+        return;
       }
     }
     
@@ -249,9 +305,9 @@ const BalloonGame = () => {
       height: '500px',
     },
     balloon: {
-      transform: `scale(${isPopped ? 3 : 1 + (progress / 60)})`, 
+      transform: `scale(${isPopped ? 3 : (gamePhase === 'start' ? 2 : (gamePhase === 'inhale' ? 2 - (holdTimer * 0.33) : 1)) + (progress / 60)})`, 
       opacity: isPopped ? 0 : 1, 
-      transition: isPopped ? 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)' : 'transform 0.1s linear',
+      transition: isPopped ? 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)' : (gamePhase === 'inhale' ? 'transform 1s linear' : 'transform 0.1s linear'),
       fontSize: '120px',
       filter: 'drop-shadow(0px 15px 20px rgba(0,0,0,0.2))',
     },
@@ -329,13 +385,15 @@ const BalloonGame = () => {
       <div style={{ position: 'absolute', bottom: '15%', left: '80%', fontSize: '50px', opacity: 0.5 }}>🎈</div>
 
       <div style={styles.topPanel}>
-        <div style={{ ...styles.glassCard, ...styles.statBox }}>
+        <div style={{ ...styles.glassCard, ...styles.statBox,
+          filter: (gamePhase !== 'exhale' && gamePhase !== 'success') ? 'blur(4px)' : 'none',
+          transition: 'filter 0.3s ease'
+        }}>
           <h3 style={{ margin: '0 0 10px 0', fontSize: '18px', color: cpTheme.text.dark }}>💨 Nefes Gücü</h3>
           <div style={{ 
             width: '200px', height: '20px', backgroundColor: cpTheme.elements.progressBg, 
             borderRadius: '10px', overflow: 'hidden', position: 'relative',
             opacity: gamePhase === 'inhale' ? 0.4 : 1,
-            filter: gamePhase === 'inhale' ? 'blur(1px) grayscale(50%)' : 'none',
             transition: 'all 0.4s ease'
           }}>
             <div style={{ position: 'absolute', left: '15%', width: '50%', height: '100%', backgroundColor: 'rgba(16, 185, 129, 0.4)', zIndex: 1 }} />
@@ -351,24 +409,17 @@ const BalloonGame = () => {
         <div style={{ ...styles.glassCard, ...styles.statBox, alignItems: 'flex-end' }}>
           <h2 style={{ margin: 0, fontSize: '22px', fontWeight: '800', color: cpTheme.text.dark }}>🎈 Eğlenceli Balon</h2>
           <div style={{ fontSize: '18px', fontWeight: '600', marginTop: '5px', color: cpTheme.text.muted }}>
-            Skor: {Math.floor(score)} | 💎 Kristal: {crystals}/5
+            Kristal: {Math.floor(score)} | Tekrar Sayısı: {crystals}/10
           </div>
           
-          {!isListening ? (
-            <button 
-              onClick={startListening} 
-              style={styles.btnStart}
-            >
-              ▶️ OYUNA BAŞLA
-            </button>
-          ) : (
-            <button 
-              onClick={() => handleFinishGame(false)} 
-              style={styles.btnStop}
-            >
-              ⏹️ BİTİR
-            </button>
-          )}
+          <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+            {!isListening ? (
+              <button onClick={handleStartGame} style={{ ...styles.btnStart, padding: '10px 20px' }}>▶️ BAŞLA</button>
+            ) : (
+              <button onClick={handlePauseGame} style={{ ...styles.btnStop, padding: '10px 20px' }}>⏸️ DURDUR</button>
+            )}
+            <button onClick={() => handleFinishGame(false)} style={{ ...styles.btnStop, background: '#9E9E9E', padding: '10px 20px' }}>🚪 ÇIKIŞ</button>
+          </div>
         </div>
       </div>
 

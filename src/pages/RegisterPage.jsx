@@ -128,15 +128,15 @@ const RegisterPage = () => {
               boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
             }}
           >
-            🩺 Fizyoterapist Kaydı
+           Katılımcı Kaydı
           </button>
         </div>
 
         {/* Hasta/Aile Bilgilendirmesi */}
         <div style={{ backgroundColor: '#fffbeb', border: '1px solid #fef3c7', padding: '16px', borderRadius: '12px', marginBottom: '20px' }}>
             <p style={{ margin: 0, fontSize: '13px', color: '#92400e', lineHeight: '1.5' }}>
-                👨‍👩‍👧 <strong>Aile / Hasta mısınız?</strong><br/>
-                Hastalar kendi kendilerine kayıt olamazlar. Sisteme giriş yapabilmek için kendi <strong>fizyoterapistinizle iletişime geçiniz</strong>. Fizyoterapistiniz sizi eklediğinde şifreniz e-posta adresinize gönderilecektir.
+                👨‍👩‍👧 <strong>Çocuk / Ebeveyn misiniz?</strong><br/>
+                Katılımcılar kendi kendilerine kayıt olamazlar. Sisteme giriş yapabilmek için kendi <strong>fizyoterapistinizle iletişime geçiniz</strong>. Fizyoterapistiniz sizi eklediğinde şifreniz e-posta adresinize gönderilecektir. Size özel oluşturulan kullanıcı adı ve şifre kişiseldir. Güvenliğiniz için giriş bilgilerinizi kimseyle paylaşmayınız.
             </p>
         </div>
 
@@ -150,7 +150,7 @@ const RegisterPage = () => {
             
             {/* Onay süreci bilgi kutusu */}
             <div style={styles.infoBox}>
-              ℹ️ Fizyoterapist başvurunuz <strong>yönetici onayına</strong> tabidir. Onay sonrası e-posta ile bilgilendirileceksiniz.
+              ℹ️ Katılımcı başvurunuz <strong>yönetici onayına</strong> tabidir. Onay sonrası e-posta ile bilgilendirileceksiniz.
             </div>
 
             <Field label="Ad Soyad">
@@ -167,18 +167,6 @@ const RegisterPage = () => {
                 required />
             </Field>
 
-            <Field label="Lisans / Diploma Numarası">
-              <input className="reg-input" type="text" placeholder="Fizyoterapi lisans numaranız"
-                value={fizyoForm.licenseNumber}
-                onChange={(e) => setFizyoForm({...fizyoForm, licenseNumber: e.target.value})}
-                required />
-            </Field>
-
-            <Field label="Uzmanlık Alanı (isteğe bağlı)">
-              <input className="reg-input" type="text" placeholder="Ör: Pediatrik Fizyoterapi"
-                value={fizyoForm.specialization}
-                onChange={(e) => setFizyoForm({...fizyoForm, specialization: e.target.value})} />
-            </Field>
 
             <Field label="Şifre">
               <div style={{ position: 'relative' }}>
@@ -245,12 +233,14 @@ const RegisterPage = () => {
           <div style={styles.modalContent}>
             <h2 style={{marginTop: 0, color: '#1e293b'}}>KVKK Aydınlatma Metni</h2>
             <div style={{maxHeight: '60vh', overflowY: 'auto', fontSize: '14px', color: '#475569', lineHeight: '1.6', marginBottom: '20px'}}>
-              <p><strong>1. Veri Sorumlusunun Kimliği</strong></p>
-              <p>Kişisel verileriniz veri sorumlusu sıfatıyla tarafımızca KVKK'ya uygun olarak işlenmektedir.</p>
+              <p><strong>1. Veri Sorumlusu</strong></p>
+              <p>Kişisel verileriniz ve çocuğunuza ait kişisel veriler, veri sorumlusu [Yeditepe Üniversitesi/TÜBİTAK 4008 - Özel Gereksinimli Bireylere Yönelik Kapsayıcı Toplum Uygulamaları Destekleme Programı] tarafından 6698 sayılı Kişisel Verilerin Korunması Kanunu (KVKK) kapsamında işlenmektedir.</p>
               <p><strong>2. Kişisel Verilerin İşlenme Amacı</strong></p>
-              <p>Toplanan kişisel verileriniz, hesabınızın oluşturulması, platform hizmetlerinin sunulması ve tıbbi geçmiş/ilerleme analizlerinin yapılabilmesi amacıyla işlenecektir.</p>
-              <p><strong>3. Açık Rıza</strong></p>
-              <p>Özel nitelikli kişisel veri sayılan sağlık verilerinizin işlenmesine ve kaydedilmesine özgür iradenizle açık rıza vermektesiniz.</p>
+              <p>Hesap oluşturma sırasında elde edilen kişisel veriler; kullanıcı hesabının oluşturulması, platform hizmetlerinin sunulması, proje kapsamında gerçekleştirilen uygulamaların ve ilerlemenin takip edilmesi ve değerlendirilmesi amacıyla işlenebilecektir.</p>
+              <p><strong>3. Sağlık Verilerinin İşlenmesine İlişkin Açık Rıza</strong></p>
+              <p>Proje kapsamında çocuğuma ait sağlık ve değerlendirme verilerinin işlenebileceği ve kaydedilebileceği konusunda bilgilendirildim. Bu verilerin yukarıda belirtilen amaçlarla sınırlı olarak işlenmesine açık rıza veriyorum.</p>
+              <p><strong>4. Hesap Güvenliği</strong></p>
+              <p>Tarafıma özel oluşturulan kullanıcı hesabı ve şifrenin kişisel olduğunu biliyorum. Çocuğuma ait kişisel ve sağlık verilerinin güvenliğinin korunması amacıyla kullanıcı adı ve şifremi üçüncü kişilerle paylaşmamam gerektiği konusunda bilgilendirildim.</p>
             </div>
             <button 
               onClick={() => setIsKvkkModalOpen(false)} 

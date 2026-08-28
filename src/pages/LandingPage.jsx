@@ -161,7 +161,7 @@ const LandingPage = () => {
           {/* KART 3: Projemiz */}
           <div className="hover-card" style={cardStyle}>
             <div style={{ fontSize: '65px', marginBottom: '15px' }}>🌲</div>
-            <h3 style={{ color: '#333', fontSize: '22px', marginBottom: '15px', fontWeight: 'bold' }}>Projemiz Hakkında</h3>
+            <h3 style={{ color: '#333', fontSize: '22px', marginBottom: '15px', fontWeight: 'bold', minHeight: '60px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Projemiz Hakkında</h3>
             <p style={{ color: '#666', fontSize: '15px', flex: 1, lineHeight: '1.5' }}>Öğrenme odaklı, aktif katılımı esas alan ve dijital teknoloji ile desteklenmiş oyunlaştırılmış solunum ve postür eğitim modeli.</p>
             <button onClick={() => setActiveModal('proje')} className="card-btn" style={{...cardBtnStyle, backgroundColor: '#FF9800'}}>Projeyi İncele</button>
           </div>
@@ -169,7 +169,7 @@ const LandingPage = () => {
           {/* KART 1: SP Nedir? */}
           <div className="hover-card" style={cardStyle}>
             <div style={{ fontSize: '65px', marginBottom: '15px' }}>🧠</div>
-            <h3 style={{ color: '#333', fontSize: '22px', marginBottom: '15px' }}>Serebral Palsi (SP) Nedir?</h3>
+            <h3 style={{ color: '#333', fontSize: '22px', marginBottom: '15px', fontWeight: 'bold', minHeight: '60px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Serebral Palsi (SP) Nedir?</h3>
             <p style={{ color: '#666', fontSize: '15px', flex: 1, lineHeight: '1.5' }}>Serebral Palsi (SP), gelişmekte olan beynin etkilenmesi sonucu hareket ve postürü etkileyen, yaşam boyu devam eden ancak ilerleyici olmayan bir durumdur.</p>
             <button onClick={() => setActiveModal('sp')} className="card-btn" style={{...cardBtnStyle, backgroundColor: '#E91E63'}}>Detaylı Bilgi</button>
           </div>
@@ -177,7 +177,7 @@ const LandingPage = () => {
           {/* KART 2: Solunum Önemi */}
           <div className="hover-card" style={cardStyle}>
             <div style={{ fontSize: '65px', marginBottom: '15px' }}>🫁</div>
-            <h3 style={{ color: '#333', fontSize: '22px', marginBottom: '15px' }}>Neden Solunum?</h3>
+            <h3 style={{ color: '#333', fontSize: '22px', marginBottom: '15px', fontWeight: 'bold', minHeight: '60px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Neden Solunum?</h3>
             <p style={{ color: '#666', fontSize: '15px', flex: 1, lineHeight: '1.5' }}>Solunum kaslarının yetersiz kullanımı ve yanlış postüral alışkanlıklar yorgunluk döngüsünü artırabilir.</p>
             <button onClick={() => setActiveModal('solunum')} className="card-btn" style={{...cardBtnStyle, backgroundColor: '#03A9F4'}}>Detaylı Bilgi</button>
           </div>
@@ -185,7 +185,7 @@ const LandingPage = () => {
           {/* KART 4: Biz Kimiz? */}
           <div className="hover-card" style={cardStyle}>
             <div style={{ fontSize: '65px', marginBottom: '15px' }}>👥</div>
-            <h3 style={{ color: '#333', fontSize: '22px', marginBottom: '15px', fontWeight: 'bold' }}>Biz Kimiz?</h3>
+            <h3 style={{ color: '#333', fontSize: '22px', marginBottom: '15px', fontWeight: 'bold', minHeight: '60px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Biz Kimiz?</h3>
             <p style={{ color: '#666', fontSize: '15px', flex: 1, lineHeight: '1.5' }}>Projemize değer katan yürütücülerimiz, araştırmacılarımız, eğitmenlerimiz ve teknik ekibimiz.</p>
             <button onClick={() => setActiveModal('bizkimiz')} className="card-btn" style={{...cardBtnStyle, backgroundColor: '#9C27B0'}}>Detaylı Bilgi</button>
           </div>

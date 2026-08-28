@@ -302,7 +302,7 @@ const FlowerGame = () => {
       <div style={{ position: 'absolute', bottom: '10%', left: '10%', fontSize: '40px', opacity: 0.3, transform: 'rotate(5deg)' }}>🌻</div>
       <div style={{ position: 'absolute', top: '35%', right: '10%', fontSize: '50px', opacity: 0.35, transform: 'rotate(-15deg)' }}>🌼</div>
 
-      <BellyBreathGuide isListening={isListening} blowIntensity={blowIntensity} phase={gamePhase} scale={2.2} customStyle={{ left: '14%', right: 'auto', top: '55%' }} />
+      <BellyBreathGuide isListening={isListening} blowIntensity={blowIntensity} phase={gamePhase} scale={2.2} customStyle={{ left: '14%', right: 'auto', top: '45%' }} />
       
       <div style={styles.topPanel}>
         <div style={{ ...styles.glassCard, padding: '15px 25px', display: 'flex', flexDirection: 'column', alignItems: 'center',

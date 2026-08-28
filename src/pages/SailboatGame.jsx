@@ -157,11 +157,11 @@ const SailboatGame = () => {
           let newPosition = prev;
           
           if (currentDb >= 15 && currentDb <= 60) {
-            newPosition += 0.4; 
+            newPosition += 1.7; // Yaklaşık 6 saniyede karşıya geçer
             setWaveIntensity((w) => Math.max(w - 5, 0)); 
           } 
           else if (currentDb > 60) {
-            newPosition += 0.1; 
+            newPosition += 0.4; 
             setWaveIntensity(10); 
           }
           else {

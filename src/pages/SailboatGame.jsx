@@ -79,7 +79,7 @@ const SailboatGame = () => {
   }, []);
 
   useEffect(() => {
-    if (isListening && !gameOver && laps === 0 && gamePhase === 'start' && !isPausedRef.current) {
+    if (isListening && !gameOver && gamePhase === 'start' && !isPausedRef.current) {
       gameOverRef.current = false;
       scheduleTimeout(() => startCycle(laps), 1000);
     }

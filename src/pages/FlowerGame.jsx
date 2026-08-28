@@ -45,10 +45,10 @@ const FlowerGame = () => {
 
   useEffect(() => {
     intensityRef.current = blowIntensity;
-    const noiseThreshold = 55; 
+    const noiseThreshold = 45; 
     let validIntensity = blowIntensity - noiseThreshold;
     if (validIntensity < 0) validIntensity = 0;
-    const currentDb = Math.min(Math.round((validIntensity / 150) * 100), 100);
+    const currentDb = Math.min(Math.round((validIntensity / 130) * 100), 100);
     setDbPercentage(currentDb);
   }, [blowIntensity]);
 
@@ -142,18 +142,18 @@ const FlowerGame = () => {
         lastTime = currentTime;
 
         // Eşik değeri (daha hassas olması için düşürüldü)
-        const noiseThreshold = 55; 
+        const noiseThreshold = 45; 
         let validIntensity = intensityRef.current - noiseThreshold;
         if (validIntensity < 0) validIntensity = 0;
         
-        // Daha az üfleme gücüyle barın dolabilmesi için 150'ye bölüyoruz
-        const currentDb = Math.min(Math.round((validIntensity / 150) * 100), 100);
+        // Daha az üfleme gücüyle barın dolabilmesi için 130'a bölüyoruz
+        const currentDb = Math.min(Math.round((validIntensity / 130) * 100), 100);
 
         // EXHALE (nefes ver) fazında üfledikçe küçülecek (kapanacak)
         if (phaseRef.current === 'exhale') {
           if (currentDb >= 5) {
-            // Üfledikçe küçülme (kapanma) hızı (6 saniyede kapanması için 100/6 = ~16.66)
-            setFlowerOpen(prev => (prev <= 0 ? 0 : prev - (16.66 * (dt / 1000))));
+            // Üfledikçe küçülme (kapanma) hızı (4 saniyede kapanması için 100/4 = 25)
+            setFlowerOpen(prev => (prev <= 0 ? 0 : prev - (25 * (dt / 1000))));
           } else {
             // Üflemeyi bırakırsa biraz geri büyüsün (açılsın) (saniyede ~10 birim)
             setFlowerOpen(prev => (prev < 100 ? prev + (10 * (dt / 1000)) : 100));

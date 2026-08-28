@@ -169,7 +169,7 @@ const LandingPage = () => {
           {/* KART 1: SP Nedir? */}
           <div className="hover-card" style={cardStyle}>
             <div style={{ fontSize: '65px', marginBottom: '15px' }}>🧠</div>
-            <h3 style={{ color: '#333', fontSize: '22px', marginBottom: '15px' }}>SP Nedir?</h3>
+            <h3 style={{ color: '#333', fontSize: '22px', marginBottom: '15px' }}>Serebral Palsi (SP) Nedir?</h3>
             <p style={{ color: '#666', fontSize: '15px', flex: 1, lineHeight: '1.5' }}>Serebral Palsi (SP), gelişmekte olan beynin etkilenmesi sonucu hareket ve postürü etkileyen, yaşam boyu devam eden ancak ilerleyici olmayan bir durumdur.</p>
             <button onClick={() => setActiveModal('sp')} className="card-btn" style={{...cardBtnStyle, backgroundColor: '#E91E63'}}>Detaylı Bilgi</button>
           </div>

@@ -454,13 +454,13 @@ const SailboatGame = () => {
           👦🏻
         </div>
         
-        {isListening && (
+        {isListening && promptMessage && (
           <div style={{
             marginTop: '15px', backgroundColor: '#FFF', color: '#000', padding: '10px 20px',
             borderRadius: '20px', fontWeight: 'bold', fontSize: '16px', boxShadow: '0 5px 15px rgba(0,0,0,0.5)',
             maxWidth: '250px', textAlign: 'center'
           }}>
-            💬 {promptMessage || 'Dudaklarını büz ve uzun üfle...'}
+            💬 {promptMessage}
           </div>
         )}
       </div>

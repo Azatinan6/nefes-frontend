@@ -81,7 +81,11 @@ const SailboatGame = () => {
   useEffect(() => {
     if (isListening && !gameOver && gamePhase === 'start' && !isPausedRef.current) {
       gameOverRef.current = false;
-      scheduleTimeout(() => startCycle(laps), 1000);
+      if (laps >= 10) {
+        handleFinishGame(true);
+      } else {
+        scheduleTimeout(() => startCycle(laps), 1000);
+      }
     }
   }, [isListening, gameOver, laps, gamePhase]);
 
@@ -196,15 +200,15 @@ const SailboatGame = () => {
     
     setScore((s) => s + 10);
     setCrystals((c) => c + 10);
-      
+    const newLaps = laps + 1;
+    setLaps(newLaps);
+
     scheduleTimeout(() => {
       if (gameOverRef.current || isPausedRef.current) {
         setGamePhase('start');
         phaseRef.current = 'start';
         return;
       }
-      const newLaps = laps + 1;
-      setLaps(newLaps);
       if (newLaps >= 10) {
         handleFinishGame(true);
       } else {

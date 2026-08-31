@@ -81,9 +81,13 @@ const SoupGame = () => {
   useEffect(() => {
     if (isListening && !gameOver && gamePhase === 'start' && !isPausedRef.current) {
       gameOverRef.current = false;
-      scheduleTimeout(() => startCycle(), 1000);
+      if (laps >= 10) {
+        handleFinishGame(true);
+      } else {
+        scheduleTimeout(() => startCycle(), 1000);
+      }
     }
-  }, [isListening, gameOver, gamePhase]);
+  }, [isListening, gameOver, gamePhase, laps]);
 
   const startCycle = () => {
     if (gameOverRef.current || isPausedRef.current) return;
@@ -192,6 +196,8 @@ const SoupGame = () => {
 
     setScore((s) => Math.min(s + 10, 100));
     setCrystals((c) => Math.min(c + 10, 100));
+    const newLaps = laps + 1;
+    setLaps(newLaps);
 
     scheduleTimeout(() => {
       if (gameOverRef.current || isPausedRef.current) {
@@ -199,8 +205,6 @@ const SoupGame = () => {
         phaseRef.current = 'start';
         return;
       }
-      const newLaps = laps + 1;
-      setLaps(newLaps);
       if (newLaps >= 10) {
         handleFinishGame(true);
       } else {

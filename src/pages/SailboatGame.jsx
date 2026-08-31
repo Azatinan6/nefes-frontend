@@ -204,10 +204,10 @@ const SailboatGame = () => {
         return;
       }
       const newLaps = laps + 1;
+      setLaps(newLaps);
       if (newLaps >= 10) {
         handleFinishGame(true);
       } else {
-        setLaps(newLaps);
         startCycle(newLaps);
       }
     }, 4000);

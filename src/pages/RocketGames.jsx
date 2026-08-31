@@ -268,8 +268,8 @@ const RocketGame = () => {
   const btnStyleStop = { padding: '10px 20px', fontSize: '16px', fontWeight: 'bold', color: '#fff', background: cpTheme.primary.coral, border: 'none', borderRadius: '12px', cursor: 'pointer', boxShadow: '0 4px 15px rgba(239, 68, 68, 0.4)' };
   const btnStyleExit = { padding: '10px 20px', fontSize: '16px', fontWeight: 'bold', color: '#fff', background: '#9E9E9E', border: 'none', borderRadius: '12px', cursor: 'pointer', boxShadow: '0 4px 15px rgba(158, 158, 158, 0.4)' };
 
-  // Üfleme dışındaki tüm anlarda (hazırlık, sayaç, fırlatma sonrası dinlenme) ekran blurlu kalır
-  const isBlurred = gamePhase !== 'exhale';
+  // Üfleme dışındaki hazırlık anlarında (sayaç, fırlatma sonrası dinlenme) ekran blurlu kalır; oyun başlamadan blurlu durmaz
+  const isBlurred = gamePhase === 'inhale' || gamePhase === 'pre-exhale' || gamePhase === 'success';
 
   return (
     <div style={{

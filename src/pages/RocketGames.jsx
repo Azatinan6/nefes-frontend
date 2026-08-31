@@ -184,10 +184,10 @@ const RocketGame = () => {
     playAudioPrompt("Roket fırladı!");
     scheduleTimeout(() => {
       if (!gameOverRef.current && !isPausedRef.current) playAudioPrompt("Harika! Roketi uzaya gönderdin.");
-    }, 1700);
+    }, 1600);
     scheduleTimeout(() => {
       if (!gameOverRef.current && !isPausedRef.current) playAudioPrompt("Şimdi dinlen.");
-    }, 3400);
+    }, 4200);
 
     setScore((s) => Math.min(s + 10, 100));
     setCrystals((c) => Math.min(c + 10, 100));
@@ -205,7 +205,7 @@ const RocketGame = () => {
       } else {
         startCycle();
       }
-    }, 6000);
+    }, 6800);
   };
 
   const handlePauseGame = () => {

@@ -235,42 +235,47 @@ const FlowerGame = () => {
     clearAllTimeouts();
     window.speechSynthesis.cancel();
     
-    if (isCompleted) {
-      setPromptMessage("Harika! Çok güzel yaptın!");
-      
-      const speech = new SpeechSynthesisUtterance("Harika! Çok güzel yaptın!");
-      speech.lang = 'tr-TR';
-      speech.rate = 1.0;
-      speech.pitch = 1.1;
-      window.speechSynthesis.speak(speech);
+    // Eğer çocuk en az 1 kez başarılı üflediyse (skor 0'dan büyükse) puanı kaydet!
+    if (finalScore > 0) {
+      if (isCompleted) {
+        setPromptMessage("Harika! Tüm görevleri bitirdin!");
+        const speech = new SpeechSynthesisUtterance("Harika! Tüm görevleri bitirdin!");
+        speech.lang = 'tr-TR';
+        window.speechSynthesis.speak(speech);
+      } else {
+        setPromptMessage(`Oyun bitirildi. Toplanan Kristal: ${finalScore}`);
+        const speech = new SpeechSynthesisUtterance(`Çok iyi çabaladın! Kazandığın kristal: ${finalScore}`);
+        speech.lang = 'tr-TR';
+        window.speechSynthesis.speak(speech);
+      }
 
-      // localStorage'dan sisteme giriş yapan hastanın gerçek ID'sini çekiyoruz
+      // localStorage'dan ID'yi çekiyoruz (veya test için elle kopyaladığın ID'yi yazabilirsin)
       const currentUserId = localStorage.getItem('patientId') || localStorage.getItem('userId');
 
       const progressData = {
-        userId: currentUserId,
-        gameId: 6, // Çiçek Kokla oyunu ID'si
+        userId: currentUserId, // Test aşamasında buraya "ID-GELSIN" yazabilirsin
+        gameId: 6,
         score: finalScore,
-        breathCrystals: dbPercentage // DTO'daki isme uyum sağlaması için güncelledik
+        breathCrystals: dbPercentage
       };
 
       try {
         await api.post('/progress/save', progressData);
-        // Sesin çalabilmesi için alerti biraz geciktiriyoruz
         setTimeout(() => {
-          alert(`Harika! Oyun Tamamlandı! Skor: ${finalScore} \nMenüye dönülüyor...`);
+          alert(`Harika çaba! Skor: ${finalScore} \nMenüye dönülüyor...`);
           navigate('/cocuk-paneli');
         }, 500);
         return;
       } catch (error) {
         setTimeout(() => {
-          alert(`Oyun Tamamlandı! Skor: ${finalScore} \nMenüye dönülüyor...`);
+          alert(`Skor: ${finalScore} (Kaydedilemedi) \nMenüye dönülüyor...`);
           navigate('/cocuk-paneli');
         }, 500);
         return;
       }
     }
 
+    // Skor 0 ise hiç veritabanını meşgul etmeden direkt çık
     navigate('/cocuk-paneli');
   };
 

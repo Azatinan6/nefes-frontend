@@ -244,11 +244,14 @@ const FlowerGame = () => {
       speech.pitch = 1.1;
       window.speechSynthesis.speak(speech);
 
+      // localStorage'dan sisteme giriş yapan hastanın gerçek ID'sini çekiyoruz
+      const currentUserId = localStorage.getItem('patientId') || localStorage.getItem('userId');
+
       const progressData = {
-        userId: "123e4567-e89b-12d3-a456-426614174000",
-        gameId: 6,
+        userId: currentUserId,
+        gameId: 6, // Çiçek Kokla oyunu ID'si
         score: finalScore,
-        dbPerformance: dbPercentage
+        breathCrystals: dbPercentage // DTO'daki isme uyum sağlaması için güncelledik
       };
 
       try {

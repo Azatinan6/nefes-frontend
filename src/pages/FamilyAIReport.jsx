@@ -10,39 +10,25 @@ const FamilyAIReport = () => {
     // Hata mesajlarını tutacak state
     const [error, setError] = useState(null);
 
-    // --- TEST VERİSİ (Şimdilik donkod, ilerde progress API'den gelecek) ---
-    const requestData = {
-        childName: "Azat",
-        weeklyScores: {
-            "Yelkenli Oyunu (Uzun Üfleme)": 850,
-            "Roket Oyunu (Güçlü Üfleme)": 300,
-            "Karnını Şişir Balonu Büyüt": 920,
-            "Dik Dur Güçlen": 780,
-            "Çiçeği Kokla Nefesini Tut": 810,
-            "Denge Kur Odaklan": 650,
-            "Derin Çek Enerji Dol": 890,
-            "Yavaş Nefes Al Huzur Bul": 900
-        }
-    };
-    // -------------------------------------------------------------------
-
-    // Butona basıldığında çalışacak fonksiyon
     const generateReport = async () => {
         setIsLoading(true);
         setError(null);
         setReportText('');
 
         try {
-            // Backend Controller Endpoint'imize POST isteği atıyoruz
-            const response = await api.post('/ai/generate-report', requestData);
+            // Sadece hastanın ID'sini gönderiyoruz, gerisini backend veritabanından halledecek
+            const currentUserId = localStorage.getItem('patientId') || localStorage.getItem('userId');
             
-            // Yapay zekadan gelen cevabı (düz metin) state'e kaydediyoruz
+            const requestData = {
+                userId: currentUserId
+            };
+
+            const response = await api.post('/ai/generate-report', requestData);
             setReportText(response.data);
         } catch (err) {
             console.error("Yapay Zeka API Hatası:", err);
-            setError("Maalesef şu an rapor oluşturulamıyor. Lütfen backend sunucusunun (8080) çalıştığından emin olun.");
+            setError("Maalesef şu an rapor oluşturulamıyor. Lütfen backend sunucusunun çalıştığından emin olun.");
         } finally {
-            // İstek bittiğinde (başarılı veya başarısız) yükleniyor durumunu kapatıyoruz
             setIsLoading(false);
         }
     };

@@ -18,7 +18,7 @@ const FamilyAIReport = () => {
         try {
             // Sadece hastanın ID'sini gönderiyoruz, gerisini backend veritabanından halledecek
             //const currentUserId = localStorage.getItem('patientId') || localStorage.getItem('userId');
-            const currentUserId = "67ddc38a-ce87-4838-bb90-e90050b616fa";
+            const currentUserId = "67ddc38a-ce87-4838-bb90-e90050b616fa" || "96d502a1-082b-4dd9-8e45-efed9710dd0a" || "755e662b-bba0-4322-967a-fa21ced0d5c3" || "777f571e-4551-4015-9607-4ec7fe795a4b";
             const requestData = {
                 userId: currentUserId
             };

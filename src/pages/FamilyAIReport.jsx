@@ -16,10 +16,15 @@ const FamilyAIReport = () => {
         setReportText('');
 
         try {
-            // Sadece hastanın ID'sini gönderiyoruz, gerisini backend veritabanından halledecek
+            // localStorage'dan kullanıcı verisini güvenli bir şekilde çekiyoruz
             const userStorage = localStorage.getItem('nefes_user');
             const userData = userStorage ? JSON.parse(userStorage) : null;
-            const currentUserId = userData ? userData.userId : (localStorage.getItem('patientId') || localStorage.getItem('userId'));               
+            
+            // Hem userId hem de id alanlarını kontrol ediyoruz
+            const currentUserId = userData?.userId || userData?.id || localStorage.getItem('patientId') || localStorage.getItem('userId');               
+            
+            console.log("Yapay zeka raporu için gönderilen kullanıcı ID:", currentUserId);
+
             const requestData = {
                 userId: currentUserId
             };
@@ -28,7 +33,7 @@ const FamilyAIReport = () => {
             setReportText(response.data);
         } catch (err) {
             console.error("Yapay Zeka API Hatası:", err);
-            setError("Maalesef şu an rapor oluşturulamıyor. Lütfen backend sunucusunun çalıştığından emin olun.");
+            setError("Maalesef şu an rapor oluşturulamıyor. Lütfen backend sunucusunun konsol loglarını kontrol edin.");
         } finally {
             setIsLoading(false);
         }

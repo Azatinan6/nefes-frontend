@@ -254,7 +254,7 @@ const FlowerGame = () => {
       const userData = userStorage ? JSON.parse(userStorage) : null;
       
       // Parse edilen objeden userId'yi alıyoruz, yoksa eski yöntemlerle destekliyoruz
-      const currentUserId = userData ? userData.userId : (localStorage.getItem('patientId') || localStorage.getItem('userId'));
+      const currentUserId = userData ? userData.userId : (localStorage.getItem('patientId') || localStorage.getItem('userid'));
 
       const progressData = {
         userId: currentUserId,

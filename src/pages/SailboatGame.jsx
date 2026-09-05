@@ -199,7 +199,7 @@ const SailboatGame = () => {
     playAudioPrompt("Harika! Yelkeni karşı kıyıya ulaştırdık!");
     
     setScore((s) => s + 10);
-    setCrystals((c) => c + 10);
+    setCrystals((c) => c + 1);
     const newLaps = laps + 1;
     setLaps(newLaps);
 
@@ -210,7 +210,7 @@ const SailboatGame = () => {
         return;
       }
       if (newLaps >= 10) {
-        handleFinishGame(true);
+        handleFinishGame(true, score + 10, newLaps);
       } else {
         startCycle(newLaps);
       }
@@ -236,27 +236,53 @@ const SailboatGame = () => {
     startListening();
   };
 
-  const handleFinishGame = async (isCompleted = false) => {
+  const handleFinishGame = async (isCompleted = false, finalScore = score, finalLaps = laps) => {
     stopListening();
     setGameOver(true);
     gameOverRef.current = true;
     clearAllTimeouts();
     window.speechSynthesis.cancel();
 
-    if (isCompleted) {
+    if (finalLaps > 0) {
+      if (isCompleted) {
+        setPromptMessage("Harika! Çok güzel yaptın!");
+        const speech = new SpeechSynthesisUtterance("Harika! Çok güzel yaptın!");
+        speech.lang = 'tr-TR';
+        speech.rate = 1.0;
+        speech.pitch = 1.1;
+        window.speechSynthesis.speak(speech);
+      } else {
+        setPromptMessage(`Oyun bitirildi. Toplanan Kristal: ${finalLaps}`);
+        const speech = new SpeechSynthesisUtterance(`Çok iyi çabaladın! Kazandığın kristal: ${finalLaps}`);
+        speech.lang = 'tr-TR';
+        window.speechSynthesis.speak(speech);
+      }
+      
+      const userStorage = localStorage.getItem('nefes_user');
+      const userData = userStorage ? JSON.parse(userStorage) : null;
+      const currentUserId = userData ? userData.userId : (localStorage.getItem('patientId') || localStorage.getItem('userId'));
+
       const progressData = {
-        userId: "123e4567-e89b-12d3-a456-426614174000",
+        userId: currentUserId,
         gameId: 3, 
-        score: isCompleted ? 100 : score,
-        breathCrystals: isCompleted ? 100 : crystals,
+        score: finalScore,
+        breathCrystals: finalLaps,
         dbPerformance: dbPercentage
       };
 
       try {
         await api.post('/progress/save', progressData);
-        alert(`Harika! Oyun Tamamlandı! Kazanılan Kristal: ${crystals} 💎 \nMenüye dönülüyor...`);
+        setTimeout(() => {
+          alert(`Harika çaba! Kazanılan Kristal: ${finalLaps} 💎 \nMenüye dönülüyor...`);
+          navigate('/cocuk-paneli');
+        }, 500);
+        return;
       } catch (error) {
-        alert(`Oyun Tamamlandı! Kazanılan Kristal: ${crystals} 💎 \nMenüye dönülüyor...`);
+        setTimeout(() => {
+          alert(`Skor: ${finalLaps} (Kaydedilemedi) \nMenüye dönülüyor...`);
+          navigate('/cocuk-paneli');
+        }, 500);
+        return;
       }
     }
     

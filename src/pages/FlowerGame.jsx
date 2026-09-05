@@ -258,7 +258,7 @@ const FlowerGame = () => {
 
       const progressData = {
         userId: currentUserId,
-        gameId: 6,
+        gameId: 1,
         score: finalScore,
         breathCrystals: dbPercentage
       };

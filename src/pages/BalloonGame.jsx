@@ -222,17 +222,32 @@ const BalloonGame = () => {
     clearAllTimeouts();
     window.speechSynthesis.cancel();
     
-    if (isCompleted) {
-      setPromptMessage("Harika! Çok güzel yaptın!");
-      const speech = new SpeechSynthesisUtterance("Harika! Çok güzel yaptın!");
-      speech.lang = 'tr-TR';
-      speech.rate = 1.0;
-      speech.pitch = 1.1;
-      window.speechSynthesis.speak(speech);
+    // Skor 0'dan büyükse kaydetmeyi dene (İlk oyundaki mantık)
+    if (finalScore > 0) {
+      if (isCompleted) {
+        setPromptMessage("Harika! Çok güzel yaptın!");
+        const speech = new SpeechSynthesisUtterance("Harika! Çok güzel yaptın!");
+        speech.lang = 'tr-TR';
+        speech.rate = 1.0;
+        speech.pitch = 1.1;
+        window.speechSynthesis.speak(speech);
+      } else {
+        setPromptMessage(`Oyun bitirildi. Toplanan Kristal: ${finalScore}`);
+        const speech = new SpeechSynthesisUtterance(`Çok iyi çabaladın! Kazandığın kristal: ${finalScore}`);
+        speech.lang = 'tr-TR';
+        window.speechSynthesis.speak(speech);
+      }
+
+      // Local Storage'dan 'nefes_user' objesini çekip parse ediyoruz
+      const userStorage = localStorage.getItem('nefes_user');
+      const userData = userStorage ? JSON.parse(userStorage) : null;
+      
+      // Parse edilen objeden userId'yi alıyoruz
+      const currentUserId = userData ? userData.userId : (localStorage.getItem('patientId') || localStorage.getItem('userId'));
 
       const progressData = {
-        userId: "123e4567-e89b-12d3-a456-426614174000",
-        gameId: 2, 
+        userId: currentUserId,
+        gameId: 2, // Eğlenceli Balon ID'si
         score: finalScore,
         breathCrystals: crystals,
         dbPerformance: dbPercentage
@@ -247,13 +262,14 @@ const BalloonGame = () => {
         return;
       } catch (error) {
         setTimeout(() => {
-          alert(`Tebrikler! Kazanılan Kristal: ${finalScore} 💎\nMenüye dönülüyor...`);
+          alert(`Skor: ${finalScore} (Kaydedilemedi) \nMenüye dönülüyor...`);
           navigate('/cocuk-paneli');
         }, 500);
         return;
       }
     }
     
+    // Skor 0 ise hiç veritabanını meşgul etmeden çık
     navigate('/cocuk-paneli');
   };
 

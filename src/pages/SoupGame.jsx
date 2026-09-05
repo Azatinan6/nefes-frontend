@@ -82,7 +82,7 @@ const SoupGame = () => {
     if (isListening && !gameOver && gamePhase === 'start' && !isPausedRef.current) {
       gameOverRef.current = false;
       if (laps >= 10) {
-        handleFinishGame(true);
+        handleFinishGame(true, score, laps);
       } else {
         scheduleTimeout(() => startCycle(), 1000);
       }
@@ -194,9 +194,12 @@ const SoupGame = () => {
       if (!gameOverRef.current && !isPausedRef.current) playAudioPrompt("Bravo!");
     }, 1600);
 
-    setScore((s) => Math.min(s + 10, 100));
-    setCrystals((c) => Math.min(c + 10, 100));
+    const newScore = Math.min(score + 10, 100);
+    const newCrystals = Math.min(crystals + 1, 10);
     const newLaps = laps + 1;
+
+    setScore(newScore);
+    setCrystals(newCrystals);
     setLaps(newLaps);
 
     scheduleTimeout(() => {
@@ -206,7 +209,7 @@ const SoupGame = () => {
         return;
       }
       if (newLaps >= 10) {
-        handleFinishGame(true);
+        handleFinishGame(true, newScore, newLaps);
       } else {
         startCycle();
       }
@@ -232,27 +235,53 @@ const SoupGame = () => {
     startListening();
   };
 
-  const handleFinishGame = async (isCompleted = false) => {
+  const handleFinishGame = async (isCompleted = false, finalScore = score, finalLaps = laps) => {
     stopListening();
     setGameOver(true);
     gameOverRef.current = true;
     clearAllTimeouts();
     window.speechSynthesis.cancel();
 
-    if (isCompleted) {
+    if (finalLaps > 0) {
+      if (isCompleted) {
+        setPromptMessage("Harika! Oyun Tamamlandı! Tebrikler! 🎉");
+        const speech = new SpeechSynthesisUtterance("Harika! Oyun Tamamlandı! Tebrikler!");
+        speech.lang = 'tr-TR';
+        speech.rate = 1.0;
+        speech.pitch = 1.1;
+        window.speechSynthesis.speak(speech);
+      } else {
+        setPromptMessage(`Oyun bitirildi. Toplanan Kristal: ${finalLaps}`);
+        const speech = new SpeechSynthesisUtterance(`Çok iyi çabaladın! Kazandığın kristal: ${finalLaps}`);
+        speech.lang = 'tr-TR';
+        window.speechSynthesis.speak(speech);
+      }
+
+      const userStorage = localStorage.getItem('nefes_user');
+      const userData = userStorage ? JSON.parse(userStorage) : null;
+      const currentUserId = userData ? userData.userId : (localStorage.getItem('patientId') || localStorage.getItem('userId'));
+
       const progressData = {
-        userId: "123e4567-e89b-12d3-a456-426614174000",
+        userId: currentUserId,
         gameId: 6,
-        score: 100,
-        breathCrystals: 100,
+        score: finalScore,
+        breathCrystals: finalLaps,
         dbPerformance: dbPercentage
       };
 
       try {
         await api.post('/progress/save', progressData);
-        alert(`Harika! Oyun Tamamlandı! Tebrikler! 🎉\nKazandığın Kristal: 100 💎\nMenüye dönülüyor...`);
+        setTimeout(() => {
+          alert(`Harika çaba! Kazanılan Kristal: ${finalLaps} 💎 \nMenüye dönülüyor...`);
+          navigate('/cocuk-paneli');
+        }, 500);
+        return;
       } catch (error) {
-        alert(`Oyun Tamamlandı! Tebrikler! 🎉\nKazandığın Kristal: 100 💎\nMenüye dönülüyor...`);
+        setTimeout(() => {
+          alert(`Skor: ${finalLaps} (Kaydedilemedi) \nMenüye dönülüyor...`);
+          navigate('/cocuk-paneli');
+        }, 500);
+        return;
       }
     }
 

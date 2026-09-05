@@ -204,9 +204,9 @@ function AppContent() {
           <Route path="/oyun/hafta-1-cicek" element={<ProtectedRoute><FlowerGame /></ProtectedRoute>} />
           <Route path="/oyun/hafta-2-balon" element={<ProtectedRoute><BalloonGame /></ProtectedRoute>} />
           {/* Eski rotalar (şimdilik tutuluyor) */}
-          <Route path="/oyun/hafta-1-fark-et" element={<ProtectedRoute><AwarenessGame /></ProtectedRoute>} />
+          {/*<Route path="/oyun/hafta-1-fark-et" element={<ProtectedRoute><AwarenessGame /></ProtectedRoute>} />*/}
           <Route path="/oyun/hafta-3-yelken" element={<ProtectedRoute><SailboatGame /></ProtectedRoute>} />
-          <Route path="/oyun/hafta-3-hareket-ettir" element={<ProtectedRoute><RainbowGame /></ProtectedRoute>} />
+          {/*<Route path="/oyun/hafta-3-hareket-ettir" element={<ProtectedRoute><RainbowGame /></ProtectedRoute>} />*/}
           <Route path="/oyun/hafta-4-kontrol-et" element={<ProtectedRoute><CarGame /></ProtectedRoute>} />
           <Route path="/oyun/hafta-5-surdur" element={<ProtectedRoute><FrogGame /></ProtectedRoute>} />
           <Route path="/oyun/hafta-6-guc-uret" element={<ProtectedRoute><SoupGame /></ProtectedRoute>} />

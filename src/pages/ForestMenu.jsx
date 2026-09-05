@@ -34,12 +34,12 @@ const ForestMenu = () => {
     outline: 'none',
     zIndex: 10,
     borderRadius: '20px', // Köşeleri yumuşatılmış tıklama alanları
-    transition: 'background-color 0.2s ease-in-out', // Hover için yumuşak geçiş
+    //transition: 'background-color 0.2s ease-in-out', // Hover için yumuşak geçiş
   };
 
   // Hover efektleri (Üzerine gelince hafif beyaz parlama)
-  const handleMouseEnter = (e) => { if (!editMode) e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.2)'; };
-  const handleMouseLeave = (e) => { if (!editMode) e.target.style.backgroundColor = 'rgba(255, 255, 255, 0)'; };
+  //const handleMouseEnter = (e) => { if (!editMode) e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.2)'; };
+  //const handleMouseLeave = (e) => { if (!editMode) e.target.style.backgroundColor = 'rgba(255, 255, 255, 0)'; };
 
   return (
     <div style={{
@@ -66,7 +66,7 @@ const ForestMenu = () => {
         onClick={() => goToGame('/oyun/hafta-1-cicek')}
         title="Çiçek Kokla"
         style={{ ...hotspotStyle, top: '56%', left: '1.5%', width: '12%', height: '13%' }}
-        onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}
+        //onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}
       >
         {editMode && "1. Hafta"}
       </button>
@@ -76,7 +76,7 @@ const ForestMenu = () => {
         onClick={() => goToGame('/oyun/hafta-2-balon')}
         title="Eğlenceli Balon"
         style={{ ...hotspotStyle, top: '30.5%', left: '4%', width: '12%', height: '13%' }}
-        onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}
+        //onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}
       >
         {editMode && "2. Hafta"}
       </button>
@@ -86,7 +86,7 @@ const ForestMenu = () => {
         onClick={() => goToGame('/oyun/hafta-3-yelken')}
         title="Yelkeni Yüzdür"
         style={{ ...hotspotStyle, top: '29.5%', left: '30%', width: '12%', height: '13%' }}
-        onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}
+        //onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}
       >
         {editMode && "3. Hafta"}
       </button>
@@ -96,7 +96,7 @@ const ForestMenu = () => {
         onClick={() => goToGame('/oyun/hafta-4-kontrol-et')}
         title="Gözün Arabada!"
         style={{ ...hotspotStyle, top: '33%', left: '52.5%', width: '12%', height: '13%' }}
-        onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}
+        //onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}
       >
         {editMode && "4. Hafta"}
       </button>
@@ -106,7 +106,7 @@ const ForestMenu = () => {
         onClick={() => goToGame('/oyun/hafta-5-surdur')}
         title="Kurbağayı Zıplat!"
         style={{ ...hotspotStyle, top: '68.5%', left: '22%', width: '12%', height: '13%' }}
-        onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}
+        //onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}
       >
         {editMode && "5. Hafta"}
       </button>
@@ -116,7 +116,7 @@ const ForestMenu = () => {
         onClick={() => goToGame('/oyun/hafta-6-guc-uret')}
         title="Çorbayı Kokla ve Soğut"
         style={{ ...hotspotStyle, top: '62%', left: '32.5%', width: '12%', height: '13%' }}
-        onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}
+        //onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}
       >
         {editMode && "6. Hafta"}
       </button>
@@ -126,7 +126,7 @@ const ForestMenu = () => {
         onClick={() => goToGame('/oyun/hafta-7-birlestir')}
         title="Güçlü Üfle, Roketi Fırlat!"
         style={{ ...hotspotStyle, top: '14.5%', left: '50.5%', width: '12%', height: '13%' }}
-        onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}
+        //onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}
       >
         {editMode && "7. Hafta"}
       </button>
@@ -136,7 +136,7 @@ const ForestMenu = () => {
         onClick={() => goToGame('/oyun/hafta-8-aktar')}
         title="Nefes Kristalleri Macerası"
         style={{ ...hotspotStyle, top: '19%', left: '73.5%', width: '12%', height: '13%' }}
-        onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}
+        //onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}
       >
         {editMode && "8. Hafta"}
       </button>

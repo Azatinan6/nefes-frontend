@@ -29,7 +29,9 @@ const FamilyAIReport = () => {
                 userId: currentUserId
             };
 
-            const response = await api.post('/ai/generate-report', requestData);
+            const response = await api.post('/ai/generate-report', requestData, {
+                timeout: 30000 // Yapay zeka için zaman aşımı süresini 30 saniyeye çıkarıyoruz
+            });            
             setReportText(response.data);
         } catch (err) {
             console.error("Yapay Zeka API Hatası:", err);

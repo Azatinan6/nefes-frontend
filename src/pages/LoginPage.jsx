@@ -69,8 +69,11 @@ const LoginPage = () => {
         }
       }
     } catch (err) {
-      // Backend'den gelen hata mesajını göster
-      const errorMsg = err.response?.data || 'Giriş yapılırken bir hata oluştu. Lütfen tekrar deneyin.';
+      // Backend'den gelen hata JSON objesi ise React'in çökmesini engellemek için string'e çeviriyoruz
+      const data = err.response?.data;
+      const errorMsg = data?.message 
+                       || (typeof data === 'string' ? data : null)
+                       || 'Giriş yapılırken bir hata oluştu. Lütfen tekrar deneyin.';
       setError(errorMsg);
     } finally {
       setLoading(false);

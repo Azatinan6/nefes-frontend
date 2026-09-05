@@ -249,11 +249,15 @@ const FlowerGame = () => {
         window.speechSynthesis.speak(speech);
       }
 
-      // localStorage'dan ID'yi çekiyoruz (veya test için elle kopyaladığın ID'yi yazabilirsin)
-      const currentUserId = localStorage.getItem('patientId') || localStorage.getItem('userId');
+      // Local Storage'dan 'nefes_user' objesini çekip parse ediyoruz
+      const userStorage = localStorage.getItem('nefes_user');
+      const userData = userStorage ? JSON.parse(userStorage) : null;
+      
+      // Parse edilen objeden userId'yi alıyoruz, yoksa eski yöntemlerle destekliyoruz
+      const currentUserId = userData ? userData.userId : (localStorage.getItem('patientId') || localStorage.getItem('userId'));
 
       const progressData = {
-        userId: currentUserId, // Test aşamasında buraya "ID-GELSIN" yazabilirsin
+        userId: currentUserId,
         gameId: 6,
         score: finalScore,
         breathCrystals: dbPercentage

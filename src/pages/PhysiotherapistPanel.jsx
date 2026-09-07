@@ -28,8 +28,15 @@ const PhysiotherapistPanel = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       setPatients(response.data);
+      
+      // KRİTİK DÜZELTME: İlk hasta otomatik seçildiğinde puanları da otomatik çekilsin
       if (response.data.length > 0 && !selectedPatient) {
-        setSelectedPatient(response.data[0]);
+        const firstPatient = response.data[0];
+        setSelectedPatient(firstPatient);
+        
+        const targetUserId = firstPatient.userId || firstPatient.user?.id || firstPatient.id;
+        const progressRes = await api.get(`/progress/user/${targetUserId}`);
+        setPatientProgress(progressRes.data);
       }
     } catch (err) {
       console.error('Hasta listesi alınamadı:', err);

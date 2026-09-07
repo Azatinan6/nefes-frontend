@@ -10,13 +10,14 @@ const PhysiotherapistPanel = () => {
   const [aiReport, setAiReport] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [patientProgress, setPatientProgress] = useState([]);
 
-  // Modal stateleri (Geçici şifre alanı eklendi)
+  // Modal stateleri 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [addForm, setAddForm] = useState({
     fullName: '',
     email: '',
-    password: '', // Fizyoterapistin belirleyeceği şifre
+    password: '', 
     diagnosisType: 'SPASTIK',
     gmfcsLevel: 1,
     dateOfBirth: ''
@@ -72,10 +73,18 @@ const PhysiotherapistPanel = () => {
     }
   };
 
-  const handlePatientSelect = (patient) => {
+  const handlePatientSelect = async (patient) => {
     setSelectedPatient(patient);
     setAiReport("");
     setError(null);
+    setPatientProgress([]); 
+    
+    try {
+        const response = await api.get(`/progress/user/${patient.id}`);
+        setPatientProgress(response.data);
+    } catch (err) {
+        console.error("Hastanın oyun verileri çekilemedi:", err);
+    }
   };
 
   const handleAddPatient = async (e) => {
@@ -103,13 +112,6 @@ const PhysiotherapistPanel = () => {
       setAddLoading(false);
     }
   };
-
-  // Demo veri: Backend'den gelecek gerçek oyun skorları (progress listesi)
-  const mockProgress = [
-    { gameId: 1, name: 'Çiçek Kokla', score: 20, crystals: 0, date: '12 Eki' },
-    { gameId: 2, name: 'Eğlenceli Balon', score: 45, crystals: 2, date: '14 Eki' },
-    { gameId: 3, name: 'Yelkeni Yüzdür', score: 60, crystals: 5, date: '16 Eki' },
-  ];
 
   return (
     <div style={{ display: 'flex', height: 'calc(100vh - 75px)', backgroundColor: '#F0F4F8', fontFamily: 'sans-serif' }}>
@@ -169,16 +171,23 @@ const PhysiotherapistPanel = () => {
             <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '25px', marginBottom: '30px', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
               <h3 style={{ margin: '0 0 20px 0', color: '#2D3748' }}>🎮 Oyun ve Gelişim Tablosu</h3>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px' }}>
-                {mockProgress.map(prog => (
-                  <div key={prog.gameId} style={{ padding: '15px', border: '1px solid #E2E8F0', borderRadius: '8px', backgroundColor: '#F7FAFC' }}>
-                    <div style={{ fontSize: '12px', color: '#718096', marginBottom: '5px' }}>{prog.date} - {prog.gameId}. Hafta</div>
-                    <div style={{ fontWeight: 'bold', color: '#2B6CB0', marginBottom: '10px' }}>{prog.name}</div>
-                    <div style={{ display: 'flex', gap: '10px' }}>
-                       <span style={{ background: '#EBF4FF', color: '#2B6CB0', padding: '4px 8px', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold' }}>🎯 {prog.score} Puan</span>
-                       <span style={{ background: '#F0FFF4', color: '#2F855A', padding: '4px 8px', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold' }}>💎 {prog.crystals} Kristal</span>
+                
+                {patientProgress.length === 0 ? (
+                    <div style={{ color: '#A0AEC0', padding: '10px 0', gridColumn: '1 / -1' }}>Bu hastanın henüz oyun verisi bulunmuyor.</div>
+                ) : (
+                    patientProgress.map((prog, index) => (
+                    <div key={index} style={{ padding: '15px', border: '1px solid #E2E8F0', borderRadius: '8px', backgroundColor: '#F7FAFC' }}>
+                        <div style={{ fontSize: '12px', color: '#718096', marginBottom: '5px' }}>Oyun ID: {prog.gameId}</div>
+                        <div style={{ fontWeight: 'bold', color: '#2B6CB0', marginBottom: '10px' }}>Skor: {prog.score} Puan</div>
+                        <div style={{ display: 'flex', gap: '10px' }}>
+                        <span style={{ background: '#F0FFF4', color: '#2F855A', padding: '4px 8px', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold' }}>
+                            💎 {prog.breathCrystals || 0} Kristal
+                        </span>
+                        </div>
                     </div>
-                  </div>
-                ))}
+                    ))
+                )}
+
               </div>
             </div>
 
@@ -223,7 +232,6 @@ const PhysiotherapistPanel = () => {
                 <input required type="email" value={addForm.email} onChange={(e) => setAddForm({...addForm, email: e.target.value})} style={inputStyle} />
               </div>
               
-              {/* FİZYOTERAPİST ŞİFRE BELİRLEME ALANI EKLENDİ */}
               <div style={{ marginBottom: '15px' }}>
                 <label style={labelStyle}>Geçici Şifre (Aileye Verilecek)</label>
                 <input required type="text" placeholder="Örn: Nefes123" value={addForm.password} onChange={(e) => setAddForm({...addForm, password: e.target.value})} style={inputStyle} />

@@ -3,42 +3,21 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getAllUsers, getPendingFizyos, approveFizyo, rejectFizyo, deleteUser } from '../services/api';
 
-/**
- * Admin Paneli — Sistem yöneticisinin tüm kullanıcıları yönettiği merkez.
- *
- * Sekmeler:
- * 1. Dashboard     → Özet istatistikler (toplam kullanıcı, fizyo, bekleyen onaylar)
- * 2. Onay Bekliyor → PENDING fizyoterapist başvuruları (Onayla / Reddet)
- * 3. Tüm Kullanıcılar → Sistem genelinde arama, filtreleme, silme
- */
 const AdminPanel = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
 
-  // Aktif sekme
   const [activeTab, setActiveTab] = useState('dashboard');
-
-  // Veri state'leri
   const [allUsers, setAllUsers] = useState([]);
   const [pendingFizyos, setPendingFizyos] = useState([]);
-
-  // Yükleme ve bildirim durumları
   const [loading, setLoading] = useState(false);
   const [notification, setNotification] = useState({ type: '', message: '' });
-
-  // Arama filtresi — kullanıcı listesinde isim/e-posta araması
   const [searchQuery, setSearchQuery] = useState('');
 
-  /**
-   * Bileşen ilk yüklendiğinde tüm verileri çek.
-   */
   useEffect(() => {
     fetchData();
   }, []);
 
-  /**
-   * Backend'den tüm kullanıcı verilerini çeker.
-   */
   const fetchData = async () => {
     setLoading(true);
     try {
@@ -55,65 +34,48 @@ const AdminPanel = () => {
     }
   };
 
-  /**
-   * Bildirim mesajı gösterir ve 3 saniye sonra gizler.
-   * @param {string} type 'success' veya 'error'
-   * @param {string} message Gösterilecek mesaj
-   */
   const showNotification = (type, message) => {
     setNotification({ type, message });
     setTimeout(() => setNotification({ type: '', message: '' }), 3000);
   };
 
-  /**
-   * Fizyoterapist başvurusunu onaylar.
-   * Backend: durum APPROVED olur, davet kodu üretilir, e-posta gönderilir.
-   */
   const handleApprove = async (id) => {
     try {
       await approveFizyo(id);
-      showNotification('success', '✅ Fizyoterapist onaylandı ve davet kodu e-posta ile gönderildi.');
-      fetchData(); // Listeyi güncelle
+      showNotification('success', 'Fizyoterapist onaylandı ve davet kodu gönderildi.');
+      fetchData();
     } catch (err) {
-      showNotification('error', '❌ Onaylama işlemi başarısız.');
+      showNotification('error', 'Onaylama işlemi başarısız.');
     }
   };
 
-  /**
-   * Fizyoterapist başvurusunu reddeder.
-   */
   const handleReject = async (id) => {
     if (!window.confirm('Bu başvuruyu reddetmek istediğinizden emin misiniz?')) return;
     try {
       await rejectFizyo(id);
-      showNotification('success', '❌ Fizyoterapist başvurusu reddedildi.');
+      showNotification('success', 'Fizyoterapist başvurusu reddedildi.');
       fetchData();
     } catch (err) {
       showNotification('error', 'Red işlemi başarısız.');
     }
   };
 
-  /**
-   * Kullanıcıyı sistemden kalıcı olarak siler.
-   */
   const handleDelete = async (id, name) => {
     if (!window.confirm(`"${name}" adlı kullanıcıyı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz!`)) return;
     try {
       await deleteUser(id);
-      showNotification('success', '🗑️ Kullanıcı başarıyla silindi.');
+      showNotification('success', 'Kullanıcı başarıyla silindi.');
       fetchData();
     } catch (err) {
       showNotification('error', err.response?.data || 'Silme işlemi başarısız.');
     }
   };
 
-  // Arama filtresine göre kullanıcı listesini filtrele
   const filteredUsers = allUsers.filter(u =>
     u.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     u.email?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Rol bazlı sayılar — dashboard istatistikleri için
   const stats = {
     total: allUsers.length,
     fizyo: allUsers.filter(u => u.role === 'ROLE_FIZYO').length,
@@ -122,88 +84,75 @@ const AdminPanel = () => {
     pending: pendingFizyos.length,
   };
 
-  // Rol etiketi rengi — tabloda görsel ayırt edicilik için
   const getRoleBadge = (role) => {
     const badges = {
-      'ROLE_ADMIN': { label: 'Admin', color: '#7c3aed', bg: '#f3e8ff' },
-      'ROLE_FIZYO': { label: 'Fizyoterapist', color: '#0369a1', bg: '#e0f2fe' },
-      'ROLE_AILE': { label: 'Aile', color: '#065f46', bg: '#d1fae5' },
-      'ROLE_COCUK': { label: 'Çocuk', color: '#92400e', bg: '#fef3c7' },
+      'ROLE_ADMIN': { label: 'Admin', color: '#5E5CE6', bg: '#E5E5EA' },
+      'ROLE_FIZYO': { label: 'Fizyoterapist', color: '#007AFF', bg: '#E5F1FF' },
+      'ROLE_AILE': { label: 'Aile', color: '#34C759', bg: '#E8F8EE' },
+      'ROLE_COCUK': { label: 'Çocuk', color: '#FF9500', bg: '#FFF4E5' },
     };
-    return badges[role] || { label: role, color: '#374151', bg: '#f3f4f6' };
+    return badges[role] || { label: role, color: '#8E8E93', bg: '#F2F2F7' };
   };
 
-  // Durum etiketi
   const getStatusBadge = (status) => {
     const badges = {
-      'ACTIVE': { label: 'Aktif', color: '#065f46', bg: '#d1fae5' },
-      'APPROVED': { label: 'Onaylı', color: '#065f46', bg: '#d1fae5' },
-      'PENDING': { label: 'Bekliyor', color: '#92400e', bg: '#fef3c7' },
-      'REJECTED': { label: 'Reddedildi', color: '#991b1b', bg: '#fee2e2' },
+      'ACTIVE': { label: 'Aktif', color: '#34C759', bg: '#E8F8EE' },
+      'APPROVED': { label: 'Onaylı', color: '#34C759', bg: '#E8F8EE' },
+      'PENDING': { label: 'Bekliyor', color: '#FF9500', bg: '#FFF4E5' },
+      'REJECTED': { label: 'Reddedildi', color: '#FF3B30', bg: '#FFEBEA' },
     };
-    return badges[status] || { label: status, color: '#374151', bg: '#f3f4f6' };
+    return badges[status] || { label: status, color: '#8E8E93', bg: '#F2F2F7' };
   };
 
   return (
     <div style={styles.container}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap');
-        * { font-family: 'Inter', sans-serif; box-sizing: border-box; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        * { font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; box-sizing: border-box; }
         
-        .admin-tab { padding: 12px 20px; border: none; border-radius: 10px; font-size: 14px;
-          font-weight: 600; cursor: pointer; transition: all 0.3s ease; }
-        .admin-tab:hover { transform: translateY(-1px); }
+        /* iOS tarzı Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #C7C7CC; border-radius: 10px; }
         
-        .stat-card { transition: all 0.3s ease; }
-        .stat-card:hover { transform: translateY(-4px); }
+        .ios-btn {
+          transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+          cursor: pointer;
+        }
+        .ios-btn:active { transform: scale(0.96); opacity: 0.8; }
         
-        .approve-btn { padding: 8px 16px; background: #16a34a; color: white; border: none;
-          border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;
-          transition: all 0.2s ease; }
-        .approve-btn:hover { background: #15803d; transform: translateY(-1px); }
+        .stat-card {
+          transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        .stat-card:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 14px 28px rgba(0,0,0,0.06);
+        }
         
-        .reject-btn { padding: 8px 16px; background: #dc2626; color: white; border: none;
-          border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;
-          transition: all 0.2s ease; margin-left: 8px; }
-        .reject-btn:hover { background: #b91c1c; transform: translateY(-1px); }
-        
-        .delete-btn { padding: 7px 14px; background: transparent; color: #dc2626; border: 1.5px solid #dc2626;
-          border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;
-          transition: all 0.2s ease; }
-        .delete-btn:hover { background: #fef2f2; }
-        
-        .search-input { padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 10px;
-          font-size: 14px; font-family: 'Inter', sans-serif; background: #f8fafc; outline: none;
-          transition: all 0.3s ease; width: 300px; }
-        .search-input:focus { border-color: #2E7D32; box-shadow: 0 0 0 4px rgba(46,125,50,0.1); }
+        .search-input::placeholder { color: #8E8E93; }
+        .search-input:focus { background: #fff; box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.15); border-color: #007AFF; }
         
         @keyframes slideDown {
-          from { opacity: 0; transform: translateY(-10px); }
+          from { opacity: 0; transform: translateY(-20px); }
           to { opacity: 1; transform: translateY(0); }
         }
-        .notification { animation: slideDown 0.3s ease; }
+        .notification { animation: slideDown 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); }
       `}</style>
 
-      {/* ===== ÜST BAŞLIK (HEADER) ===== */}
+      {/* ===== HEADER (iOS Frosted Glass) ===== */}
       <div style={styles.header}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <span style={{ fontSize: '32px' }}>🌿</span>
+          <div style={styles.iconContainer}>🌿</div>
           <div>
-            <h1 style={styles.headerTitle}>N.E.F.E.S. Admin Paneli</h1>
-            <p style={styles.headerSubtitle}>Hoş geldiniz, {user?.fullName} 👋</p>
+            <h1 style={styles.headerTitle}>Yönetim Merkezi</h1>
+            <p style={styles.headerSubtitle}>Hoş geldin, {user?.fullName}</p>
           </div>
         </div>
         <div style={{ display: 'flex', gap: '12px' }}>
-          <button
-            onClick={() => navigate('/')}
-            style={{...styles.logoutBtn, color: '#2E7D32', borderColor: '#2E7D32'}}
-          >
-            🏠 Ana Sayfa
+          <button onClick={() => navigate('/')} style={{...styles.actionBtn, background: '#F2F2F7', color: '#007AFF'}} className="ios-btn">
+            Ana Sayfa
           </button>
-          <button
-            onClick={logout}
-            style={styles.logoutBtn}
-          >
+          <button onClick={logout} style={{...styles.actionBtn, background: '#FFEBEA', color: '#FF3B30'}} className="ios-btn">
             Çıkış Yap
           </button>
         </div>
@@ -211,40 +160,32 @@ const AdminPanel = () => {
 
       <div style={styles.content}>
         
-        {/* Bildirim mesajı — işlem sonrası gösterilir */}
         {notification.message && (
-          <div
-            className="notification"
-            style={{
-              ...styles.notification,
-              backgroundColor: notification.type === 'success' ? '#f0fdf4' : '#fef2f2',
-              borderColor: notification.type === 'success' ? '#bbf7d0' : '#fecaca',
-              color: notification.type === 'success' ? '#166534' : '#dc2626',
-            }}
-          >
+          <div className="notification" style={{
+            ...styles.notification,
+            backgroundColor: notification.type === 'success' ? '#E8F8EE' : '#FFEBEA',
+            color: notification.type === 'success' ? '#34C759' : '#FF3B30',
+          }}>
             {notification.message}
           </div>
         )}
 
-        {/* ===== SEKME MENÜSÜ ===== */}
-        <div style={styles.tabBar}>
+        {/* ===== iOS SEGMENTED CONTROL (Tab Menü) ===== */}
+        <div style={styles.segmentedControl}>
           {[
-            { key: 'dashboard', label: '📊 Dashboard' },
-            { key: 'pending', label: `⏳ Onay Bekliyor ${stats.pending > 0 ? `(${stats.pending})` : ''}` },
-            { key: 'users', label: '👥 Tüm Kullanıcılar' },
+            { key: 'dashboard', label: 'Özet' },
+            { key: 'pending', label: `Onay Bekleyen (${stats.pending})` },
+            { key: 'users', label: 'Tüm Kullanıcılar' },
           ].map(tab => (
             <button
               key={tab.key}
-              className="admin-tab"
+              className="ios-btn"
               onClick={() => setActiveTab(tab.key)}
               style={{
-                background: activeTab === tab.key
-                  ? 'linear-gradient(135deg, #2E7D32, #43A047)'
-                  : '#fff',
-                color: activeTab === tab.key ? '#fff' : '#374151',
-                boxShadow: activeTab === tab.key
-                  ? '0 4px 12px rgba(46,125,50,0.3)'
-                  : '0 1px 3px rgba(0,0,0,0.1)',
+                ...styles.segmentBtn,
+                background: activeTab === tab.key ? '#FFFFFF' : 'transparent',
+                color: activeTab === tab.key ? '#000000' : '#8E8E93',
+                boxShadow: activeTab === tab.key ? '0 3px 8px rgba(0,0,0,0.12), 0 3px 1px rgba(0,0,0,0.04)' : 'none',
               }}
             >
               {tab.label}
@@ -252,72 +193,68 @@ const AdminPanel = () => {
           ))}
         </div>
 
-        {/* ===== DASHBOARD SEKMESİ ===== */}
+        {/* ===== DASHBOARD ===== */}
         {activeTab === 'dashboard' && (
-          <div>
-            <h2 style={styles.sectionTitle}>Sistem Özeti</h2>
+          <div style={{ animation: 'slideDown 0.3s ease-out' }}>
+            <h2 style={styles.sectionTitle}>Sistem İstatistikleri</h2>
             <div style={styles.statsGrid}>
-              <StatCard icon="👥" label="Toplam Kullanıcı" value={stats.total} color="#2E7D32" />
-              <StatCard icon="🩺" label="Fizyoterapist" value={stats.fizyo} color="#0369a1" />
-              <StatCard icon="👨‍👩‍👧" label="Aile" value={stats.aile} color="#065f46" />
-              <StatCard icon="👦" label="Çocuk/Hasta" value={stats.cocuk} color="#92400e" />
-              <StatCard icon="⏳" label="Onay Bekliyor" value={stats.pending} color="#dc2626" />
+              <StatCard icon="👥" label="Toplam Kullanıcı" value={stats.total} color="#000000" />
+              <StatCard icon="🩺" label="Fizyoterapist" value={stats.fizyo} color="#007AFF" />
+              <StatCard icon="👨‍👩‍👧" label="Aile" value={stats.aile} color="#34C759" />
+              <StatCard icon="👦" label="Çocuk/Hasta" value={stats.cocuk} color="#FF9500" />
+              <StatCard icon="⏳" label="Onay Bekliyor" value={stats.pending} color="#FF3B30" />
             </div>
 
-            {/* Hızlı eylem kutusu */}
             {stats.pending > 0 && (
               <div style={styles.alertBox}>
-                ⚠️ <strong>{stats.pending} fizyoterapist başvurusu</strong> onayınızı bekliyor.{' '}
-                <button
-                  onClick={() => setActiveTab('pending')}
-                  style={{ background: 'none', border: 'none', color: '#92400e', fontWeight: '700', cursor: 'pointer', textDecoration: 'underline', fontSize: '14px' }}
-                >
-                  Hemen incele →
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <span style={{ fontSize: '24px' }}>🔔</span>
+                  <div>
+                    <strong style={{ display: 'block', fontSize: '15px', color: '#000' }}>İşlem Bekleyen Başvurular</strong>
+                    <span style={{ color: '#8E8E93' }}>{stats.pending} yeni fizyoterapist onayınızı bekliyor.</span>
+                  </div>
+                </div>
+                <button onClick={() => setActiveTab('pending')} style={styles.alertBtn} className="ios-btn">
+                  İncele
                 </button>
               </div>
             )}
           </div>
         )}
 
-        {/* ===== ONAY BEKLİYENLER SEKMESİ ===== */}
+        {/* ===== ONAY BEKLİYENLER ===== */}
         {activeTab === 'pending' && (
-          <div>
-            <h2 style={styles.sectionTitle}>Onay Bekleyen Fizyoterapist Başvuruları</h2>
+          <div style={{ animation: 'slideDown 0.3s ease-out' }}>
+            <h2 style={styles.sectionTitle}>Fizyoterapist Başvuruları</h2>
             
-            {loading && <div style={styles.emptyState}>⏳ Yükleniyor...</div>}
+            {loading && <div style={styles.emptyState}>Yükleniyor...</div>}
             
             {!loading && pendingFizyos.length === 0 && (
               <div style={styles.emptyState}>
-                ✅ Onay bekleyen başvuru bulunmuyor.
+                <span style={{ fontSize: '40px', display: 'block', marginBottom: '12px' }}>🎉</span>
+                Bekleyen başvuru bulunmuyor.
               </div>
             )}
 
-            {/* Her bekleyen fizyo için bir kart */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {pendingFizyos.map(fizyo => (
-                <div key={fizyo.id} style={styles.pendingCard}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-                        <span style={{ fontSize: '32px' }}>🩺</span>
-                        <div>
-                          <div style={{ fontWeight: '700', fontSize: '18px', color: '#1e293b' }}>
-                            {fizyo.fullName}
-                          </div>
-                          <div style={{ color: '#64748b', fontSize: '14px' }}>{fizyo.email}</div>
-                        </div>
+                <div key={fizyo.id} style={styles.card}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                      <div style={{ width: '50px', height: '50px', borderRadius: '16px', background: '#E5F1FF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px' }}>
+                        🩺
                       </div>
-                      <div style={{ fontSize: '13px', color: '#64748b' }}>
-                        📅 Başvuru: {fizyo.createdAt ? new Date(fizyo.createdAt).toLocaleDateString('tr-TR') : 'Bilinmiyor'}
+                      <div>
+                        <div style={{ fontWeight: '700', fontSize: '17px', color: '#000', marginBottom: '4px' }}>{fizyo.fullName}</div>
+                        <div style={{ color: '#8E8E93', fontSize: '14px' }}>{fizyo.email} • {new Date(fizyo.createdAt).toLocaleDateString('tr-TR')}</div>
                       </div>
                     </div>
-                    {/* Onay / Red butonları */}
-                    <div>
-                      <button className="approve-btn" onClick={() => handleApprove(fizyo.id)}>
-                        ✅ Onayla
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button className="ios-btn" onClick={() => handleReject(fizyo.id)} style={{ ...styles.actionBtn, background: '#F2F2F7', color: '#FF3B30' }}>
+                        Reddet
                       </button>
-                      <button className="reject-btn" onClick={() => handleReject(fizyo.id)}>
-                        ❌ Reddet
+                      <button className="ios-btn" onClick={() => handleApprove(fizyo.id)} style={{ ...styles.actionBtn, background: '#007AFF', color: '#fff' }}>
+                        Onayla
                       </button>
                     </div>
                   </div>
@@ -327,76 +264,67 @@ const AdminPanel = () => {
           </div>
         )}
 
-        {/* ===== TÜM KULLANICILAR SEKMESİ ===== */}
+        {/* ===== TÜM KULLANICILAR ===== */}
         {activeTab === 'users' && (
-          <div>
+          <div style={{ animation: 'slideDown 0.3s ease-out' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-              <h2 style={{ ...styles.sectionTitle, margin: 0 }}>Tüm Kullanıcılar ({filteredUsers.length})</h2>
-              {/* Arama kutusu */}
-              <input
-                type="text"
-                className="search-input"
-                placeholder="🔍 Ad veya e-posta ile ara..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
+              <h2 style={{ ...styles.sectionTitle, margin: 0 }}>Kullanıcı Listesi</h2>
+              <div style={styles.searchWrapper}>
+                <span style={{ position: 'absolute', left: '12px', color: '#8E8E93' }}>🔍</span>
+                <input
+                  type="text"
+                  className="search-input"
+                  placeholder="Ara..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  style={styles.searchInput}
+                />
+              </div>
             </div>
 
-            {loading && <div style={styles.emptyState}>⏳ Yükleniyor...</div>}
+            {loading && <div style={styles.emptyState}>Yükleniyor...</div>}
 
-            {/* Kullanıcı tablosu */}
             {!loading && (
               <div style={styles.tableWrapper}>
                 <table style={styles.table}>
                   <thead>
                     <tr style={styles.tableHeader}>
-                      <th style={styles.th}>Ad Soyad</th>
-                      <th style={styles.th}>E-posta</th>
+                      <th style={styles.th}>Kullanıcı</th>
                       <th style={styles.th}>Rol</th>
                       <th style={styles.th}>Durum</th>
-                      <th style={styles.th}>Kayıt Tarihi</th>
-                      <th style={styles.th}>İşlem</th>
+                      <th style={styles.th}>Tarih</th>
+                      <th style={{ ...styles.th, textAlign: 'right', paddingRight: '24px' }}>İşlem</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredUsers.map((u) => {
+                    {filteredUsers.map((u, index) => {
                       const roleBadge = getRoleBadge(u.role);
                       const statusBadge = getStatusBadge(u.status);
                       return (
-                        <tr key={u.id} style={styles.tableRow}>
+                        <tr key={u.id} style={{ ...styles.tableRow, borderBottom: index === filteredUsers.length - 1 ? 'none' : '1px solid #E5E5EA' }}>
                           <td style={styles.td}>
-                            <div style={{ fontWeight: '600', color: '#1e293b' }}>{u.fullName}</div>
+                            <div style={{ fontWeight: '600', color: '#000', fontSize: '15px' }}>{u.fullName}</div>
+                            <div style={{ color: '#8E8E93', fontSize: '13px', marginTop: '2px' }}>{u.email}</div>
                           </td>
                           <td style={styles.td}>
-                            <div style={{ color: '#64748b', fontSize: '13px' }}>{u.email}</div>
-                          </td>
-                          <td style={styles.td}>
-                            {/* Rol etiketi */}
-                            <span style={{ padding: '4px 10px', borderRadius: '20px', fontSize: '12px',
-                              fontWeight: '600', background: roleBadge.bg, color: roleBadge.color }}>
+                            <span style={{ padding: '4px 12px', borderRadius: '12px', fontSize: '12px', fontWeight: '600', background: roleBadge.bg, color: roleBadge.color }}>
                               {roleBadge.label}
                             </span>
                           </td>
                           <td style={styles.td}>
-                            {/* Durum etiketi */}
-                            <span style={{ padding: '4px 10px', borderRadius: '20px', fontSize: '12px',
-                              fontWeight: '600', background: statusBadge.bg, color: statusBadge.color }}>
+                            <span style={{ padding: '4px 12px', borderRadius: '12px', fontSize: '12px', fontWeight: '600', background: statusBadge.bg, color: statusBadge.color }}>
                               {statusBadge.label}
                             </span>
                           </td>
                           <td style={styles.td}>
-                            <div style={{ color: '#64748b', fontSize: '13px' }}>
+                            <div style={{ color: '#8E8E93', fontSize: '14px', fontWeight: '500' }}>
                               {u.createdAt ? new Date(u.createdAt).toLocaleDateString('tr-TR') : '-'}
                             </div>
                           </td>
-                          <td style={styles.td}>
-                            {/* Admin kendi hesabını silemez */}
+                          <td style={{ ...styles.td, textAlign: 'right', paddingRight: '24px' }}>
                             {u.role !== 'ROLE_ADMIN' && (
-                              <button
-                                className="delete-btn"
-                                onClick={() => handleDelete(u.id, u.fullName)}
-                              >
-                                🗑️ Sil
+                              <button className="ios-btn" onClick={() => handleDelete(u.id, u.fullName)} style={styles.deleteBtn}>
+                                Sil
                               </button>
                             )}
                           </td>
@@ -414,58 +342,60 @@ const AdminPanel = () => {
   );
 };
 
-// İstatistik kartı bileşeni — dashboard'da tekrar kulllanılır
+// Alt Bileşen: İstatistik Kartı
 const StatCard = ({ icon, label, value, color }) => (
-  <div className="stat-card" style={{
-    backgroundColor: '#fff', borderRadius: '16px', padding: '24px',
-    boxShadow: '0 4px 12px rgba(0,0,0,0.06)', border: `2px solid ${color}20`,
-    textAlign: 'center',
-  }}>
-    <div style={{ fontSize: '36px', marginBottom: '8px' }}>{icon}</div>
-    <div style={{ fontSize: '36px', fontWeight: '900', color }}>{value}</div>
-    <div style={{ fontSize: '14px', color: '#64748b', marginTop: '4px', fontWeight: '600' }}>{label}</div>
+  <div className="stat-card" style={styles.card}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <div style={{ fontSize: '32px' }}>{icon}</div>
+      <div style={{ fontSize: '32px', fontWeight: '800', color: color, letterSpacing: '-1px' }}>{value}</div>
+    </div>
+    <div style={{ fontSize: '15px', color: '#8E8E93', marginTop: '12px', fontWeight: '600' }}>{label}</div>
   </div>
 );
 
+// Stiller
 const styles = {
-  container: { minHeight: '100vh', backgroundColor: '#f1f5f9', fontFamily: "'Inter', sans-serif" },
+  container: { minHeight: '100vh', backgroundColor: '#F2F2F7', paddingBottom: '60px' },
   header: {
-    backgroundColor: '#fff', padding: '20px 40px', display: 'flex', justifyContent: 'space-between',
-    alignItems: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', position: 'sticky', top: 0, zIndex: 100,
+    padding: '16px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+    position: 'sticky', top: 0, zIndex: 100,
+    background: 'rgba(255, 255, 255, 0.75)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
+    borderBottom: '1px solid rgba(0,0,0,0.05)',
   },
-  headerTitle: { margin: 0, fontSize: '20px', fontWeight: '900', color: '#1e293b' },
-  headerSubtitle: { margin: '4px 0 0 0', fontSize: '14px', color: '#64748b' },
-  logoutBtn: {
-    padding: '10px 20px', background: 'none', border: '2px solid #e2e8f0', borderRadius: '10px',
-    color: '#64748b', fontWeight: '600', fontSize: '14px', cursor: 'pointer',
-    transition: 'all 0.2s ease',
+  iconContainer: { background: '#E8F8EE', borderRadius: '14px', width: '44px', height: '44px', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '24px' },
+  headerTitle: { margin: 0, fontSize: '19px', fontWeight: '700', color: '#000', letterSpacing: '-0.5px' },
+  headerSubtitle: { margin: '2px 0 0 0', fontSize: '13px', color: '#8E8E93', fontWeight: '500' },
+  actionBtn: { padding: '8px 16px', border: 'none', borderRadius: '14px', fontWeight: '600', fontSize: '14px' },
+  
+  content: { padding: '40px', maxWidth: '1200px', margin: '0 auto' },
+  notification: { padding: '16px 20px', borderRadius: '16px', fontSize: '14px', fontWeight: '600', marginBottom: '24px', textAlign: 'center' },
+  
+  segmentedControl: {
+    display: 'flex', background: '#E3E3E8', padding: '4px', borderRadius: '14px', width: 'fit-content', margin: '0 auto 40px'
   },
-  content: { padding: '32px 40px', maxWidth: '1400px', margin: '0 auto' },
-  notification: {
-    border: '1px solid', borderRadius: '12px', padding: '14px 20px',
-    fontSize: '14px', fontWeight: '600', marginBottom: '24px',
+  segmentBtn: {
+    padding: '8px 24px', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '600', transition: 'all 0.3s ease'
   },
-  tabBar: { display: 'flex', gap: '12px', marginBottom: '32px', flexWrap: 'wrap' },
-  sectionTitle: { fontSize: '22px', fontWeight: '800', color: '#1e293b', marginBottom: '24px' },
-  statsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', marginBottom: '24px' },
-  alertBox: {
-    backgroundColor: '#fefce8', border: '1px solid #fde68a', borderRadius: '12px',
-    padding: '16px 20px', color: '#92400e', fontSize: '14px',
-  },
-  pendingCard: {
-    backgroundColor: '#fff', borderRadius: '16px', padding: '24px',
-    boxShadow: '0 4px 12px rgba(0,0,0,0.06)', border: '1px solid #e2e8f0',
-  },
-  emptyState: {
-    textAlign: 'center', padding: '60px', color: '#94a3b8',
-    fontSize: '16px', backgroundColor: '#fff', borderRadius: '16px',
-  },
-  tableWrapper: { backgroundColor: '#fff', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 4px 12px rgba(0,0,0,0.06)' },
+  
+  sectionTitle: { fontSize: '22px', fontWeight: '700', color: '#000', marginBottom: '20px', letterSpacing: '-0.5px' },
+  statsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '32px' },
+  card: { background: '#fff', borderRadius: '24px', padding: '24px', boxShadow: '0 8px 30px rgba(0,0,0,0.04)' },
+  
+  alertBox: { background: '#fff', borderRadius: '24px', padding: '20px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 8px 30px rgba(0,0,0,0.04)', border: '1px solid #FFEBEA' },
+  alertBtn: { background: '#F2F2F7', color: '#007AFF', padding: '10px 24px', borderRadius: '14px', fontWeight: '600', border: 'none', fontSize: '15px' },
+  
+  emptyState: { textAlign: 'center', padding: '80px 20px', color: '#8E8E93', fontSize: '16px', fontWeight: '500' },
+  
+  searchWrapper: { position: 'relative', display: 'flex', alignItems: 'center' },
+  searchInput: { padding: '10px 16px 10px 40px', borderRadius: '12px', border: '1px solid transparent', background: '#E3E3E880', fontSize: '15px', width: '280px', outline: 'none', transition: 'all 0.2s', fontWeight: '500' },
+  
+  tableWrapper: { background: '#fff', borderRadius: '24px', overflow: 'hidden', boxShadow: '0 8px 30px rgba(0,0,0,0.04)' },
   table: { width: '100%', borderCollapse: 'collapse' },
-  tableHeader: { backgroundColor: '#f8fafc' },
-  th: { padding: '14px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' },
-  tableRow: { borderTop: '1px solid #f1f5f9', transition: 'background 0.2s' },
-  td: { padding: '14px 16px', verticalAlign: 'middle' },
+  tableHeader: { borderBottom: '1px solid #E5E5EA' },
+  th: { padding: '16px 24px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: '#8E8E93' },
+  tableRow: { transition: 'background 0.2s' },
+  td: { padding: '16px 24px', verticalAlign: 'middle' },
+  deleteBtn: { padding: '6px 16px', background: 'transparent', color: '#FF3B30', border: '1px solid #FF3B30', borderRadius: '12px', fontSize: '13px', fontWeight: '600' }
 };
 
 export default AdminPanel;

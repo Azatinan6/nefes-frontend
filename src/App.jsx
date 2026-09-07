@@ -51,78 +51,81 @@ function AppContent() {
   return (
     <div style={{ fontFamily: 'sans-serif', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', height: '100vh' }}>
 
-      <Routes>
-        <Route path="/admin/*" element={null} />
-        <Route path="/giris" element={null} />
-        <Route path="/kayit" element={null} />
-        <Route path="/sifremi-unuttum" element={null} />
-        <Route path="/sifre-sifirla" element={null} />
-        <Route path="*" element={
-          <nav style={{
-            minHeight: '85px',
-            padding: '10px 40px',
-            backgroundColor: '#FFFFFF',
-            color: '#333',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            boxShadow: '0 4px 15px rgba(0,0,0,0.15)',
-            zIndex: 100
-          }}>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-              <Link to="/" style={{ fontSize: '26px', fontWeight: '900', letterSpacing: '1px', color: '#2E7D32', textDecoration: 'none', textShadow: 'none', lineHeight: '1', textAlign: 'center' }}>
-                🌿 N.E.F.E.S. AL
-              </Link>
-              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%' }}>
-                <img src="/sponsors.png" alt="Sponsorlar" style={{ width: 'auto', height: '45px', objectFit: 'contain', maxWidth: '100%' }} />
+      {/* SADECE ADMIN OLMAYANLAR ÜST MENÜYÜ GÖRSÜN */}
+      {user?.role !== 'ROLE_ADMIN' && (
+        <Routes>
+          <Route path="/admin/*" element={null} />
+          <Route path="/giris" element={null} />
+          <Route path="/kayit" element={null} />
+          <Route path="/sifremi-unuttum" element={null} />
+          <Route path="/sifre-sifirla" element={null} />
+          <Route path="*" element={
+            <nav style={{
+              minHeight: '85px',
+              padding: '10px 40px',
+              backgroundColor: '#FFFFFF',
+              color: '#333',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              boxShadow: '0 4px 15px rgba(0,0,0,0.15)',
+              zIndex: 100
+            }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                <Link to="/" style={{ fontSize: '26px', fontWeight: '900', letterSpacing: '1px', color: '#2E7D32', textDecoration: 'none', textShadow: 'none', lineHeight: '1', textAlign: 'center' }}>
+                  🌿 N.E.F.E.S. AL
+                </Link>
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%' }}>
+                  <img src="/sponsors.png" alt="Sponsorlar" style={{ width: 'auto', height: '45px', objectFit: 'contain', maxWidth: '100%' }} />
+                </div>
               </div>
-            </div>
 
-            <div style={{ display: 'flex', gap: '25px', alignItems: 'center' }}>
-              <Link to="/" style={navLinkStyle}>Ana Sayfa</Link>
-              <Link to="/cocuk-paneli" style={navLinkStyle}>Çocuk Paneli</Link>
+              <div style={{ display: 'flex', gap: '25px', alignItems: 'center' }}>
+                <Link to="/" style={navLinkStyle}>Ana Sayfa</Link>
+                <Link to="/cocuk-paneli" style={navLinkStyle}>Çocuk Paneli</Link>
 
-              {isAuthenticated() && (user?.role === 'ROLE_AILE' || user?.role === 'ROLE_ADMIN') && (
-                <Link to="/aile-paneli" style={navLinkStyle}>Aile Paneli</Link>
-              )}
+                {isAuthenticated() && (user?.role === 'ROLE_AILE' || user?.role === 'ROLE_ADMIN') && (
+                  <Link to="/aile-paneli" style={navLinkStyle}>Aile Paneli</Link>
+                )}
 
-              {isAuthenticated() && (user?.role === 'ROLE_FIZYO' || user?.role === 'ROLE_ADMIN') && (
-                <Link to="/fizyoterapist" style={navLinkStyle}>Fizyoterapist Paneli</Link>
-              )}
-            </div>
+                {isAuthenticated() && (user?.role === 'ROLE_FIZYO' || user?.role === 'ROLE_ADMIN') && (
+                  <Link to="/fizyoterapist" style={navLinkStyle}>Fizyoterapist Paneli</Link>
+                )}
+              </div>
 
-            <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
-              {isAuthenticated() ? (
-                <>
-                  <span style={{ color: '#2E7D32', fontWeight: '600', fontSize: '15px' }}>
-                    👤 {user?.fullName?.split(' ')[0]}
-                  </span>
-                  {user?.role === 'ROLE_ADMIN' && (
-                    <Link to="/admin" style={{ ...btnStyle, backgroundColor: '#7c3aed', color: '#fff', textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
-                      ⚙️ Admin
+              <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
+                {isAuthenticated() ? (
+                  <>
+                    <span style={{ color: '#2E7D32', fontWeight: '600', fontSize: '15px' }}>
+                      👤 {user?.fullName?.split(' ')[0]}
+                    </span>
+                    {user?.role === 'ROLE_ADMIN' && (
+                      <Link to="/admin" style={{ ...btnStyle, backgroundColor: '#7c3aed', color: '#fff', textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
+                        ⚙️ Admin
+                      </Link>
+                    )}
+                    <button
+                      onClick={handleLogout}
+                      style={{ ...btnStyle, backgroundColor: '#ef4444', color: '#fff' }}
+                    >
+                      Çıkış Yap
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Link to="/giris" style={{ ...btnStyle, backgroundColor: '#2E7D32', color: '#FFFFFF', textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
+                      Giriş Yap
                     </Link>
-                  )}
-                  <button
-                    onClick={handleLogout}
-                    style={{ ...btnStyle, backgroundColor: '#ef4444', color: '#fff' }}
-                  >
-                    Çıkış Yap
-                  </button>
-                </>
-              ) : (
-                <>
-                  <Link to="/giris" style={{ ...btnStyle, backgroundColor: '#2E7D32', color: '#FFFFFF', textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
-                    Giriş Yap
-                  </Link>
-                  <Link to="/kayit" style={{ ...btnStyle, backgroundColor: '#FFCA28', color: '#333', textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
-                    Kayıt Ol
-                  </Link>
-                </>
-              )}
-            </div>
-          </nav>
-        } />
-      </Routes>
+                    <Link to="/kayit" style={{ ...btnStyle, backgroundColor: '#FFCA28', color: '#333', textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
+                      Kayıt Ol
+                    </Link>
+                  </>
+                )}
+              </div>
+            </nav>
+          } />
+        </Routes>
+      )}
 
       <div style={{ flex: 1, position: 'relative', overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
         <div style={{ flex: '1 0 auto' }}>
@@ -185,36 +188,39 @@ function AppContent() {
         </Routes>
         </div>
 
-        <footer style={{
-          backgroundColor: '#FFFFFF',
-          color: '#333',
-          padding: '20px 40px',
-          display: 'flex',
-          flexWrap: 'wrap',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          gap: '20px',
-          marginTop: 'auto',
-          borderTop: '4px solid #4CAF50'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: '1 1 200px' }}>
-            <span style={{ fontSize: '24px' }}>🌿</span>
-            <div>
-              <h4 style={{ margin: '0 0 4px 0', fontSize: '16px', color: '#2E7D32', letterSpacing: '0.5px', fontWeight: 'bold' }}>N.E.F.E.S. AL</h4>
-              <p style={{ margin: 0, fontSize: '13px', opacity: 0.8, color: '#555' }}>Dijital Oyunlaştırılmış Nefes ve Postür Platformu</p>
+        {/* SADECE ADMIN OLMAYANLAR FOOTER'I GÖRSÜN */}
+        {user?.role !== 'ROLE_ADMIN' && (
+          <footer style={{
+            backgroundColor: '#FFFFFF',
+            color: '#333',
+            padding: '20px 40px',
+            display: 'flex',
+            flexWrap: 'wrap',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: '20px',
+            marginTop: 'auto',
+            borderTop: '4px solid #4CAF50'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: '1 1 200px' }}>
+              <span style={{ fontSize: '24px' }}>🌿</span>
+              <div>
+                <h4 style={{ margin: '0 0 4px 0', fontSize: '16px', color: '#2E7D32', letterSpacing: '0.5px', fontWeight: 'bold' }}>N.E.F.E.S. AL</h4>
+                <p style={{ margin: 0, fontSize: '13px', opacity: 0.8, color: '#555' }}>Dijital Oyunlaştırılmış Nefes ve Postür Platformu</p>
+              </div>
             </div>
-          </div>
-          
-          <div style={{ flex: '1 1 300px', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '30px', flexWrap: 'wrap' }}>
-            <img src="/footer-sponsors.png" alt="Footer Sponsorlar" style={{ height: '60px', width: 'auto', maxWidth: '100%', objectFit: 'contain' }} />
-            <img src="/sbulogo.png" alt="SBU Logo" style={{ height: '60px', width: 'auto', maxWidth: '100%', objectFit: 'contain' }} />
-          </div>
+            
+            <div style={{ flex: '1 1 300px', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '30px', flexWrap: 'wrap' }}>
+              <img src="/footer-sponsors.png" alt="Footer Sponsorlar" style={{ height: '60px', width: 'auto', maxWidth: '100%', objectFit: 'contain' }} />
+              <img src="/sbulogo.png" alt="SBU Logo" style={{ height: '60px', width: 'auto', maxWidth: '100%', objectFit: 'contain' }} />
+            </div>
 
-          <div style={{ fontSize: '13px', textAlign: 'right', opacity: 0.9, flex: '1 1 200px' }}>
-            &copy; {new Date().getFullYear()} Tüm Hakları Saklıdır.<br/>
-            <span style={{ fontSize: '11px', opacity: 0.7 }}>Destekleyen Kurumlar Ortadadır</span>
-          </div>
-        </footer>
+            <div style={{ fontSize: '13px', textAlign: 'right', opacity: 0.9, flex: '1 1 200px' }}>
+              &copy; {new Date().getFullYear()} Tüm Hakları Saklıdır.<br/>
+              <span style={{ fontSize: '11px', opacity: 0.7 }}>Destekleyen Kurumlar Ortadadır</span>
+            </div>
+          </footer>
+        )}
 
       </div>
     </div>

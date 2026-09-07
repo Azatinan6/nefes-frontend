@@ -55,10 +55,15 @@ const FamilyPanel = () => {
     setAiLoading(true);
     setAiInsight("");
     try {
-      // Backend'deki AI uç noktana veri göndererek ailenin anlayacağı dilde analiz iste
-      const res = await api.post('/ai/generate-family-insight', { 
-        games: progressData 
+      // 1. Kullanıcının kimliğini al
+      const currentUserId = userData.userId || userData.id;
+
+      // 2. URL'yi senin yazdığın "/generate-report" ile değiştirdik
+      // 3. Gönderilen veriyi senin ReportRequest (userId) sınıfına eşitledik
+      const res = await api.post('/ai/generate-report', { 
+        userId: currentUserId 
       });
+      
       setAiInsight(res.data);
     } catch (err) {
       console.error("AI API Hatası:", err);
@@ -135,8 +140,8 @@ const FamilyPanel = () => {
               progressData.map((game, index) => (
                 <div key={index} style={styles.tableRow}>
                   <div style={{ flex: 2, fontWeight: '700', color: '#2D3748' }}>
-                    Oyun Serisi: {game.gameId || 'Bilinmiyor'}
-                  </div>
+                    Oyun: {game.game?.name || 'Bilinmiyor'}
+                   </div>
                   <div style={{ flex: 1, textAlign: 'center', fontWeight: '800', color: '#3182CE', fontSize: '18px' }}>
                     {game.score}
                   </div>

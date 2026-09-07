@@ -23,20 +23,25 @@ const PhysiotherapistPanel = () => {
   const fetchPatients = useCallback(async () => {
     setPatientsLoading(true);
     try {
-      const token = localStorage.getItem('nefes_token');
+      // Token farklı anahtar isimleriyle kaydedilmiş olabileceğinden güvenli kontrol
+      const token = localStorage.getItem('nefes_token') || localStorage.getItem('token');
       const response = await api.get('/fizyo/my-patients', {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
       });
-      setPatients(response.data);
+      
+      const patientList = response.data || [];
+      setPatients(patientList);
       
       // Sayfa ilk açıldığında ilk hastayı ve skorlarını otomatik seç
-      if (response.data.length > 0) {
-        const firstPatient = response.data[0];
+      if (patientList.length > 0) {
+        const firstPatient = patientList[0];
         setSelectedPatient(firstPatient);
         
         const targetUserId = firstPatient.userId || firstPatient.user?.id || firstPatient.id;
-        const progressRes = await api.get(`/progress/user/${targetUserId}`);
-        setPatientProgress(progressRes.data);
+        if (targetUserId) {
+          const progressRes = await api.get(`/progress/user/${targetUserId}`);
+          setPatientProgress(progressRes.data || []);
+        }
       }
     } catch (err) {
       console.error('Hasta listesi alınamadı:', err);
@@ -44,7 +49,11 @@ const PhysiotherapistPanel = () => {
     } finally {
       setPatientsLoading(false);
     }
-  }, []); // Bağımlılık dizisi boş bırakıldı, sadece mount anında çalışır
+  }, []);
+
+  useEffect(() => {
+    fetchPatients();
+  }, [fetchPatients]);
 
   // HASTA SEÇİMİ VE DOĞRU ID İLE VERİ ÇEKME
   const handlePatientSelect = async (patient) => {
@@ -54,45 +63,45 @@ const PhysiotherapistPanel = () => {
     setPatientProgress([]); 
     
     try {
-        // Backend'in beklediği asıl User UUID'sini garantiye alıyoruz
         const targetUserId = patient.userId || patient.user?.id || patient.id;
-        const response = await api.get(`/progress/user/${targetUserId}`);
-        setPatientProgress(response.data);
+        if (targetUserId) {
+            const response = await api.get(`/progress/user/${targetUserId}`);
+            setPatientProgress(response.data || []);
+        }
     } catch (err) {
         console.error("Hastanın oyun verileri çekilemedi:", err);
     }
   };
 
-  // YAPAY ZEKA RAPORU ÜRETİMİ (TİP UYUŞMAZLIKLARI DÜZELTİLDİ)
+  // YAPAY ZEKA RAPORU ÜRETİMİ (TİP UYUŞMAZLIKLARI KESİN OLARAK GİDERİLDİ)
   const generateClinicalReport = async () => {
     if (!selectedPatient) return;
     setIsLoading(true);
     setError(null);
     setAiReport('');
 
-    // Yaş hesabı (Eğer veri yoksa Spring Boot'un çökmemesi için 0 veya varsayılan sayı (örn: 8) gönderilir)
-    let calculatedAge = 0;
+    // Güvenli yaş hesabı
+    let calculatedAge = 8;
     if (selectedPatient.dateOfBirth) {
         const diff = Date.now() - new Date(selectedPatient.dateOfBirth).getTime();
-        calculatedAge = Math.floor(diff / (365.25 * 24 * 3600 * 1000));
+        const years = Math.floor(diff / (365.25 * 24 * 3600 * 1000));
+        if (years > 0 && !isNaN(years)) calculatedAge = years;
     }
-    if (calculatedAge <= 0 || isNaN(calculatedAge)) calculatedAge = 8; 
 
-    // Hastanın gerçek skorlarından klinik veriler türetiliyor
     const playCount = patientProgress.length;
     const avgScore = playCount > 0 ? Math.round(patientProgress.reduce((sum, p) => sum + (p.score || 0), 0) / playCount) : 0;
     const lastPlayed = playCount > 0 ? (patientProgress[playCount - 1].game?.name || "Bilinmiyor") : "Henüz oynanmadı";
 
-    // Backend'deki ClinicalReportRequest sınıfındaki int ve String tipleriyle birebir eşleşen veri paketi
+    // Sayısal alanların kesinlikle int gitmesi için Number() ile sarıldı (JSON Parse hatası önlendi)
     const requestData = {
         patientName: selectedPatient.fullName || 'Belirtilmemiş',
-        age: calculatedAge, // int
+        age: Number(calculatedAge), 
         cpType: selectedPatient.diagnosisType || 'Belirtilmemiş',
-        gmfcsLevel: `Seviye ${selectedPatient.gmfcsLevel}`,
-        compliance: playCount * 10, // int
-        avgDb: avgScore, // int
-        lastModule: lastPlayed, // String
-        totalTime: `${playCount * 5} Dakika` // String
+        gmfcsLevel: `Seviye ${selectedPatient.gmfcsLevel || 1}`,
+        compliance: Number(playCount * 10), 
+        avgDb: Number(avgScore), 
+        lastModule: String(lastPlayed), 
+        totalTime: `${playCount * 5} Dakika` 
     };
 
     try {
@@ -100,7 +109,7 @@ const PhysiotherapistPanel = () => {
         setAiReport(response.data);
     } catch (err) {
         console.error("Klinik AI API Hatası:", err);
-        setError("Yapay zeka raporu oluşturulamıyor. Lütfen backend sunucusunu kontrol edin.");
+        setError("Yapay zeka raporu oluşturulamıyor. Google servis yoğunluğu (503) veya sunucu hatası olabilir, lütfen tekrar deneyin.");
     } finally {
         setIsLoading(false);
     }
@@ -112,9 +121,9 @@ const PhysiotherapistPanel = () => {
     setAddSuccess('');
     setAddLoading(true);
     try {
-      const token = localStorage.getItem('nefes_token');
+      const token = localStorage.getItem('nefes_token') || localStorage.getItem('token');
       await api.post('/fizyo/add-patient', addForm, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
       });
       
       setAddSuccess(`Hasta eklendi! Aile, belirlediğiniz şifre (${addForm.password}) ile giriş yapabilir.`);
@@ -151,6 +160,9 @@ const PhysiotherapistPanel = () => {
 
         <div style={{ flex: 1, overflowY: 'auto' }}>
           {patientsLoading && <div style={{ padding: '20px', color: '#A0AEC0', textAlign: 'center' }}>⏳ Yükleniyor...</div>}
+          {patientsError && <div style={{ padding: '20px', color: '#FEB2B2', textAlign: 'center' }}>{patientsError}</div>}
+          {!patientsLoading && patients.length === 0 && <div style={{ padding: '20px', color: '#A0AEC0', textAlign: 'center' }}>Kayıtlı hasta bulunmuyor.</div>}
+          
           {patients.map(patient => (
             <div 
               key={patient.id} onClick={() => handlePatientSelect(patient)}
@@ -196,7 +208,6 @@ const PhysiotherapistPanel = () => {
                 ) : (
                     patientProgress.map((prog, index) => (
                     <div key={index} style={{ padding: '15px', border: '1px solid #E2E8F0', borderRadius: '8px', backgroundColor: '#F7FAFC' }}>
-                        {/* gameId YERİNE GERÇEK OYUN İSMİ ÇEKİLDİ */}
                         <div style={{ fontSize: '13px', fontWeight: '700', color: '#4A5568', marginBottom: '5px' }}>
                           Oyun: {prog.game?.name || 'Bilinmiyor'}
                         </div>
@@ -244,6 +255,7 @@ const PhysiotherapistPanel = () => {
           <div style={{ backgroundColor: 'white', padding: '30px', borderRadius: '12px', width: '450px' }}>
             <h2 style={{ margin: '0 0 20px 0', color: '#2D3748' }}>Yeni Hasta Ekle</h2>
             {addSuccess && <div style={{ background: '#F0FFF4', color: '#2F855A', padding: '12px', borderRadius: '8px', marginBottom: '15px', fontWeight: 'bold' }}>✅ {addSuccess}</div>}
+            {addError && <div style={{ background: '#FED7D7', color: '#C53030', padding: '12px', borderRadius: '8px', marginBottom: '15px', fontWeight: 'bold' }}>❌ {addError}</div>}
             
             <form onSubmit={handleAddPatient}>
               <div style={{ marginBottom: '15px' }}>
@@ -276,8 +288,8 @@ const PhysiotherapistPanel = () => {
                   </select>
                 </div>
               </div>
-              <button type="submit" style={{ width: '100%', padding: '12px', background: '#3182CE', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>
-                Kaydet ve Yetkilendir
+              <button type="submit" disabled={addLoading} style={{ width: '100%', padding: '12px', background: '#3182CE', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>
+                {addLoading ? 'Kaydediliyor...' : 'Kaydet ve Yetkilendir'}
               </button>
             </form>
           </div>

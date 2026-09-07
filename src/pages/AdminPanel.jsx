@@ -149,9 +149,11 @@ const AdminPanel = () => {
           </div>
         </div>
         <div style={{ display: 'flex', gap: '12px' }}>
+          {/* 
           <button onClick={() => navigate('/')} style={{...styles.actionBtn, background: '#F2F2F7', color: '#007AFF'}} className="ios-btn">
             Ana Sayfa
           </button>
+          */}
           <button onClick={logout} style={{...styles.actionBtn, background: '#FFEBEA', color: '#FF3B30'}} className="ios-btn">
             Çıkış Yap
           </button>

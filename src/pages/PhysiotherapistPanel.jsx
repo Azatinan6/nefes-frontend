@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
 import api from '../services/api';
+import ReactMarkdown from 'react-markdown';
 
 const PhysiotherapistPanel = () => {
   const [patients, setPatients] = useState([]);
@@ -12,15 +12,9 @@ const PhysiotherapistPanel = () => {
   const [error, setError] = useState(null);
   const [patientProgress, setPatientProgress] = useState([]);
 
-  // Modal stateleri 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [addForm, setAddForm] = useState({
-    fullName: '',
-    email: '',
-    password: '', 
-    diagnosisType: 'SPASTIK',
-    gmfcsLevel: 1,
-    dateOfBirth: ''
+    fullName: '', email: '', password: '', diagnosisType: 'SPASTIK', gmfcsLevel: 1, dateOfBirth: ''
   });
   const [addLoading, setAddLoading] = useState(false);
   const [addSuccess, setAddSuccess] = useState('');
@@ -49,17 +43,53 @@ const PhysiotherapistPanel = () => {
     fetchPatients();
   }, [fetchPatients]);
 
+  // HASTA SEÇİMİ VE DOĞRU ID İLE VERİ ÇEKME
+  const handlePatientSelect = async (patient) => {
+    setSelectedPatient(patient);
+    setAiReport("");
+    setError(null);
+    setPatientProgress([]); 
+    
+    try {
+        // Backend'in beklediği asıl User UUID'sini garantiye alıyoruz
+        const targetUserId = patient.userId || patient.user?.id || patient.id;
+        const response = await api.get(`/progress/user/${targetUserId}`);
+        setPatientProgress(response.data);
+    } catch (err) {
+        console.error("Hastanın oyun verileri çekilemedi:", err);
+    }
+  };
+
+  // YAPAY ZEKA RAPORU ÜRETİMİ (TİP UYUŞMAZLIKLARI DÜZELTİLDİ)
   const generateClinicalReport = async () => {
     if (!selectedPatient) return;
     setIsLoading(true);
     setError(null);
     setAiReport('');
 
+    // Yaş hesabı (Eğer veri yoksa Spring Boot'un çökmemesi için 0 veya varsayılan sayı (örn: 8) gönderilir)
+    let calculatedAge = 0;
+    if (selectedPatient.dateOfBirth) {
+        const diff = Date.now() - new Date(selectedPatient.dateOfBirth).getTime();
+        calculatedAge = Math.floor(diff / (365.25 * 24 * 3600 * 1000));
+    }
+    if (calculatedAge <= 0 || isNaN(calculatedAge)) calculatedAge = 8; 
+
+    // Hastanın gerçek skorlarından klinik veriler türetiliyor
+    const playCount = patientProgress.length;
+    const avgScore = playCount > 0 ? Math.round(patientProgress.reduce((sum, p) => sum + (p.score || 0), 0) / playCount) : 0;
+    const lastPlayed = playCount > 0 ? (patientProgress[playCount - 1].game?.name || "Bilinmiyor") : "Henüz oynanmadı";
+
+    // Backend'deki ClinicalReportRequest sınıfındaki int ve String tipleriyle birebir eşleşen veri paketi
     const requestData = {
-        patientName: selectedPatient.fullName,
-        age: selectedPatient.dateOfBirth ? Math.floor((new Date() - new Date(selectedPatient.dateOfBirth)) / (365.25 * 24 * 3600 * 1000)) : '—',
+        patientName: selectedPatient.fullName || 'Belirtilmemiş',
+        age: calculatedAge, // int
         cpType: selectedPatient.diagnosisType || 'Belirtilmemiş',
-        gmfcsLevel: `Seviye ${selectedPatient.gmfcsLevel}`
+        gmfcsLevel: `Seviye ${selectedPatient.gmfcsLevel}`,
+        compliance: playCount * 10, // int
+        avgDb: avgScore, // int
+        lastModule: lastPlayed, // String
+        totalTime: `${playCount * 5} Dakika` // String
     };
 
     try {
@@ -70,20 +100,6 @@ const PhysiotherapistPanel = () => {
         setError("Yapay zeka raporu oluşturulamıyor. Lütfen backend sunucusunu kontrol edin.");
     } finally {
         setIsLoading(false);
-    }
-  };
-
-  const handlePatientSelect = async (patient) => {
-    setSelectedPatient(patient);
-    setAiReport("");
-    setError(null);
-    setPatientProgress([]); 
-    
-    try {
-        const response = await api.get(`/progress/user/${patient.id}`);
-        setPatientProgress(response.data);
-    } catch (err) {
-        console.error("Hastanın oyun verileri çekilemedi:", err);
     }
   };
 
@@ -177,11 +193,14 @@ const PhysiotherapistPanel = () => {
                 ) : (
                     patientProgress.map((prog, index) => (
                     <div key={index} style={{ padding: '15px', border: '1px solid #E2E8F0', borderRadius: '8px', backgroundColor: '#F7FAFC' }}>
-                        <div style={{ fontSize: '12px', color: '#718096', marginBottom: '5px' }}>Oyun ID: {prog.gameId}</div>
-                        <div style={{ fontWeight: 'bold', color: '#2B6CB0', marginBottom: '10px' }}>Skor: {prog.score} Puan</div>
+                        {/* gameId YERİNE GERÇEK OYUN İSMİ ÇEKİLDİ */}
+                        <div style={{ fontSize: '13px', fontWeight: '700', color: '#4A5568', marginBottom: '5px' }}>
+                          Oyun: {prog.game?.name || 'Bilinmiyor'}
+                        </div>
+                        <div style={{ fontWeight: '900', color: '#2B6CB0', marginBottom: '10px', fontSize: '18px' }}>Skor: {prog.score}</div>
                         <div style={{ display: 'flex', gap: '10px' }}>
                         <span style={{ background: '#F0FFF4', color: '#2F855A', padding: '4px 8px', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold' }}>
-                            💎 {prog.breathCrystals || 0} Kristal
+                            💎 +{prog.breathCrystals || 0} Kristal
                         </span>
                         </div>
                     </div>
@@ -203,10 +222,11 @@ const PhysiotherapistPanel = () => {
               {error && <div style={{ color: '#C53030', backgroundColor: '#FED7D7', padding: '15px', borderRadius: '8px', marginBottom: '20px' }}>⚠️ {error}</div>}
               
               <div style={{ backgroundColor: '#F7FAFC', padding: '25px', borderRadius: '8px', borderLeft: '4px solid #3182CE', minHeight: '100px' }}>
-                {!aiReport && !isLoading && !error && <p style={{ color: '#718096', fontStyle: 'italic' }}>Hastanın tüm oyun verilerini yorumlamak için Analiz Et butonuna tıklayın.</p>}
+                {!aiReport && !isLoading && !error && <p style={{ color: '#718096', fontStyle: 'italic', margin: 0 }}>Hastanın tüm oyun verilerini yorumlamak için Analiz Et butonuna tıklayın.</p>}
+                
                 {aiReport && !isLoading && (
-                  <div style={{ color: '#2D3748', lineHeight: '1.8' }}>
-                    {aiReport.split('\n').map((line, index) => <p key={index} style={{ margin: '0 0 10px 0' }}>{line}</p>)}
+                  <div style={styles.markdownContainer}>
+                    <ReactMarkdown>{aiReport}</ReactMarkdown>
                   </div>
                 )}
               </div>
@@ -270,5 +290,17 @@ const labelStyle = { display: 'block', fontSize: '13px', fontWeight: 'bold', col
 const badgeStyle = (bg, color) => ({ backgroundColor: bg, color: color, padding: '6px 14px', borderRadius: '20px', fontSize: '13px', fontWeight: 'bold' });
 const primaryBtnStyle = { padding: '10px 20px', fontSize: '15px', backgroundColor: '#3182CE', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' };
 const disabledBtnStyle = { ...primaryBtnStyle, backgroundColor: '#90CDF4', cursor: 'not-allowed' };
+const styles = {
+  markdownContainer: {
+    margin: 0, 
+    fontSize: '15px', 
+    lineHeight: '1.8', 
+    color: '#2D3748', 
+    fontWeight: '500',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '10px'
+  }
+};
 
 export default PhysiotherapistPanel;

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
+import ReactMarkdown from 'react-markdown';
 
 const FamilyPanel = () => {
   const [userData, setUserData] = useState(null);
@@ -14,14 +15,12 @@ const FamilyPanel = () => {
     const fetchRealData = async () => {
       setIsLoading(true);
       try {
-        // 1. Kullanıcı bilgilerini LocalStorage'dan al
         const storedUser = localStorage.getItem('nefes_user');
         let userId = null;
 
         if (storedUser) {
           const parsedUser = JSON.parse(storedUser);
           setUserData(parsedUser);
-          // KRİTİK DÜZELTME: localStorage'daki JSON verisinde id yerine userId bulunuyor!
           userId = parsedUser.userId || parsedUser.id; 
         }
 
@@ -31,10 +30,8 @@ const FamilyPanel = () => {
           return;
         }
 
-        // 2. Senin ProgressController'daki mevcut endpoint'ine ID ile istek atıyoruz
         const response = await api.get(`/progress/user/${userId}`); 
         
-        // Sadece son 5 oyunu al ve en yeni en üstte olacak şekilde tersine çevir
         const allGames = response.data || [];
         const last5Games = allGames.slice(-5).reverse(); 
         
@@ -50,16 +47,12 @@ const FamilyPanel = () => {
     fetchRealData();
   }, []);
 
-  // Gerçek Yapay Zeka Raporunu Çeken Fonksiyon
   const generateFamilyInsight = async () => {
     setAiLoading(true);
     setAiInsight("");
     try {
-      // 1. Kullanıcının kimliğini al
       const currentUserId = userData.userId || userData.id;
 
-      // 2. URL'yi senin yazdığın "/generate-report" ile değiştirdik
-      // 3. Gönderilen veriyi senin ReportRequest (userId) sınıfına eşitledik
       const res = await api.post('/ai/generate-report', { 
         userId: currentUserId 
       });
@@ -86,7 +79,6 @@ const FamilyPanel = () => {
     <div style={styles.pageBackground}>
       <div style={styles.container}>
         
-        {/* Karşılama Alanı */}
         <div style={styles.header}>
           <div>
             <h1 style={styles.title}>Hoş Geldiniz, {userData ? userData.fullName : 'Değerli Ailemiz'} 👋</h1>
@@ -95,7 +87,6 @@ const FamilyPanel = () => {
           <button style={styles.actionButton}>🎮 Oyuna Başla</button>
         </div>
 
-        {/* N.E.F.E.S. AI Gelişim Asistanı */}
         <div style={styles.aiCard}>
           <div style={styles.aiHeader}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -113,25 +104,26 @@ const FamilyPanel = () => {
           
           <div style={styles.aiContentBox}>
             {!aiInsight && !aiLoading && <p style={{ color: '#A0AEC0', fontStyle: 'italic', margin: 0 }}>Çocuğunuzun son oyun verilerini yapay zekaya yorumlatmak için butona tıklayın.</p>}
-            {aiInsight && <p style={styles.aiText}>{aiInsight}</p>}
+            {aiInsight && (
+              <div style={styles.markdownContainer}>
+                <ReactMarkdown>{aiInsight}</ReactMarkdown>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Son Oyunlar ve Puanlar (Modern Tablo Görünümü) */}
         <div style={{ marginTop: '40px' }}>
           <h3 style={styles.sectionTitle}>🏆 Son 5 Oyunun Özeti</h3>
           
           {error && <div style={styles.errorBox}>{error}</div>}
           
           <div style={styles.tableContainer}>
-            {/* Tablo Başlıkları */}
             <div style={styles.tableHeader}>
               <div style={{ flex: 2 }}>OYUN (ID)</div>
               <div style={{ flex: 1, textAlign: 'center' }}>SKOR</div>
               <div style={{ flex: 1, textAlign: 'right' }}>KAZANILAN KRİSTAL</div>
             </div>
 
-            {/* Tablo Satırları */}
             {progressData.length === 0 && !error ? (
               <div style={{ padding: '20px', textAlign: 'center', color: '#718096' }}>
                 Henüz oynanmış bir oyun bulunmuyor.
@@ -161,7 +153,6 @@ const FamilyPanel = () => {
   );
 };
 
-// --- YENİ NESİL STİLLER (iOS & Frosted Glass Temalı Tablo) ---
 const styles = {
   pageBackground: {
     minHeight: 'calc(100vh - 75px)',
@@ -184,12 +175,22 @@ const styles = {
   aiButton: { background: '#805AD5', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' },
   aiButtonDisabled: { background: '#D6BCFA', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '8px', fontWeight: 'bold', cursor: 'not-allowed' },
   aiContentBox: { background: '#F7FAFC', padding: '20px', borderRadius: '12px', borderLeft: '4px solid #805AD5' },
-  aiText: { margin: 0, fontSize: '16px', lineHeight: '1.6', color: '#4A5568', fontWeight: '500' },
+  
+  // ReactMarkdown içeriğinin okunabilirliğini artıran yeni stil
+  markdownContainer: {
+    margin: 0, 
+    fontSize: '15px', 
+    lineHeight: '1.8', 
+    color: '#2D3748', 
+    fontWeight: '500',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '10px'
+  },
   
   sectionTitle: { fontSize: '22px', fontWeight: '800', color: '#2D3748', marginBottom: '20px' },
   errorBox: { background: '#FED7D7', color: '#C53030', padding: '15px', borderRadius: '8px', marginBottom: '20px', fontWeight: 'bold' },
   
-  // Tablo Stilleri (Satır Satır Modern Görünüm)
   tableContainer: { background: 'white', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.03)', border: '1px solid #EDF2F7', overflow: 'hidden' },
   tableHeader: { display: 'flex', background: '#F7FAFC', padding: '15px 20px', fontSize: '12px', fontWeight: '800', color: '#A0AEC0', letterSpacing: '1px', borderBottom: '1px solid #EDF2F7' },
   tableRow: { display: 'flex', alignItems: 'center', padding: '20px', borderBottom: '1px solid #EDF2F7', transition: 'background 0.2s', ':hover': { background: '#F7FAFC' } },

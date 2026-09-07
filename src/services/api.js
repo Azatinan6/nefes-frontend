@@ -139,5 +139,8 @@ export const getMyPatients = () => api.get('/fizyo/my-patients');
 // Davet kodunu görüntüle
 export const getMyInviteCode = () => api.get('/fizyo/invite-code');
 
+// Yeni hasta/aile ekle (Fizyoterapist paneli için)
+export const addPatient = (data) => api.post('/fizyo/add-patient', data);
+
 // Varsayılan export — korunan API instance'ı
 export default api;

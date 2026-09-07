@@ -29,8 +29,8 @@ const PhysiotherapistPanel = () => {
       });
       setPatients(response.data);
       
-      // KRİTİK DÜZELTME: İlk hasta otomatik seçildiğinde puanları da otomatik çekilsin
-      if (response.data.length > 0 && !selectedPatient) {
+      // Sayfa ilk açıldığında ilk hastayı ve skorlarını otomatik seç
+      if (response.data.length > 0) {
         const firstPatient = response.data[0];
         setSelectedPatient(firstPatient);
         
@@ -44,11 +44,7 @@ const PhysiotherapistPanel = () => {
     } finally {
       setPatientsLoading(false);
     }
-  }, [selectedPatient]);
-
-  useEffect(() => {
-    fetchPatients();
-  }, [fetchPatients]);
+  }, []); // Bağımlılık dizisi boş bırakıldı, sadece mount anında çalışır
 
   // HASTA SEÇİMİ VE DOĞRU ID İLE VERİ ÇEKME
   const handlePatientSelect = async (patient) => {

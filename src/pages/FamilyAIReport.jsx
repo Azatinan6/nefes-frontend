@@ -21,11 +21,12 @@ const FamilyPanel = () => {
         if (storedUser) {
           const parsedUser = JSON.parse(storedUser);
           setUserData(parsedUser);
-          userId = parsedUser.id; // Giriş yaparken localStorage'a kaydedilen kullanıcı ID'si
+          // KRİTİK DÜZELTME: localStorage'daki JSON verisinde id yerine userId bulunuyor!
+          userId = parsedUser.userId || parsedUser.id; 
         }
 
         if (!userId) {
-          setError("Kullanıcı kimliği bulunamadı. Lütfen tekrar giriş yapın.");
+          setError("Kullanıcı kimliği bulunamadı. Lütfen çıkış yapıp tekrar giriş yapın.");
           setIsLoading(false);
           return;
         }
@@ -47,7 +48,7 @@ const FamilyPanel = () => {
     };
 
     fetchRealData();
-    }, []);
+  }, []);
 
   // Gerçek Yapay Zeka Raporunu Çeken Fonksiyon
   const generateFamilyInsight = async () => {

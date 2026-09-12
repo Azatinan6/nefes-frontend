@@ -50,7 +50,7 @@ const RocketGame = () => {
   // Ses Şiddetini Yüzdeye Çevir
   useEffect(() => {
     blowIntensityRef.current = blowIntensity;
-    const noiseThreshold = 40;
+    const noiseThreshold = 25;
     let validIntensity = blowIntensity - noiseThreshold;
     if (validIntensity < 0) validIntensity = 0;
     const currentDb = Math.min(Math.round((validIntensity / 100) * 100), 100);
@@ -82,7 +82,7 @@ const RocketGame = () => {
     if (isListening && !gameOver && gamePhase === 'start' && !isPausedRef.current) {
       gameOverRef.current = false;
       if (laps >= 10) {
-        handleFinishGame(true, score, laps);
+        handleFinishGame(true, score, laps, crystals);
       } else {
         scheduleTimeout(() => startCycle(), 1000);
       }
@@ -98,7 +98,7 @@ const RocketGame = () => {
     setGamePhase('inhale');
     phaseRef.current = 'inhale';
 
-    const messages = ["Dik dur.", "Kollarını yukarı uzat.", "Hazır mısın?", "Burnundan derin bir nefes al."];
+    const messages = ["Öğrendiğimiz gibi dik dur.", "Kollarını yukarı uzat.", "Hazır mısın?", "Burnundan derin bir nefes al."];
 
     messages.forEach((msg, i) => {
       scheduleTimeout(() => {
@@ -145,7 +145,7 @@ const RocketGame = () => {
           return;
         }
 
-        const noiseThreshold = 40;
+        const noiseThreshold = 25;
         let validIntensity = blowIntensityRef.current - noiseThreshold;
         if (validIntensity < 0) validIntensity = 0;
         const currentDb = Math.min(Math.round((validIntensity / 100) * 100), 100);
@@ -154,7 +154,7 @@ const RocketGame = () => {
           let newEnergy = prev;
 
           // Güçlü Üfleme Hedefi (%30 - %100)
-          if (currentDb >= 30) {
+          if (currentDb >= 20) {
             newEnergy += 0.5;
           } else {
             newEnergy = Math.max(prev - 0.2, 0);
@@ -194,9 +194,9 @@ const RocketGame = () => {
     }, 4200);
 
     const newScore = Math.min(score + 10, 100);
-    const newCrystals = Math.min(crystals + 1, 10);
+    const newCrystals = Math.min(crystals + 10, 100);
     const newLaps = laps + 1;
-    
+
     setScore(newScore);
     setCrystals(newCrystals);
     setLaps(newLaps);
@@ -208,7 +208,7 @@ const RocketGame = () => {
         return;
       }
       if (newLaps >= 10) {
-        handleFinishGame(true, newScore, newLaps);
+        handleFinishGame(true, newScore, newLaps, newCrystals);
       } else {
         startCycle();
       }
@@ -235,7 +235,7 @@ const RocketGame = () => {
     startListening();
   };
 
-  const handleFinishGame = async (isCompleted = false, finalScore = score, finalLaps = laps) => {
+  const handleFinishGame = async (isCompleted = false, finalScore = score, finalLaps = laps, finalCrystals = crystals) => {
     stopListening();
     setGameOver(true);
     gameOverRef.current = true;
@@ -251,8 +251,8 @@ const RocketGame = () => {
         speech.pitch = 1.1;
         window.speechSynthesis.speak(speech);
       } else {
-        setPromptMessage(`Oyun bitirildi. Toplanan Kristal: ${finalLaps}`);
-        const speech = new SpeechSynthesisUtterance(`Çok iyi çabaladın! Kazandığın kristal: ${finalLaps}`);
+        setPromptMessage(`Oyun bitirildi. Toplanan Kristal: ${finalCrystals}`);
+        const speech = new SpeechSynthesisUtterance(`Çok iyi çabaladın! Kazandığın kristal: ${finalCrystals}`);
         speech.lang = 'tr-TR';
         window.speechSynthesis.speak(speech);
       }
@@ -265,20 +265,20 @@ const RocketGame = () => {
         userId: currentUserId,
         gameId: 7,
         score: finalScore,
-        breathCrystals: finalLaps,
+        breathCrystals: finalCrystals,
         dbPerformance: dbPercentage
       };
 
       try {
         await api.post('/progress/save', progressData);
         setTimeout(() => {
-          alert(`Harika çaba! Kazanılan Kristal: ${finalLaps} 💎 \nMenüye dönülüyor...`);
+          alert(`Harika çaba! Kazanılan Kristal: ${finalCrystals} 💎 \nMenüye dönülüyor...`);
           navigate('/cocuk-paneli');
         }, 500);
         return;
       } catch (error) {
         setTimeout(() => {
-          alert(`Skor: ${finalLaps} (Kaydedilemedi) \nMenüye dönülüyor...`);
+          alert(`Kristal: ${finalCrystals} (Kaydedilemedi) \nMenüye dönülüyor...`);
           navigate('/cocuk-paneli');
         }, 500);
         return;
@@ -352,12 +352,12 @@ const RocketGame = () => {
           <h3 style={{ margin: '0 0 10px 0', fontSize: '18px', color: '#FFF' }}>💨 Nefes Gücü</h3>
           <div style={{ width: '200px', height: '20px', backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: '10px', overflow: 'hidden', position: 'relative' }}>
 
-            {/* İdeal Üfleme Aralığı (%30 - %100) (Güçlü Üfleme) */}
-            <div style={{ position: 'absolute', left: '30%', width: '70%', height: '100%', backgroundColor: 'rgba(16, 185, 129, 0.6)', zIndex: 1 }} />
+            {/* İdeal Üfleme Aralığı (%20 - %100) (Güçlü Üfleme) */}
+            <div style={{ position: 'absolute', left: '20%', width: '80%', height: '100%', backgroundColor: 'rgba(16, 185, 129, 0.6)', zIndex: 1 }} />
 
             <div style={{
               width: `${dbPercentage}%`, height: '100%',
-              backgroundColor: dbPercentage < 30 ? '#F59E0B' : themeColors.accent,
+              backgroundColor: dbPercentage < 20 ? '#F59E0B' : themeColors.accent,
               transition: 'width 0.1s linear', zIndex: 2, position: 'relative'
             }} />
           </div>

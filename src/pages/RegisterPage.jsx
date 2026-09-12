@@ -154,11 +154,11 @@ const RegisterPage = () => {
             
             {/* Onay süreci bilgi kutusu */}
             <div style={styles.infoBox}>
-              ℹ️ Katılımcı başvurunuz <strong>yönetici onayına</strong> tabidir. Onay sonrası e-posta ile bilgilendirileceksiniz.
+              ℹ️ Fizyoterapist/Uzman başvurunuz <strong>sistem yöneticisinin onayına</strong> tabidir. Onay sonrası hesabınız aktifleşecektir ve kullanıma açılacaktır.
             </div>
 
             <Field label="Ad Soyad">
-              <input className="reg-input" type="text" placeholder="Dr. Adınız Soyadınız"
+              <input className="reg-input" type="text" placeholder="Fzt. Adınız Soyadınız"
                 value={fizyoForm.fullName}
                 onChange={(e) => setFizyoForm({...fizyoForm, fullName: e.target.value})}
                 required />

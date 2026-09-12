@@ -50,7 +50,7 @@ const SoupGame = () => {
   // Ses Şiddetini Yüzdeye Çevir
   useEffect(() => {
     blowIntensityRef.current = blowIntensity;
-    const noiseThreshold = 40;
+    const noiseThreshold = 25;
     let validIntensity = blowIntensity - noiseThreshold;
     if (validIntensity < 0) validIntensity = 0;
     const currentDb = Math.min(Math.round((validIntensity / 100) * 100), 100);
@@ -82,7 +82,7 @@ const SoupGame = () => {
     if (isListening && !gameOver && gamePhase === 'start' && !isPausedRef.current) {
       gameOverRef.current = false;
       if (laps >= 10) {
-        handleFinishGame(true, score, laps);
+        handleFinishGame(true, score, laps, crystals);
       } else {
         scheduleTimeout(() => startCycle(), 1000);
       }
@@ -98,7 +98,7 @@ const SoupGame = () => {
     phaseRef.current = 'inhale';
     coolingMotivationRef.current = false;
 
-    const messages = ["Dik dur.", "Çorbamızı koklayalım.", "Burnundan derin ve yavaş nefes al."];
+    const messages = ["Öğrendiğimiz gibi dik dur.", "Çorbamızı koklayalım.", "Burnundan derin ve yavaş nefes al."];
 
     messages.forEach((msg, i) => {
       scheduleTimeout(() => {
@@ -145,7 +145,7 @@ const SoupGame = () => {
           return;
         }
 
-        const noiseThreshold = 40;
+        const noiseThreshold = 25;
         let validIntensity = blowIntensityRef.current - noiseThreshold;
         if (validIntensity < 0) validIntensity = 0;
         const currentDb = Math.min(Math.round((validIntensity / 100) * 100), 100);
@@ -195,7 +195,7 @@ const SoupGame = () => {
     }, 1600);
 
     const newScore = Math.min(score + 10, 100);
-    const newCrystals = Math.min(crystals + 1, 10);
+    const newCrystals = Math.min(crystals + 10, 100);
     const newLaps = laps + 1;
 
     setScore(newScore);
@@ -209,7 +209,7 @@ const SoupGame = () => {
         return;
       }
       if (newLaps >= 10) {
-        handleFinishGame(true, newScore, newLaps);
+        handleFinishGame(true, newScore, newLaps, newCrystals);
       } else {
         startCycle();
       }
@@ -235,7 +235,7 @@ const SoupGame = () => {
     startListening();
   };
 
-  const handleFinishGame = async (isCompleted = false, finalScore = score, finalLaps = laps) => {
+  const handleFinishGame = async (isCompleted = false, finalScore = score, finalLaps = laps, finalCrystals = crystals) => {
     stopListening();
     setGameOver(true);
     gameOverRef.current = true;
@@ -251,8 +251,8 @@ const SoupGame = () => {
         speech.pitch = 1.1;
         window.speechSynthesis.speak(speech);
       } else {
-        setPromptMessage(`Oyun bitirildi. Toplanan Kristal: ${finalLaps}`);
-        const speech = new SpeechSynthesisUtterance(`Çok iyi çabaladın! Kazandığın kristal: ${finalLaps}`);
+        setPromptMessage(`Oyun bitirildi. Toplanan Kristal: ${finalCrystals}`);
+        const speech = new SpeechSynthesisUtterance(`Çok iyi çabaladın! Kazandığın kristal: ${finalCrystals}`);
         speech.lang = 'tr-TR';
         window.speechSynthesis.speak(speech);
       }
@@ -265,20 +265,20 @@ const SoupGame = () => {
         userId: currentUserId,
         gameId: 6,
         score: finalScore,
-        breathCrystals: finalLaps,
+        breathCrystals: finalCrystals,
         dbPerformance: dbPercentage
       };
 
       try {
         await api.post('/progress/save', progressData);
         setTimeout(() => {
-          alert(`Harika çaba! Kazanılan Kristal: ${finalLaps} 💎 \nMenüye dönülüyor...`);
+          alert(`Harika çaba! Kazanılan Kristal: ${finalCrystals} 💎 \nMenüye dönülüyor...`);
           navigate('/cocuk-paneli');
         }, 500);
         return;
       } catch (error) {
         setTimeout(() => {
-          alert(`Skor: ${finalLaps} (Kaydedilemedi) \nMenüye dönülüyor...`);
+          alert(`Kristal: ${finalCrystals} (Kaydedilemedi) \nMenüye dönülüyor...`);
           navigate('/cocuk-paneli');
         }, 500);
         return;

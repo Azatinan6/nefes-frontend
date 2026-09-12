@@ -51,9 +51,7 @@ function AppContent() {
   return (
     <div style={{ fontFamily: 'sans-serif', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', height: '100vh' }}>
 
-      {/* SADECE ADMIN OLMAYANLAR ÜST MENÜYÜ GÖRSÜN */}
-      {user?.role !== 'ROLE_ADMIN' && (
-        <Routes>
+      <Routes>
           <Route path="/admin/*" element={null} />
           <Route path="/giris" element={null} />
           <Route path="/kayit" element={null} />
@@ -125,7 +123,6 @@ function AppContent() {
             </nav>
           } />
         </Routes>
-      )}
 
       <div style={{ flex: 1, position: 'relative', overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
         <div style={{ flex: '1 0 auto' }}>
@@ -188,9 +185,7 @@ function AppContent() {
         </Routes>
         </div>
 
-        {/* SADECE ADMIN OLMAYANLAR FOOTER'I GÖRSÜN */}
-        {user?.role !== 'ROLE_ADMIN' && (
-          <footer style={{
+        <footer style={{
             backgroundColor: '#FFFFFF',
             color: '#333',
             padding: '20px 40px',
@@ -220,7 +215,6 @@ function AppContent() {
               <span style={{ fontSize: '11px', opacity: 0.7 }}>Destekleyen Kurumlar Ortadadır</span>
             </div>
           </footer>
-        )}
 
       </div>
     </div>

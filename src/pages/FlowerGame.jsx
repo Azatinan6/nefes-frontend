@@ -53,8 +53,9 @@ const FlowerGame = () => {
   }, [blowIntensity]);
 
   const playAudioPrompt = (message) => {
-    if (!gameOverRef.current && isListening) {
+    if (!gameOverRef.current && !pausedRef.current && isListening) {
       setPromptMessage(message);
+      window.speechSynthesis.cancel();
       const speech = new SpeechSynthesisUtterance(message);
       speech.lang = 'tr-TR';
       speech.rate = 1.0;
@@ -219,6 +220,8 @@ const FlowerGame = () => {
     setFlowerOpen(0);
     setHoldTimer(0);
     window.speechSynthesis.cancel();
+    // Bazı tarayıcılarda cancel() o an konuşan sesi hemen kesmeyebiliyor, kısa gecikmeyle tekrar deniyoruz
+    setTimeout(() => window.speechSynthesis.cancel(), 50);
     setPromptMessage("Oyun duraklatıldı. Devam etmek için başla tuşuna basın.");
   };
 

@@ -135,8 +135,12 @@ const RegisterPage = () => {
         {/* Hasta/Aile Bilgilendirmesi */}
         <div style={{ backgroundColor: '#fffbeb', border: '1px solid #fef3c7', padding: '16px', borderRadius: '12px', marginBottom: '20px' }}>
             <p style={{ margin: 0, fontSize: '13px', color: '#92400e', lineHeight: '1.5' }}>
-                👨‍👩‍👧 <strong>Çocuk / Ebeveyn misiniz?</strong><br/>
-                Katılımcılar kendi kendilerine kayıt olamazlar. Sisteme giriş yapabilmek için kendi <strong>fizyoterapistinizle iletişime geçiniz</strong>. Fizyoterapistiniz sizi eklediğinde şifreniz e-posta adresinize gönderilecektir. Size özel oluşturulan kullanıcı adı ve şifre kişiseldir. Güvenliğiniz için giriş bilgilerinizi kimseyle paylaşmayınız.
+                🩺 <strong>Fizyoterapist / Uzman mısınız?</strong><br/>
+                Bu kayıt alanı yalnızca fizyoterapist ve uzmanlar içindir. Fizyoterapist/ uzman olarak sisteme kayıt olmak için aşağıdaki bilgileri doldurabilirsiniz.
+                <br/><br/>
+                Çocuk/ebeveyn iseniz bu alandan kayıt oluşturmayınız. Sisteme erişebilmek için fizyoterapistinizle iletişime geçiniz. Fizyoterapistiniz kaydınızı oluşturduktan sonra size özel kullanıcı adı ve şifreniz ile sisteme giriş yapabilirsiniz.
+                <br/><br/>
+                🔒 Giriş bilgileriniz kişiseldir. Güvenliğiniz için kullanıcı adı ve şifrenizi başkalarıyla paylaşmayınız.
             </p>
         </div>
 

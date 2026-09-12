@@ -135,7 +135,7 @@ const FinalAdventureGame = () => {
       setGamePhase('pre-exhale');
       phaseRef.current = 'pre-exhale';
 
-      playAudioPrompt("Şimdi nefesini ver.");
+      playAudioPrompt("Şimdi nefesini ver, kristali parlat.");
 
       // Mesaj tamamlanınca üfleme kısmı açılır (blur kalkar)
       scheduleTimeout(() => {
